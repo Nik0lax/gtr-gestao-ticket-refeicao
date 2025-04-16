@@ -234,22 +234,30 @@ def relatorio_totalEmissao():
         # Total de colaboradores cadastrados (não depende de data)
         cursor.execute("SELECT COUNT(DISTINCT cpf) FROM colaboradores")
         base_colaboradores = cursor.fetchone()[0]
-
-        # Total de senhas diurnas
+        
+        # Total de senhas almoço
         cursor.execute("""
             SELECT COUNT(*) FROM emissoes_senha
-            WHERE TIME(data_hora) BETWEEN '06:00:00' AND '17:59:59'
+            WHERE TIME(data_hora) BETWEEN '06:50:00' AND '07:20:00'
             AND DATE(data_hora) BETWEEN %s AND %s
         """, (data_inicio, data_fim))
-        senhas_diurno = cursor.fetchone()[0]
+        senhas_cafe = cursor.fetchone()[0]
 
-        # Total de senhas noturnas
+        # Total de senhas almoço
         cursor.execute("""
             SELECT COUNT(*) FROM emissoes_senha
-            WHERE (TIME(data_hora) >= '18:00:00' OR TIME(data_hora) < '06:00:00')
+            WHERE TIME(data_hora) BETWEEN '11:50:00' AND '14:20:00'
             AND DATE(data_hora) BETWEEN %s AND %s
         """, (data_inicio, data_fim))
-        senhas_noturno = cursor.fetchone()[0]
+        senhas_almoco = cursor.fetchone()[0]
+
+        # Total de senhas janta
+        cursor.execute("""
+            SELECT COUNT(*) FROM emissoes_senha
+            WHERE (TIME(data_hora) >= '19:00:00' OR TIME(data_hora) < '22:20:00')
+            AND DATE(data_hora) BETWEEN %s AND %s
+        """, (data_inicio, data_fim))
+        senhas_janta = cursor.fetchone()[0]
 
         # Top 5 departamentos no período
         cursor.execute("""
@@ -268,8 +276,9 @@ def relatorio_totalEmissao():
         dados_total = {
             "base_colaboradores": base_colaboradores,
             "total_senhas": total_senhas,
-            "senhas_diurno": senhas_diurno,
-            "senhas_noturno": senhas_noturno,
+            "senhas_cafe": senhas_cafe,
+            "senhas_almoco": senhas_almoco,
+            "senhas_janta": senhas_janta,
             "senhas_visitantes": total_visitantes,
             "senhas_colaborador": total_colaborador,
             "data_geracao": f"{data_inicio.strftime('%d/%m/%Y')} até {data_fim.strftime('%d/%m/%Y')}"
@@ -394,7 +403,6 @@ def senha_colaborador():
             nome, cpf, cargo, departamento, limite_diario = colaborador
             data_hoje = date.today()
 
-            # Verifica quantas senhas o colaborador já emitiu hoje
             cur.execute("""
                 SELECT COUNT(*) FROM emissoes_senha
                 WHERE cpf = %s AND DATE(data_hora) = %s
@@ -407,7 +415,6 @@ def senha_colaborador():
                 cur.close()
                 return redirect(url_for('senha_colaborador'))
 
-            # Buscar o maior número de senha do dia para gerar o próximo
             cur.execute("""
                 SELECT COALESCE(MAX(numero_senha), 0) FROM emissoes_senha
                 WHERE DATE(data_hora) = %s
@@ -418,51 +425,50 @@ def senha_colaborador():
             data_hora = datetime.now()
 
             try:
-                # Registrar a nova emissão com a numeração da senha
+                # Registrar a emissão primeiro
                 cur.execute("""
                     INSERT INTO emissoes_senha (nome, cpf, cargo, departamento, data_hora, numero_senha)
                     VALUES (%s, %s, %s, %s, %s, %s)
                 """, (nome, cpf, cargo, departamento, data_hora, novo_numero))
                 mysql.connection.commit()
+                logger.info(f"{usuario_logado}: Senha Nº {novo_numero:03d} registrada para o CPF {cpf}.")
 
-                # Impressão da senha com número
-                printer = Network("10.10.4.70")  # Endereço IP da impressora
+            except Exception as e:
+                logger.error(f"{usuario_logado}: erro ao registrar senha no banco: {e}")
+                flash("Erro ao registrar a senha no sistema.", "error")
+                mysql.connection.rollback()
+                cur.close()
+                return redirect(url_for('senha_colaborador'))
+
+            finally:
+                cur.close()
+
+            # Tenta imprimir depois, sem afetar o banco
+            try:
+                printer = Network("10.10.4.70")
                 printer.profile.media['width']['pixels'] = 512
-                # Caminho do logo (preto e branco, .png preferido)
                 printer.set(align='center')
-                printer.image("static/images/logo_gtr.png")  # caminho relativo ou absoluto da imagem
-                # Espaçamento abaixo da logo
+                printer.image("static/images/logo_gtr.png")
                 printer.text("\n\n")
-
                 printer.set(align='center', width=5, height=5)
                 printer.text(f"SENHA {novo_numero:03d}\n")
-
-                # Mais um pequeno espaçamento antes dos dados
                 printer.text("\n")
-
-                # Informações do colaborador
                 printer.set(align='left', width=1, height=1)
                 printer.text(f"Nome: {nome}\n")
                 printer.text(f"Cargo: {cargo}\n")
                 printer.text(f"Departamento: {departamento}\n")
                 printer.text(f"Data/Hora: {data_hora.strftime('%d/%m/%Y %H:%M:%S')}\n")
-
                 printer.cut()
                 printer.close()
-                
-                logger.info(f"{usuario_logado}: A senha {novo_numero:03d} para o CPF {cpf} foi emitida com sucesso!")
+
                 flash(f"Senha Nº {novo_numero:03d} emitida com sucesso!", "success")
-                return redirect(url_for('senha_colaborador'))  # Redireciona para a página de emissão após sucesso
+                logger.info(f"{usuario_logado}: Impressão da senha {novo_numero:03d} concluída.")
 
             except Exception as e:
-                # Em caso de erro na impressão, fazer rollback da transação do banco de dados
-                mysql.connection.rollback()
-                logger.error(f"{usuario_logado}: erro ao tenta imprimir a senha: {e}")
-                flash(f"Erro ao imprimir a senha: {str(e)}", "error")
-                return redirect(url_for('senha_colaborador'))
+                logger.warning(f"{usuario_logado}: Erro ao imprimir a senha {novo_numero:03d} — registro salvo com sucesso. Erro: {e}")
+                flash(f"Senha Nº {novo_numero:03d} registrada com sucesso, mas houve erro na impressão.", "warning")
 
-            finally:
-                cur.close()
+            return redirect(url_for('senha_colaborador'))
 
         else:
             logger.info(f"{usuario_logado}: O CPF {cpf} não foi encontrando na base de colaboradores")
@@ -471,6 +477,7 @@ def senha_colaborador():
             return redirect(url_for('senha_colaborador'))
 
     return render_template('emissao_senha.html', tipo_senha='colaborador')
+
 
 @app.route('/senha/visitante', methods=['GET', 'POST'])
 def senha_visitante():
@@ -514,14 +521,26 @@ def senha_visitante():
         departamento = "VISITANTE"
 
         try:
-            # Registrar emissão
+            # Registrar emissão no banco
             cur.execute("""
                 INSERT INTO emissoes_senha (nome, cpf, cargo, departamento, data_hora, numero_senha)
                 VALUES (%s, %s, %s, %s, %s, %s)
             """, (nome, cpf, cargo, departamento, data_hora, novo_numero))
             mysql.connection.commit()
+            logger.info(f"{usuario_logado}: Senha Nº {novo_numero:03d} registrada para visitante CPF {cpf}.")
 
-            # Impressão da senha
+        except Exception as e:
+            logger.error(f"{usuario_logado}: erro ao registrar senha do visitante no banco: {e}")
+            flash("Erro ao registrar a senha no sistema.", "error")
+            mysql.connection.rollback()
+            cur.close()
+            return redirect(url_for('senha_visitante'))
+
+        finally:
+            cur.close()
+
+        # Impressão separada, não afeta o banco
+        try:
             printer = Network("10.10.4.70")
 
             printer.set(align='center')
@@ -530,7 +549,6 @@ def senha_visitante():
 
             printer.set(align='center', width=5, height=5)
             printer.text(f"SENHA {novo_numero:03d}\n")
-
             printer.text("\n")
 
             printer.set(align='left', width=1, height=1)
@@ -540,22 +558,18 @@ def senha_visitante():
 
             printer.cut()
             printer.close()
-            logger.info(f"{usuario_logado}: A senha {novo_numero:03d} para o CPF {cpf} foi emitida com sucesso!")
+
+            logger.info(f"{usuario_logado}: Impressão da senha {novo_numero:03d} para visitante CPF {cpf} concluída.")
             flash(f"Senha Nº {novo_numero:03d} emitida com sucesso!", "success")
 
-            return redirect(url_for('senha_visitante'))  # Redireciona para a página de emissão após sucesso
-
         except Exception as e:
-            # Em caso de erro na impressão, fazer rollback da transação do banco de dados
-            mysql.connection.rollback()
-            logger.error(f"{usuario_logado}: erro ao tenta imprimir a senha: {e}")
-            flash(f"Erro ao imprimir a senha: {str(e)}", "error")
-            return redirect(url_for('senha_visitante'))
+            logger.warning(f"{usuario_logado}: Erro ao imprimir senha {novo_numero:03d} para visitante CPF {cpf}. Registro feito. Erro: {e}")
+            flash(f"Senha Nº {novo_numero:03d} registrada com sucesso, mas houve erro na impressão.", "warning")
 
-        finally:
-            cur.close()
+        return redirect(url_for('senha_visitante'))
 
     return render_template('emissao_senha.html', tipo_senha='visitante')
+
 
 @app.route('/logout')
 def logout():
