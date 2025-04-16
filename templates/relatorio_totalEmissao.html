@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Relatório Total de Senhas Emitidas</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&amp;display=swap" rel="stylesheet">
+    <style>
+        
+        
+        body {
+            font-family: Poppins;
+        }
+        .logo h1 {
+            font-weight: 900;
+            margin: 0;
+            font-size: 2em;
+        }
+
+        .logo span {
+            font-size: 0.8em;
+            color: #4A90E2;
+        }
+
+        .title {
+            font-size: 20px;
+        }
+        .total-grafico {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 30px;
+        }
+
+        .total, .grafico-barras, .circle-container {
+            width: 48%;
+            padding: 20px;
+            border-radius: 10px;
+            background: #f9f9f9;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            box-sizing: border-box;
+        }
+
+        .total p {
+            margin: 6px 0;
+            padding-top: 10px;
+            font-size: 1.1em;
+        }
+
+        .grafico-barras {
+            text-align: center;
+        }
+
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-top: 30px;
+            width: 100%;
+            gap: 4%;
+        }
+
+        .footer table {
+            border-collapse: collapse;
+            width: 48%;
+            background: #fff;
+            font-size: 1em;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px 15px;
+            text-align: left;
+            font-size: 1em;
+        }
+
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="logo">
+            <h1>GTR</h1>
+            <span>GESTÃO DE TICKET REFEIÇÃO</span>
+        </div>
+    </div>
+
+    <div class="title">
+        <span><strong>Relatório</strong> Total de Senhas Emitidas</span>
+    </div>
+    <p><strong>Data:</strong> {{ total.data_geracao }}</p>
+    <p><strong> Base Atual de Colaboradores:</strong> {{ total.base_colaboradores }}</p>
+
+    <div class="total-grafico">
+        <div class="total">
+            <h3>Resumo</h3>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                <tr style="background-color: #f2f2f2;">
+                    <th style="padding: 10px; text-align: left;">Periodo</th>
+                    <th style="padding: 10px; text-align: right;">Quantidade</th>
+                </tr>
+                <tr>
+                    <td style="padding: 10px;">Diurno</td>
+                    <td style="padding: 10px; text-align: right;">{{ total.senhas_diurno }}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px;">Noturno</td>
+                    <td style="padding: 10px; text-align: right;">{{ total.senhas_noturno }}</td>
+                </tr>
+                <tr style="background-color: #f2f2f2;">
+                    <th style="padding: 10px; text-align: left;">Tipo</th>
+                    <th style="padding: 10px; text-align: right;">Quantidade</th>
+                </tr>
+                <tr>
+                    <td style="padding: 10px;">Visitantes</td>
+                    <td style="padding: 10px; text-align: right;">{{ total.senhas_visitantes }}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px;">Colaborador</td>
+                    <td style="padding: 10px; text-align: right;">{{ total.senhas_colaborador }}</td>
+                </tr>
+                <tr>
+                    <th style="padding: 10px;">Total</th>
+                    <th style="padding: 10px; text-align: right;"><strong>{{ total.total_senhas }}</strong></th>
+                </tr>
+            </table>
+        </div>
+    
+        <div class="grafico-barras">
+            <img src="data:image/png;base64,{{ grafico_barras }}" alt="Gráfico de Barras" style="max-width: 100%; height: auto;">
+        </div>
+    </div>
+    <!-- INÍCIO BLOCO TOPO COM total E GRÁFICO DE BARRAS -->
+    
+    <div class="clear"></div>
+    <!-- FIM BLOCO TOPO -->
+
+    <!-- INÍCIO BLOCO RODAPÉ COM TABELA E CÍRCULO -->
+    <div class="footer">
+        <div class="total">
+            <h3>Total de Departamentos emitidos no Periodo</h3>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                <thead>
+                    <tr style="background-color: #f2f2f2;">
+                        <th style="padding: 10px; text-align: left;">Nome</th>
+                        <th style="padding: 10px; text-align: right;">Quantidade</th></tr>
+                </thead>
+                <tbody>
+                    {% for depto in departamentos %}
+                    <tr>
+                        <td style="padding: 10px;">{{ depto.nome }}</td>
+                        <td style="padding: 10px; text-align: right;">{{ depto.quantidade }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+
+        <div class="circle-container">
+            <img src="data:image/png;base64,{{ grafico_meta }}" alt="Gráfico de Meta" style="max-width: 100%; height: auto;">
+        </div>
+    </div>
+
+</body>
+</html>

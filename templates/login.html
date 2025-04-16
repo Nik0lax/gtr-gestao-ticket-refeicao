@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - GTR</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+</head>
+<body>
+    <div class="background">
+        <div class="login-box">
+            <h1>GTR</h1>
+            <p class="subtitulo">GESTÃO DE TICKET REFEIÇÃO</p>
+            <p class="acesso">Insira as suas <strong>CREDENCIAIS</strong></p>
+            <form method="POST" action="/">
+                <label for="usuario">USUÁRIO</label>
+                <input type="text" name="usuario" id="usuario" placeholder="Digite o seu usuário" required>
+            
+                <label for="senha">SENHA</label>
+                <input type="password" name="senha" id="senha" placeholder="Digite sua senha" required>
+            
+                <button type="submit">ENTRAR</button>
+            </form>
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <div class="mensagem-erro">
+                    {% for message in messages %}
+                        <p>{{ message }}</p>
+                    {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+        </div>
+    </div>
+</body>
+</html>

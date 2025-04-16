@@ -1,0 +1,168 @@
+body, html {
+    margin: 0;
+    padding: 0;
+    font-family: 'Poppins', sans-serif;
+    background-color: #fff;
+    height: 100%;
+}
+
+.flash-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.4); /* fundo escuro transparente */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.flash-popup {
+    background-color: white;
+    padding: 30px 40px;
+    border-radius: 16px;
+    text-align: center;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.3);
+    max-width: 90%;
+    height: 400px;
+    width: 500px;
+}
+
+.flash-message {
+    font-size: 20px;
+    margin-top: 170px;
+    padding: 16px;
+    border-radius: 8px;
+    color: white;
+}
+
+.flash-message.success {
+    background-color: #28a745;
+    border: 1px solid #218838;
+}
+
+.flash-message.error {
+    background-color: #dc3545;
+    border: 1px solid #c82333;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+
+
+.top-bar {
+    background-color: #217d9d;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    color: white;
+}
+
+.logo h1 {
+    margin: 0;
+    font-size: 20px;
+}
+
+.logo p {
+    margin: 0;
+    font-size: 12px;
+    color: #b0e0e6;
+}
+
+.logout a {
+    color: white;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: calc(100vh - 60px);
+    gap: 120px;
+}
+
+.btn-senha {
+    display: block;
+    background-color: #41c8b0;
+    color: white;
+    text-align: center;
+    padding: 30px 60px;
+    font-size: 50px;
+    font-weight: 700;
+    border-radius: 12px;
+    text-decoration: none;
+    width: 700px;
+    transition: background-color 0.3s ease;
+}
+
+.btn-senha:hover {
+    background-color: #37b09c;
+}
+
+.form-cpf {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.form-cpf input {
+    padding: 15px;
+    font-size: 50px;
+    width: 700px;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+}
+
+.form-cpf button {
+    background-color: #41c8b0;
+    color: white;
+    font-size: 24px;
+    padding: 15px 30px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.form-cpf button:hover {
+    background-color: #37b09c;
+}
+
+.btn-voltar {
+    position: absolute;
+    top: 80px; /* Ajuste conforme o header */
+    left: 20px;
+    font-size: 20px;
+    color: white;
+    text-decoration: none;
+    background-color: #37b09c;
+    padding: 6px 14px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    font-family: 'Poppins', sans-serif;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+    z-index: 10;
+}
+
+.btn-voltar:hover {
+    background-color: #e0e0e0;
+}

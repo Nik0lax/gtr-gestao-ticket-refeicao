@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Relatório de Emissões Diárias</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+        }
+
+        .logo h1 {
+            font-weight: 900;
+            margin: 0;
+            font-size: 2em;
+        }
+
+        .logo span {
+            font-size: 0.8em;
+            color: #4A90E2;
+        }
+
+        .title {
+            margin-top: 20px;
+            font-size: 20px;
+        }
+
+        .info {
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        th, td {
+            border: 1px solid #999;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .footer {
+            margin-top: 40px;
+            font-size: 12px;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">
+            <h1>GTR</h1>
+            <span>GESTÃO DE TICKET REFEIÇÃO</span>
+        </div>
+        <div class="title">
+            <span><strong>Relatório</strong> Total de Senhas Emitidas</span>
+        </div>
+    </div>
+
+    <div class="info">
+        <strong>Período:</strong> {{ data_geracao }}
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Senha</th>
+                <th>CPF</th>
+                <th>Nome</th>
+                <th>Cargo</th>
+                <th>Departamento</th>
+                <th>Data/Hora</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in registros %}
+            <tr>
+                <td>{{ item.numero_senha }}</td>
+                <td>{{ item.cpf }}</td>
+                <td>{{ item.nome }}</td>
+                <td>{{ item.cargo }}</td>
+                <td>{{ item.departamento }}</td>
+                <td>{{ item.data_hora.strftime('%d/%m/%Y %H:%M') }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="footer">
+        Relatório gerado em {{ agora }}
+    </div>
+</body>
+</html>

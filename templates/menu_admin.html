@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Painel Admin - GTR</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/menu_admin.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+  <header>
+    <div class="top-bar">
+      <div class="user-actions">
+        <button class="btn-user">
+          <i class="fas fa-user"></i> MEU USUÁRIO
+        </button>
+        <span class="separator">|</span>
+        <a href="{{ url_for('logout') }}" class="btn-logout">
+          <i class="fas fa-sign-out-alt"></i> SAIR
+        </a>        
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <aside class="sidebar">
+      <a href="{{ url_for('admin') }}">
+        <h1>GTR</h1>
+        <p class="subtitulo">GESTÃO DE TICKET REFEIÇÃO</p>
+      </a>
+
+      <nav class="menu">
+        <a href="{{ url_for('cadastro') }}">
+          <i class="fas fa-user-plus"></i> Cadastro
+        </a>
+        <a href="#" id="menu-relatorios">
+          <i class="fas fa-chart-bar"></i> Relatórios
+          <i class="fas fa-chevron-down arrow"></i>
+        </a>
+        <ul id="submenu-relatorios" style="display: none;">
+          <li><a href="{{ url_for('relatorio_totalEmissao') }}">Total de Senhas Emitidas</a></li>
+          <li><a href="{{ url_for('relatorio_emissaoDiaria') }}">Relação de Emissões Diárias</a></li>
+        </ul>
+        <a href= '#' id="menu-configuracoes">
+          <i class="fas fa-cogs"></i> Configurações
+        </a>
+      </nav>
+    </aside>
+
+    <main class="main-content">
+      {% if module == 'cadastro' %}
+        <div id="cadastro-content">
+          <h2>Cadastro de Colaborador</h2>
+          {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+              <div class="flash-container" id="flash-container">
+                {% for category, message in messages %}
+                  <div class="flash-message {{ category }}">{{ message }}</div>
+                {% endfor %}
+              </div>
+            {% endif %}
+          {% endwith %}
+          <form method="POST" action="{{ url_for('cadastro') }}" onsubmit="return validarFormulario()" class="form-grid">
+            <div class="form-group">
+              <label for="nome">Nome:</label>
+              <input type="text" id="nome" name="nome" required>
+            </div>
+          
+            <div class="form-group">
+              <label for="cpf">CPF:</label>
+              <input type="text" id="cpf" name="cpf" required maxlength="14" oninput="formatarEValidarCPF(this)">
+              <small id="cpf-feedback" style="font-size: 12px; color: red;"></small>
+            </div>
+          
+            <div class="form-group">
+              <label for="cargo">Cargo:</label>
+              <input type="text" id="cargo" name="cargo" required>
+            </div>
+          
+            <div class="form-group">
+              <label for="departamento">Departamento:</label>
+              <select id="departamento" name="departamento" required>
+                <option value="" disabled selected>Selecione o departamento</option>
+                {% for d in departamentos %}
+                  <option value="{{ d }}">{{ d }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          
+            <div class="form-group">
+              <label for="tipo">Tipo:</label>
+              <select id="tipo" name="tipo" required>
+                <option value="" disabled selected>Selecione a quantidade de refeições pode emitir por dia</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+              </select>
+            </div>
+          
+            <div class="form-actions">
+              <button type="submit">Cadastrar</button>
+            </div>
+          </form>
+          <div class="lista_colaboradores">
+            <h3>Lista de Colaboradores</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nome</th>
+                <th>CPF</th>
+                <th>Cargo</th>
+                <th>Departamento</th>
+                <th>Quantidade de Refeições/dia</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if colaboradores %}
+                {% for colaborador in colaboradores %}
+                  <tr>
+                    <td>{{ colaborador[0] }}</td> <!-- ID -->
+                    <td>{{ colaborador[1] }}</td> <!-- Nome -->
+                    <td>{{ colaborador[2] }}</td> <!-- CPF -->
+                    <td>{{ colaborador[3] }}</td> <!-- Cargo -->
+                    <td>{{ colaborador[4] }}</td> <!-- Departamento -->
+                    <td>{{ colaborador[5] }}</td> <!-- Tipo -->
+                  </tr>
+                {% endfor %}
+              {% else %}
+                <tr>
+                  <td colspan="6">Nenhum colaborador encontrado.</td>
+                </tr>
+              {% endif %}
+            </tbody>
+          </table>
+          </div>
+          
+
+          <div class="pagination">
+            {% if page > 1 %}
+              <a href="{{ url_for('cadastro', page=page-1) }}">&laquo; Anterior</a>
+            {% endif %}
+
+            Página {{ page }} de {{ total_pages }}
+
+            {% if page < total_pages %}
+              <a href="{{ url_for('cadastro', page=page+1) }}">Próxima &raquo;</a>
+            {% endif %}
+          </div>
+        </div>
+        {% elif modulo == 'relatorio_totalEmissao' %}
+        <div class="relatorios-content">
+          <h2>Total de Senhas Emitidas</h2>
+          <form method="POST" action="{{ url_for('relatorio_totalEmissao') }}">
+            <label for="data_inicial">Data Inicial:</label>
+            <input type="date" name="data_inicial" required>
+            
+            <label for="data_final">Data Final:</label>
+            <input type="date" name="data_final" required>
+        
+            <button type="submit">Exportar em PDF</button>
+          </form>
+        </div>
+
+      {% elif modulo == 'relatorio_emissaoDiaria' %}
+        <div class="relatorios-content">
+          <h2>Relação de Emissões Diárias</h2>
+          <form method="POST" action="{{ url_for('relatorio_emissaoDiaria') }}">
+            <label>Data: <input type="date" name="data_unica" required></label>
+            <button type="submit">Gerar Relatório</button>
+          </form>
+        </div>
+      {% elif module == 'configuracoes' %}
+        <div class="configuracoes-content">
+          <!-- Configurações -->
+        </div>
+      {% else %}
+        <div class="intro-content">
+          <h2>Bem-vindo ao Painel Admin!</h2>
+          <p>Escolha um módulo no menu à esquerda para começar.</p>
+        </div>
+      {% endif %}
+    </main>
+  </div>
+  
+  <script src="{{ url_for('static', filename='js/form-validations.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/flash-message.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/submenu-hide.js') }}"></script>
+</body>
+</html>
