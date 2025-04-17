@@ -50,7 +50,7 @@
         <a href="{{ url_for('emissao_senha') }}" class="btn-voltar">⬅ Voltar</a>
 
         <form action="{{ url_for('senha_visitante') }}" method="post" class="form-cpf" onsubmit="return validarFormularioVisitante()">
-            <input type="text" name="nome" id="nome" placeholder="Digite o nome completo" autocomplete="off" autocorrect="off" required>           
+            <input type="text" name="nome" id="nome" placeholder="Digite o nome completo" autocomplete="off" autocorrect="off" required oninput="validarNome(this)">           
             <input type="text" name="cpf" id="cpf" placeholder="Digite o CPF" required maxlength="14" autocomplete="off" autocorrect="off" oninput="formatarEValidarCPF(this)">
             <div id="cpf-feedback" style="color: red; font-size: 12px;"></div>           
             <button type="submit">Emitir Senha</button>

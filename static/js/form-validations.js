@@ -1,4 +1,4 @@
- /* CAMPO CPF(Somente número e adiciona . e -)*/
+  /* CAMPO CPF(Somente número e adiciona . e -)*/
  function formatarEValidarCPF(input) {
     let value = input.value.replace(/\D/g, ''); // remove tudo que não for número
 
@@ -57,3 +57,8 @@
     // Se CPF for válido, continua o envio do formulário
     return true;
   }
+
+  function validarNome(input) {
+    // Remove tudo que não for letra ou espaço
+    input.value = input.value.replace(/[^A-Za-zÀ-ÿ\s]/g, '');
+}

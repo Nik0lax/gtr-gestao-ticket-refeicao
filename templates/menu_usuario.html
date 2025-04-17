@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Painel Admin - GTR</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/menu_admin.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+  <header>
+    <div class="top-bar">
+      <div class="user-actions">
+        <button class="btn-user">
+          <i class="fas fa-user"></i> MEU USUÁRIO
+        </button>
+        <span class="separator">|</span>
+        <a href="{{ url_for('logout') }}" class="btn-logout">
+          <i class="fas fa-sign-out-alt"></i> SAIR
+        </a>        
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <aside class="sidebar">
+      <a href="{{ url_for('usuario') }}">
+        <h1>GTR</h1>
+        <p class="subtitulo">GESTÃO DE TICKET REFEIÇÃO</p>
+      </a>
+
+      <nav class="menu">
+        <a href="#" id="menu-relatorios">
+          <i class="fas fa-chart-bar"></i> Relatórios
+          <i class="fas fa-chevron-down arrow"></i>
+        </a>
+        <ul id="submenu-relatorios" style="display: none;">
+          <li><a href="{{ url_for('relatorio_totalEmissao') }}">Total de Senhas Emitidas</a></li>
+          <li><a href="{{ url_for('relatorio_emissaoDiaria') }}">Relação de Emissões Diárias</a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <main class="main-content">      
+        {% if modulo == 'relatorio_totalEmissao' %}
+        <div class="relatorios-content">
+          <h2>Total de Senhas Emitidas</h2>
+          <form method="POST" action="{{ url_for('relatorio_totalEmissao') }}">
+            <label for="data_inicial">Data Inicial:</label>
+            <input type="date" name="data_inicial" required>
+            
+            <label for="data_final">Data Final:</label>
+            <input type="date" name="data_final" required>
+        
+            <button type="submit">Exportar em PDF</button>
+          </form>
+        </div>
+
+      {% elif modulo == 'relatorio_emissaoDiaria' %}
+        <div class="relatorios-content">
+          <h2>Relação de Emissões Diárias</h2>
+          <form method="POST" action="{{ url_for('relatorio_emissaoDiaria') }}">
+            <label>Data: <input type="date" name="data_unica" required></label>
+            <button type="submit">Gerar Relatório</button>
+          </form>
+        </div>
+      {% else %}
+        <div class="intro-content">
+          <h2>Bem-vindo ao Painel de Usuário!</h2>
+          <p>Escolha um módulo no menu à esquerda para começar.</p>
+        </div>
+      {% endif %}
+    </main>
+  </div>
+  
+  <script src="{{ url_for('static', filename='js/form-validations.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/flash-message.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/submenu-hide.js') }}"></script>
+</body>
+</html>

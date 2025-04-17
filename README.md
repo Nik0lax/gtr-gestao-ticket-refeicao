@@ -16,6 +16,11 @@
 </p>
 <br>
 
+### v1.2:
+Adicionado bloqueio de caracteres numéricos ao registrar nome de visitante.
+Adicionando perfil usuário para emissão de Relatórios
+
+<br>Ajustes de Relatórios
 ## Sobre o GTR
 
 <p align="center">

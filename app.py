@@ -97,6 +97,10 @@ def login():
                 logger.info(f"{usuario} logando com sucesso!")
                 return redirect('/admin')
             
+            elif perfil == 'usuario':
+                logger.info(f"{usuario} logando com sucesso!")
+                return redirect('/usuario')
+            
             elif perfil == 'totem_desktop':
                 logger.info(f"{usuario} logando com sucesso!")
                 return redirect('/emissao_senha')
@@ -122,6 +126,12 @@ def admin():
     if 'usuario_id' not in session:
         return redirect('/')
     return render_template('menu_admin.html', module=None)
+
+@app.route('/usuario')
+def usuario():
+    if 'usuario_id' not in session:
+        return redirect('/')
+    return render_template('menu_usuario.html', module=None)
 
 @app.route('/emissao_senha', methods=['GET', 'POST'])
 def emissao_senha():
@@ -211,6 +221,7 @@ def cadastro():
 @app.route('/relatorio/total', methods=['GET', 'POST'])
 def relatorio_totalEmissao():
     usuario_logado = get_usuario_logado()
+    perfil = session.get('usuario_perfil', 'desconhecido')  # Exemplo: 'totem_desktop' ou 'totem_tablet'
 
     if request.method == 'POST':
         data_inicial = request.form.get('data_inicial')
@@ -361,11 +372,15 @@ def relatorio_totalEmissao():
 
         return send_file(BytesIO(pdf), download_name='relatorio_totalEmissao.pdf', as_attachment=True)
 
-    return render_template('menu_admin.html', modulo='relatorio_totalEmissao')
-
+    if perfil == 'admin':
+        return render_template('menu_admin.html.html', modulo='relatorio_totalEmissao')
+    else:
+        return render_template('menu_usuario.html', modulo='relatorio_totalEmissao')# Renderização baseada no perfil
+    
 @app.route('/relatorio/diario', methods=['GET', 'POST'])
 def relatorio_emissaoDiaria():
     usuario_logado = get_usuario_logado()
+    perfil = session.get('usuario_perfil', 'desconhecido')  # Exemplo: 'totem_desktop' ou 'totem_tablet'
 
     if request.method == 'POST':
         data_unica = request.form.get('data_unica')
@@ -404,7 +419,11 @@ def relatorio_emissaoDiaria():
         
         return send_file(BytesIO(pdf), download_name='relatorio_emissoesDiarias.pdf', as_attachment=True)
 
-    return render_template('menu_admin.html', modulo='relatorio_emissaoDiaria')
+    if perfil == 'admin':
+        return render_template('menu_admin.html.html', modulo='relatorio_emissaoDiaria')
+    else:
+        return render_template('menu_usuario.html', modulo='relatorio_emissaoDiaria')# Renderização baseada no perfil
+
 
 @app.route('/senha/colaborador', methods=['GET', 'POST'])
 def senha_colaborador():
@@ -594,8 +613,6 @@ def senha_visitante():
         return render_template('emissao_senha_tablet.html', tipo_senha='visitante')
     else:
         return render_template('emissao_senha.html', tipo_senha='visitante')
-
-
 
 @app.route('/logout')
 def logout():
