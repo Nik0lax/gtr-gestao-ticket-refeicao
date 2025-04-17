@@ -9,6 +9,8 @@
         
         body {
             font-family: Poppins;
+            font-size: 13px;
+            
         }
         .logo h1 {
             font-weight: 900;
@@ -33,7 +35,7 @@
 
         .total, .grafico-barras, .circle-container {
             width: 48%;
-            padding: 20px;
+            padding: 10px;
             border-radius: 10px;
             background: #f9f9f9;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
@@ -92,8 +94,7 @@
     <div class="title">
         <span><strong>Relatório</strong> Total de Senhas Emitidas</span>
     </div>
-    <p><strong>Data:</strong> {{ total.data_geracao }}</p>
-    <p><strong> Base Atual de Colaboradores:</strong> {{ total.base_colaboradores }}</p>
+    <p><strong>Data:</strong> {{ total.data_geracao }} <strong>Base Atual de Colaboradores: </strong> {{ total.base_colaboradores }}</p>
 
     <div class="total-grafico">
         <div class="total">
@@ -154,7 +155,7 @@
                         <th style="padding: 10px; text-align: right;">Quantidade</th></tr>
                 </thead>
                 <tbody>
-                    {% for depto in departamentos %}
+                    {% for depto in lista_departamentos %}
                     <tr>
                         <td style="padding: 10px;">{{ depto.nome }}</td>
                         <td style="padding: 10px; text-align: right;">{{ depto.quantidade }}</td>

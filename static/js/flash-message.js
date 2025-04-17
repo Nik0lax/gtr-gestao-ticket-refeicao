@@ -7,4 +7,4 @@ setTimeout(() => {
           overlay.remove(); // remove do DOM depois da transição
       }, 500);
   }
-}, 6000); // tempo que o popup fica visível
+}, 5000); // tempo que o popup fica visível

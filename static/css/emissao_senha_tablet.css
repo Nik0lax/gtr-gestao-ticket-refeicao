@@ -1,0 +1,252 @@
+body, html {
+    margin: 0;
+    padding: 0;
+    font-family: 'Poppins', sans-serif;
+    background-color: #fff;
+    height: 100%;
+}
+
+.flash-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.flash-popup {
+    background-color: white;
+    padding: 30px 40px;
+    border-radius: 16px;
+    text-align: center;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.3);
+    max-width: 90%;
+    width: 80%;
+    max-height: 90%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.flash-message {
+    font-size: 18px;
+    padding: 14px;
+    border-radius: 8px;
+    color: white;
+    margin-top: 20px;  /* Espaçamento entre a mensagem e o conteúdo da popup */
+    min-width: 200px;
+    text-align: center;
+    word-wrap: break-word;
+}
+
+.flash-message.success,
+.flash-message.warning {
+    background-color: #28a745;
+    border: 1px solid #218838;
+}
+
+.flash-message.error {
+    background-color: #dc3545;
+    border: 1px solid #c82333;
+}
+
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.top-bar {
+    background-color: #217d9d;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    color: white;
+    flex-wrap: wrap;
+}
+
+.logo h1 {
+    margin: 0;
+    font-size: 24px;
+}
+
+.logo p {
+    margin: 0;
+    font-size: 14px;
+    color: #b0e0e6;
+}
+
+.logout a {
+    color: white;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: calc(100vh - 60px);
+    gap: 60px;
+    padding: 20px;
+    text-align: center;
+}
+
+.btn-senha {
+    display: block;
+    background-color: #41c8b0;
+    color: white;
+    text-align: center;
+    padding: 20px 40px;
+    font-size: 32px;
+    font-weight: 700;
+    border-radius: 12px;
+    text-decoration: none;
+    width: 90%;
+    max-width: 500px;
+    transition: background-color 0.3s ease;
+}
+
+.btn-senha:hover {
+    background-color: #37b09c;
+}
+
+.form-cpf {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    width: 100%;
+    max-width: 600px;
+}
+
+.form-cpf input {
+    padding: 15px;
+    font-size: 24px;
+    width: 100%;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+}
+
+.form-cpf button {
+    background-color: #41c8b0;
+    color: white;
+    font-size: 20px;
+    padding: 15px 30px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.form-cpf button:hover {
+    background-color: #37b09c;
+}
+
+.btn-voltar {
+    position: absolute;
+    top: 80px;
+    left: 20px;
+    font-size: 18px;
+    color: white;
+    text-decoration: none;
+    background-color: #37b09c;
+    padding: 6px 14px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    font-family: 'Poppins', sans-serif;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+    z-index: 10;
+}
+
+.btn-voltar:hover {
+    background-color: #e0e0e0;
+}
+
+/* RESPONSIVO PARA TABLETS */
+@media (min-width: 600px) and (max-width: 1024px) {
+    .btn-senha {
+        padding: 16px 32px;
+        font-size: 24px;
+        max-width: 400px;
+    }
+
+    .form-cpf input {
+        font-size: 20px;
+        padding: 12px;
+    }
+
+    .form-cpf button {
+        font-size: 18px;
+        padding: 12px 24px;
+    }
+
+    .flash-popup {
+        padding: 20px 30px;
+        width: 90%;
+    }
+
+    .flash-message {
+        font-size: 16px;
+    }
+
+    .top-bar .logo h1 {
+        font-size: 22px;
+    }
+
+    .top-bar .logo p {
+        font-size: 13px;
+    }
+
+    .btn-voltar {
+        font-size: 16px;
+        padding: 5px 12px;
+    }
+}
+
+/* RESPONSIVO PARA SMARTPHONES */
+@media (max-width: 599px) {
+    .btn-senha {
+        font-size: 20px;
+        padding: 14px 28px;
+        max-width: 90%;
+    }
+
+    .form-cpf input {
+        font-size: 18px;
+        padding: 10px;
+    }
+
+    .form-cpf button {
+        font-size: 16px;
+        padding: 10px 20px;
+    }
+
+    .flash-message {
+        font-size: 14px;
+    }
+
+    .top-bar .logo h1 {
+        font-size: 20px;
+    }
+
+    .top-bar .logo p {
+        font-size: 12px;
+    }
+
+    .btn-voltar {
+        font-size: 14px;
+        padding: 5px 10px;
+    }
+}

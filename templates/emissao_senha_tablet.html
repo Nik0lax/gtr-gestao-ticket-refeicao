@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emissão de Senha - GTR</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/emissao_senha_tablet.css">
+</head>
+<body>
+    <header class="top-bar">
+        <div class="logo">
+            <h1>GTR</h1>
+            <p>GESTÃO DE TICKET REFEIÇÃO</p>
+        </div>
+        <div class="logout">
+            <a href="/logout"><i class="fas fa-sign-out-alt"></i> SAIR</a>
+        </div>
+    </header>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-overlay" id="flash-overlay">
+            <div class="flash-popup">
+                {% for category, message in messages %}
+                    <div class="flash-message {{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        </div>
+            <script>
+                // Aguardar 5 segundos e redirecionar para a tela de emissão de senha
+                setTimeout(() => {
+                    window.location.href = "{{ url_for('emissao_senha_tablet') }}";  // Redireciona para a tela de seleção de senha
+                }, 5000);
+            </script>
+        {% endif %}
+    {% endwith %}
+    <main class="container">       
+        {% if tipo_senha == 'menu' %}
+            <a href="{{ url_for('senha_colaborador') }}" class="btn-senha">SENHA COLABORADOR</a>
+            <a href="{{ url_for('senha_visitante') }}" class="btn-senha">SENHA VISITANTE</a>
+        {% elif tipo_senha == 'colaborador' %}
+        <a href="{{ url_for('emissao_senha_tablet') }}" class="btn-voltar">⬅ Voltar</a>
+
+            <form action="{{ url_for('senha_colaborador') }}" method="post" class="form-cpf" onsubmit="return validarFormulario()">
+                <input type="tel" inputmode="numeric" name="cpf" id="cpf" placeholder="Digite o CPF" required maxlength="14" autocomplete="off" autocorrect="off" oninput="formatarEValidarCPF(this)">
+                <div id="cpf-feedback" style="color: red; font-size: 12px;"></div>
+                <button type="submit">Emitir Senha</button>
+            </form>
+        {% elif tipo_senha == 'visitante' %}
+        <a href="{{ url_for('emissao_senha_tablet') }}" class="btn-voltar">⬅ Voltar</a>
+
+        <form action="{{ url_for('senha_visitante') }}" method="post" class="form-cpf" onsubmit="return validarFormularioVisitante()">
+            <input type="text" name="nome" id="nome" placeholder="Digite o nome completo" autocomplete="off" autocorrect="off" required>           
+            <input type="tel" inputmode="numeric" name="cpf" id="cpf" placeholder="Digite o CPF" required maxlength="14" autocomplete="off" autocorrect="off" oninput="formatarEValidarCPF(this)">
+            <div id="cpf-feedback" style="color: red; font-size: 12px;"></div>           
+            <button type="submit">Emitir Senha</button>
+        </form>        
+        {% endif %}
+    </main>
+    <script src="{{ url_for('static', filename='js/form-validations.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/flash-message.js') }}"></script>
+</body>
+</html>

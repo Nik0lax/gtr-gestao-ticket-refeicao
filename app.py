@@ -100,6 +100,11 @@ def login():
             elif perfil == 'totem_desktop':
                 logger.info(f"{usuario} logando com sucesso!")
                 return redirect('/emissao_senha')
+            
+            elif perfil == 'totem_tablet':
+                logger.info(f"{usuario} logando com sucesso!")
+                return redirect('/emissao_senha_tablet')
+            
             else:
                 flash("Perfil não reconhecido.")
                 logger.info(f"perfil do {usuario} não foi reconhecido.")
@@ -117,6 +122,18 @@ def admin():
     if 'usuario_id' not in session:
         return redirect('/')
     return render_template('menu_admin.html', module=None)
+
+@app.route('/emissao_senha', methods=['GET', 'POST'])
+def emissao_senha():
+    if 'usuario_id' not in session:
+        return redirect('/')
+    return render_template('emissao_senha.html', tipo_senha='menu')
+
+@app.route('/emissao_senha_tablet', methods=['GET', 'POST'])
+def emissao_senha_tablet():
+    if 'usuario_id' not in session:
+        return redirect('/')
+    return render_template('emissao_senha_tablet.html', tipo_senha='menu')
 
 @app.route('/cadastro', methods=['GET', 'POST'])
 def cadastro():
@@ -235,7 +252,7 @@ def relatorio_totalEmissao():
         cursor.execute("SELECT COUNT(DISTINCT cpf) FROM colaboradores")
         base_colaboradores = cursor.fetchone()[0]
         
-        # Total de senhas almoço
+        # Total de senhas cafe
         cursor.execute("""
             SELECT COUNT(*) FROM emissoes_senha
             WHERE TIME(data_hora) BETWEEN '06:50:00' AND '07:20:00'
@@ -254,7 +271,7 @@ def relatorio_totalEmissao():
         # Total de senhas janta
         cursor.execute("""
             SELECT COUNT(*) FROM emissoes_senha
-            WHERE (TIME(data_hora) >= '19:00:00' OR TIME(data_hora) < '22:20:00')
+            WHERE TIME(data_hora) BETWEEN '18:50:00' AND '22:20:00'
             AND DATE(data_hora) BETWEEN %s AND %s
         """, (data_inicio, data_fim))
         senhas_janta = cursor.fetchone()[0]
@@ -270,6 +287,16 @@ def relatorio_totalEmissao():
         """, (data_inicio, data_fim))
         departamentos = [{"nome": nome, "quantidade": qtd} for nome, qtd in cursor.fetchall()]
 
+        # Lista de departamentos no período
+        cursor.execute("""
+            SELECT departamento, COUNT(*) as quantidade
+            FROM emissoes_senha
+            WHERE DATE(data_hora) BETWEEN %s AND %s
+            GROUP BY departamento
+            ORDER BY quantidade DESC
+        """, (data_inicio, data_fim))
+        lista_departamentos = [{"nome": nome, "quantidade": qtd} for nome, qtd in cursor.fetchall()]
+
         cursor.close()
 
         # Monta o dicionário com os totais
@@ -281,6 +308,7 @@ def relatorio_totalEmissao():
             "senhas_janta": senhas_janta,
             "senhas_visitantes": total_visitantes,
             "senhas_colaborador": total_colaborador,
+            "lista_departamentos": lista_departamentos,
             "data_geracao": f"{data_inicio.strftime('%d/%m/%Y')} até {data_fim.strftime('%d/%m/%Y')}"
         }
 
@@ -324,6 +352,7 @@ def relatorio_totalEmissao():
         html = render_template('relatorio_totalEmissao.html',
                                total=dados_total,
                                departamentos=departamentos,
+                               lista_departamentos=lista_departamentos,
                                grafico_barras=grafico_barras,
                                grafico_meta=grafico_meta)
 
@@ -377,15 +406,10 @@ def relatorio_emissaoDiaria():
 
     return render_template('menu_admin.html', modulo='relatorio_emissaoDiaria')
 
-@app.route('/emissao_senha', methods=['GET', 'POST'])
-def emissao_senha():
-    if 'usuario_id' not in session:
-        return redirect('/')
-    return render_template('emissao_senha.html', tipo_senha='menu')
-
 @app.route('/senha/colaborador', methods=['GET', 'POST'])
 def senha_colaborador():
     usuario_logado = get_usuario_logado()
+    perfil = session.get('usuario_perfil', 'desconhecido')  # Exemplo: 'totem_desktop' ou 'totem_tablet'
 
     if request.method == 'POST':
         cpf = request.form['cpf']
@@ -410,8 +434,8 @@ def senha_colaborador():
             qtd_emissoes_hoje = cur.fetchone()[0]
 
             if qtd_emissoes_hoje >= limite_diario:
-                logger.error(f"{usuario_logado}: {cpf} atingiu a quantidade máxima de emissões por hoje")
-                flash(f"Você atingiu o limite diário de emissões.", "error")
+                logger.error(f"{usuario_logado}: {cpf} atingiu o limite diário.")
+                flash("Você atingiu o limite diário de emissões.", "error")
                 cur.close()
                 return redirect(url_for('senha_colaborador'))
 
@@ -425,25 +449,21 @@ def senha_colaborador():
             data_hora = datetime.now()
 
             try:
-                # Registrar a emissão primeiro
                 cur.execute("""
                     INSERT INTO emissoes_senha (nome, cpf, cargo, departamento, data_hora, numero_senha)
                     VALUES (%s, %s, %s, %s, %s, %s)
                 """, (nome, cpf, cargo, departamento, data_hora, novo_numero))
                 mysql.connection.commit()
-                logger.info(f"{usuario_logado}: Senha Nº {novo_numero:03d} registrada para o CPF {cpf}.")
-
+                logger.info(f"{usuario_logado}: Senha Nº {novo_numero:03d} registrada para {cpf}.")
             except Exception as e:
-                logger.error(f"{usuario_logado}: erro ao registrar senha no banco: {e}")
-                flash("Erro ao registrar a senha no sistema.", "error")
+                logger.error(f"{usuario_logado}: erro ao registrar senha: {e}")
+                flash("Erro ao registrar a senha.", "error")
                 mysql.connection.rollback()
                 cur.close()
                 return redirect(url_for('senha_colaborador'))
-
             finally:
                 cur.close()
 
-            # Tenta imprimir depois, sem afetar o banco
             try:
                 printer = Network("10.10.4.70")
                 printer.profile.media['width']['pixels'] = 512
@@ -462,26 +482,27 @@ def senha_colaborador():
                 printer.close()
 
                 flash(f"Senha Nº {novo_numero:03d} emitida com sucesso!", "success")
-                logger.info(f"{usuario_logado}: Impressão da senha {novo_numero:03d} concluída.")
-
             except Exception as e:
-                logger.warning(f"{usuario_logado}: Erro ao imprimir a senha {novo_numero:03d} — registro salvo com sucesso. Erro: {e}")
-                flash(f"Senha Nº {novo_numero:03d} registrada com sucesso, mas houve erro na impressão.", "warning")
+                logger.warning(f"{usuario_logado}: erro na impressão: {e}")
+                flash(f"Senha Nº {novo_numero:03d} registrada, mas houve erro na impressão.", "warning")
 
             return redirect(url_for('senha_colaborador'))
-
         else:
-            logger.info(f"{usuario_logado}: O CPF {cpf} não foi encontrando na base de colaboradores")
+            logger.info(f"{usuario_logado}: CPF {cpf} não encontrado.")
             flash("CPF não encontrado na base de colaboradores.", "error")
             cur.close()
             return redirect(url_for('senha_colaborador'))
 
-    return render_template('emissao_senha.html', tipo_senha='colaborador')
-
+    # Renderização baseada no perfil
+    if perfil == 'totem_tablet':
+        return render_template('emissao_senha_tablet.html', tipo_senha='colaborador')
+    else:
+        return render_template('emissao_senha.html', tipo_senha='colaborador')
 
 @app.route('/senha/visitante', methods=['GET', 'POST'])
 def senha_visitante():
     usuario_logado = get_usuario_logado()
+    perfil = session.get('usuario_perfil', 'desconhecido')  # Exemplo: 'totem_desktop' ou 'totem_tablet'
 
     if request.method == 'POST':
         nome = request.form['nome'].strip().upper()
@@ -568,7 +589,12 @@ def senha_visitante():
 
         return redirect(url_for('senha_visitante'))
 
-    return render_template('emissao_senha.html', tipo_senha='visitante')
+    # Renderização baseada no perfil
+    if perfil == 'totem_tablet':
+        return render_template('emissao_senha_tablet.html', tipo_senha='visitante')
+    else:
+        return render_template('emissao_senha.html', tipo_senha='visitante')
+
 
 
 @app.route('/logout')
