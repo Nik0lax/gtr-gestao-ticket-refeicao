@@ -12,7 +12,7 @@
     <div class="top-bar">
       <div class="user-actions">
         <button class="btn-user">
-          <i class="fas fa-user"></i> MEU USUÁRIO
+          <i class="fas fa-user"></i> {{ usuario }}
         </button>
         <span class="separator">|</span>
         <a href="{{ url_for('logout') }}" class="btn-logout">
@@ -31,7 +31,7 @@
 
       <nav class="menu">
         <a href="{{ url_for('cadastro') }}">
-          <i class="fas fa-user-plus"></i> Cadastro
+          <i class="fas fa-user-plus"></i> Cadastro Colaborador
         </a>
         <a href="#" id="menu-relatorios">
           <i class="fas fa-chart-bar"></i> Relatórios
@@ -104,6 +104,16 @@
           </form>
           <div class="lista_colaboradores">
             <h3>Lista de Colaboradores</h3>
+            <form method="GET" class="form-grid" action="{{ url_for('cadastro') }}">
+              <div class="form-group">
+                <input type="text" name="search" id="search" placeholder="Insira o Nome ou o CPF para buscar" class="search-input">
+              </div>
+              
+              <div class="form-actions">
+                <button type="submit">Buscar</button>
+              </div>
+              
+            </form>
           <table>
             <thead>
               <tr>

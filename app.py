@@ -10,18 +10,14 @@ import pdfkit
 import matplotlib.pyplot as plt
 import base64
 import io
-
+import time
 
 from log_config import logger  # Importar o logger
-from log_backup import start_log_backup  # Importar a função para iniciar o backup de logs
-
 
 ##################################CONFIGS##################################
 app = Flask(__name__)
 app.secret_key = 'gtr_hmpa'
 
-# Iniciar a rotina de backup de logs
-start_log_backup()
 
 # Configuração de navegador, para não armazenar dados no cache
 @app.after_request
@@ -125,13 +121,17 @@ def login():
 def admin():
     if 'usuario_id' not in session:
         return redirect('/')
-    return render_template('menu_admin.html', module=None)
+    
+    usuario_logado = get_usuario_logado()
+    return render_template('menu_admin.html', module=None, usuario=usuario_logado)
 
 @app.route('/usuario')
-def usuario():
+def usuario(): 
     if 'usuario_id' not in session:
         return redirect('/')
-    return render_template('menu_usuario.html', module=None)
+    
+    usuario_logado = get_usuario_logado()
+    return render_template('menu_usuario.html', module=None, usuario=usuario_logado)
 
 @app.route('/emissao_senha', methods=['GET', 'POST'])
 def emissao_senha():
@@ -149,20 +149,43 @@ def emissao_senha_tablet():
 def cadastro():
     usuario_logado = get_usuario_logado()
 
+    # Obtendo o valor de pesquisa de colaborador, se houver
+    search = request.args.get('search', '').strip()
+
     # Configuração da paginação da lista de colaboradores
     page = request.args.get('page', 1, type=int)
-    per_page = 10
+    per_page = 20
     offset = (page - 1) * per_page
 
-    cur = mysql.connection.cursor()  # <-- Criar o cursos no MySQL
+    cur = mysql.connection.cursor()  # <-- Criar o cursor no MySQL
 
     # Obtem o total de colaboradores para calcular o total de páginas
-    cur.execute("SELECT COUNT(*) FROM colaboradores;")
+    if search:
+        # Se houver uma pesquisa, vamos filtrar pelo nome ou CPF
+        cur.execute("""
+            SELECT COUNT(*) FROM colaboradores
+            WHERE nome LIKE %s OR cpf LIKE %s;
+        """, (f"%{search}%", f"%{search}%"))
+    else:
+        # Caso contrário, contar todos os colaboradores
+        cur.execute("SELECT COUNT(*) FROM colaboradores;")
+        
     total_colaboradores = cur.fetchone()[0]
     total_pages = (total_colaboradores + per_page - 1) // per_page
 
-    # Busca colaboradores da página atual
-    cur.execute("SELECT * FROM colaboradores LIMIT %s OFFSET %s;", (per_page, offset))
+    # Busca colaboradores da página atual, considerando a pesquisa
+    if search:
+        cur.execute("""
+            SELECT * FROM colaboradores
+            WHERE nome LIKE %s OR cpf LIKE %s
+            LIMIT %s OFFSET %s;
+        """, (f"%{search}%", f"%{search}%", per_page, offset))
+    else:
+        cur.execute("""
+            SELECT * FROM colaboradores
+            LIMIT %s OFFSET %s;
+        """, (per_page, offset))
+
     colaboradores = cur.fetchall()
 
     # Buscar departamentos
@@ -216,7 +239,7 @@ def cadastro():
 
         return redirect(url_for('cadastro'))
 
-    return render_template('menu_admin.html', colaboradores=colaboradores,  departamentos=departamentos, page=page, total_pages=total_pages,module='cadastro')
+    return render_template('menu_admin.html', colaboradores=colaboradores, departamentos=departamentos, page=page, total_pages=total_pages, search=search, module='cadastro')
 
 @app.route('/relatorio/total', methods=['GET', 'POST'])
 def relatorio_totalEmissao():
@@ -266,7 +289,7 @@ def relatorio_totalEmissao():
         # Total de senhas cafe
         cursor.execute("""
             SELECT COUNT(*) FROM emissoes_senha
-            WHERE TIME(data_hora) BETWEEN '06:50:00' AND '07:20:00'
+            WHERE TIME(data_hora) BETWEEN '06:00:00' AND '09:00:00'
             AND DATE(data_hora) BETWEEN %s AND %s
         """, (data_inicio, data_fim))
         senhas_cafe = cursor.fetchone()[0]
@@ -274,7 +297,7 @@ def relatorio_totalEmissao():
         # Total de senhas almoço
         cursor.execute("""
             SELECT COUNT(*) FROM emissoes_senha
-            WHERE TIME(data_hora) BETWEEN '11:50:00' AND '14:20:00'
+            WHERE TIME(data_hora) BETWEEN '11:00:00' AND '15:00:00'
             AND DATE(data_hora) BETWEEN %s AND %s
         """, (data_inicio, data_fim))
         senhas_almoco = cursor.fetchone()[0]
@@ -282,7 +305,7 @@ def relatorio_totalEmissao():
         # Total de senhas janta
         cursor.execute("""
             SELECT COUNT(*) FROM emissoes_senha
-            WHERE TIME(data_hora) BETWEEN '18:50:00' AND '22:20:00'
+            WHERE TIME(data_hora) BETWEEN '18:00:00' AND '23:59:00'
             AND DATE(data_hora) BETWEEN %s AND %s
         """, (data_inicio, data_fim))
         senhas_janta = cursor.fetchone()[0]
@@ -373,7 +396,7 @@ def relatorio_totalEmissao():
         return send_file(BytesIO(pdf), download_name='relatorio_totalEmissao.pdf', as_attachment=True)
 
     if perfil == 'admin':
-        return render_template('menu_admin.html.html', modulo='relatorio_totalEmissao')
+        return render_template('menu_admin.html', modulo='relatorio_totalEmissao')
     else:
         return render_template('menu_usuario.html', modulo='relatorio_totalEmissao')# Renderização baseada no perfil
     
@@ -420,10 +443,9 @@ def relatorio_emissaoDiaria():
         return send_file(BytesIO(pdf), download_name='relatorio_emissoesDiarias.pdf', as_attachment=True)
 
     if perfil == 'admin':
-        return render_template('menu_admin.html.html', modulo='relatorio_emissaoDiaria')
+        return render_template('menu_admin.html', modulo='relatorio_emissaoDiaria')
     else:
         return render_template('menu_usuario.html', modulo='relatorio_emissaoDiaria')# Renderização baseada no perfil
-
 
 @app.route('/senha/colaborador', methods=['GET', 'POST'])
 def senha_colaborador():

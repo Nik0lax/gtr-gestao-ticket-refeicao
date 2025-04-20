@@ -16,9 +16,13 @@
 </p>
 <br>
 
-### v1.2:
-Adicionado bloqueio de caracteres numéricos ao registrar nome de visitante.
-Adicionando perfil usuário para emissão de Relatórios
+### V1.3:
+Adicionado o nome do usuário na barra superior na tela de admin/usuário
+Adicionado bloqueio de números no input de Nome na tela de Senha Visitante
+Adicionado som de sucesso ao emitir senha nas rotas de Senha
+Corrigido bug do log que não registrava o conteúdo e apagava o histórico
+Adicionado campo de busca de colaborador na tela de Cadastro
+Ocultado o botão de sair do Totem
 
 <br>Ajustes de Relatórios
 ## Sobre o GTR

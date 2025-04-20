@@ -7,6 +7,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/emissao_senha.css">
 </head>
+
+<audio id="som-sucesso" src="{{ url_for('static', filename='sounds/sucesso.mp3') }}"></audio>
+
 <body>
     <header class="top-bar">
         <div class="logo">
@@ -59,5 +62,6 @@
     </main>
     <script src="{{ url_for('static', filename='js/form-validations.js') }}"></script>
     <script src="{{ url_for('static', filename='js/flash-message.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/sound-validation.js') }}"></script>
 </body>
 </html>
