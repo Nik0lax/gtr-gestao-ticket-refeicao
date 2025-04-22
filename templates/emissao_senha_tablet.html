@@ -36,7 +36,6 @@
                 if (successMessage) {
                     // Tocar som de sucesso
                     const audio = new Audio('{{ url_for("static", filename="sounds/sucesso.mp3") }}');
-                    audioErro.volume = 1.0;  // Volume máximo
                     audio.play().catch(e => {
                         console.warn("Falha ao tentar tocar o som de sucesso:", e);
                     });
