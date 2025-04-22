@@ -1,14 +1,20 @@
-// Toca o som se a flash message aparecer
 document.addEventListener('DOMContentLoaded', () => {
-    const overlay = document.getElementById('flash-overlay');
-    const audio = document.getElementById('som-sucesso');
+    const audio = new Audio('{{ url_for("static", filename="sounds/sucesso.mp3") }}');
+    const form = document.querySelector('.form-cpf');  // Usa querySelector para pegar o primeiro formulário com a classe 'form-cpf'
 
-    if (overlay && audio) {
-        // Toca o som após uma pequena espera (deixa a flash aparecer primeiro)
+    // Escuta o evento de submit do formulário
+    form.addEventListener('submit', (event) => {
+        // Previne o envio imediato do formulário
+        event.preventDefault();
+
+        // Toca o áudio de sucesso
+        audio.play().catch(e => {
+            console.warn("Falha ao tentar tocar o som:", e);
+        });
+
+        // Após 1 segundo (1000 milissegundos), submete o formulário
         setTimeout(() => {
-            audio.play().catch(e => {
-                console.warn("Falha ao tentar tocar o som:", e);
-            });
-        }, 500);  // meio segundo depois de aparecer o overlay
-    }
+            form.submit();  // Envia o formulário após o áudio
+        }, 1000);  // Aguardar 1 segundo após o áudio
+    });
 });

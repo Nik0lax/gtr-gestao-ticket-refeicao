@@ -8,8 +8,6 @@
     <link rel="stylesheet" href="/static/css/emissao_senha_tablet.css">
 </head>
 
-<audio id="som-sucesso" src="{{ url_for('static', filename='sounds/sucesso.mp3') }}"></audio>
-
 <body>
     <header class="top-bar">
         <div class="logo">
@@ -29,12 +27,43 @@
                 {% endfor %}
             </div>
         </div>
-            <script>
-                // Aguardar 5 segundos e redirecionar para a tela de emissão de senha
-                setTimeout(() => {
-                    window.location.href = "{{ url_for('emissao_senha_tablet') }}";  // Redireciona para a tela de seleção de senha
-                }, 5000);
-            </script>
+        <script>
+            window.addEventListener('DOMContentLoaded', () => {
+                // Verificar se há mensagem de sucesso
+                const successMessage = document.querySelector('.flash-message.success');
+                const errorMessage = document.querySelector('.flash-message.error');
+
+                if (successMessage) {
+                    // Tocar som de sucesso
+                    const audio = new Audio('{{ url_for("static", filename="sounds/sucesso.mp3") }}');
+                    audioErro.volume = 1.0;  // Volume máximo
+                    audio.play().catch(e => {
+                        console.warn("Falha ao tentar tocar o som de sucesso:", e);
+                    });
+
+                    // Aguardar 5 segundos e redirecionar
+                    setTimeout(() => {
+                        window.location.href = "{{ url_for('emissao_senha_tablet') }}";
+                    }, 5000);
+                }
+
+                if (errorMessage) {
+                    // Tocar som de erro
+                    const audioErro = new Audio('{{ url_for("static", filename="sounds/falha.mp3") }}');
+                    audioErro.volume = 1.0;  // Volume máximo
+                    audioErro.play().catch(e => {
+                        console.warn("Falha ao tentar tocar o som de erro:", e);
+                    });
+                   
+                    // Aguardar 5 segundos e redirecionar para a tela de emissão de senha
+                    setTimeout(() => {
+                        window.location.href = "{{ url_for('emissao_senha_tablet') }}";  // Redireciona para a tela de seleção de senha
+                    }, 5000);
+                }
+            });
+        </script>
+        
+        
         {% endif %}
     {% endwith %}
     <main class="container">       

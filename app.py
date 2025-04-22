@@ -17,6 +17,7 @@ from log_config import logger  # Importar o logger
 ##################################CONFIGS##################################
 app = Flask(__name__)
 app.secret_key = 'gtr_hmpa'
+logger.info("🚀 Aplicação iniciada.")
 
 
 # Configuração de navegador, para não armazenar dados no cache
@@ -66,6 +67,8 @@ app.config['MYSQL_DB'] = 'gtr'
 mysql = MySQL(app)
 
 ##################################APP##################################
+
+
 @app.route('/', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -505,27 +508,27 @@ def senha_colaborador():
             finally:
                 cur.close()
 
-            try:
-                printer = Network("10.10.4.70")
-                printer.profile.media['width']['pixels'] = 512
-                printer.set(align='center')
-                printer.image("static/images/logo_gtr.png")
-                printer.text("\n\n")
-                printer.set(align='center', width=5, height=5)
-                printer.text(f"SENHA {novo_numero:03d}\n")
-                printer.text("\n")
-                printer.set(align='left', width=1, height=1)
-                printer.text(f"Nome: {nome}\n")
-                printer.text(f"Cargo: {cargo}\n")
-                printer.text(f"Departamento: {departamento}\n")
-                printer.text(f"Data/Hora: {data_hora.strftime('%d/%m/%Y %H:%M:%S')}\n")
-                printer.cut()
-                printer.close()
+            # Remove a parte de impressão da senha física
+            # O código de impressão foi removido abaixo:
 
-                flash(f"Senha Nº {novo_numero:03d} emitida com sucesso!", "success")
-            except Exception as e:
-                logger.warning(f"{usuario_logado}: erro na impressão: {e}")
-                flash(f"Senha Nº {novo_numero:03d} registrada, mas houve erro na impressão.", "warning")
+            # try:
+            #     printer = Network("10.10.4.70")
+            #     printer.profile.media['width']['pixels'] = 512
+            #     printer.set(align='center')
+            #     printer.image("static/images/logo_gtr.png")
+            #     printer.text("\n\n")
+            #     printer.set(align='center', width=5, height=5)
+            #     printer.text(f"SENHA {novo_numero:03d}\n")
+            #     printer.text("\n")
+            #     printer.set(align='left', width=1, height=1)
+            #     printer.text(f"Nome: {nome}\n")
+            #     printer.text(f"Cargo: {cargo}\n")
+            #     printer.text(f"Departamento: {departamento}\n")
+            #     printer.text(f"Data/Hora: {data_hora.strftime('%d/%m/%Y %H:%M:%S')}\n")
+            #     printer.cut()
+            #     printer.close()
+
+            flash(f"Senha Nº {novo_numero:03d} emitida com sucesso!", "success")
 
             return redirect(url_for('senha_colaborador'))
         else:
@@ -601,32 +604,36 @@ def senha_visitante():
         finally:
             cur.close()
 
-        # Impressão separada, não afeta o banco
-        try:
-            printer = Network("10.10.4.70")
+        # Remover a parte de impressão da senha física
+        # O código de impressão foi removido abaixo:
 
-            printer.set(align='center')
-            printer.image("static/images/logo_gtr.png")
-            printer.text("\n\n")
+        # try:
+        #     printer = Network("10.10.4.70")
 
-            printer.set(align='center', width=5, height=5)
-            printer.text(f"SENHA {novo_numero:03d}\n")
-            printer.text("\n")
+        #     printer.set(align='center')
+        #     printer.image("static/images/logo_gtr.png")
+        #     printer.text("\n\n")
 
-            printer.set(align='left', width=1, height=1)
-            printer.text(f"Nome: {nome}\n")
-            printer.text(f"Cargo: {cargo}\n")
-            printer.text(f"Data/Hora: {data_hora.strftime('%d/%m/%Y %H:%M:%S')}\n")
+        #     printer.set(align='center', width=5, height=5)
+        #     printer.text(f"SENHA {novo_numero:03d}\n")
+        #     printer.text("\n")
 
-            printer.cut()
-            printer.close()
+        #     printer.set(align='left', width=1, height=1)
+        #     printer.text(f"Nome: {nome}\n")
+        #     printer.text(f"Cargo: {cargo}\n")
+        #     printer.text(f"Data/Hora: {data_hora.strftime('%d/%m/%Y %H:%M:%S')}\n")
 
-            logger.info(f"{usuario_logado}: Impressão da senha {novo_numero:03d} para visitante CPF {cpf} concluída.")
-            flash(f"Senha Nº {novo_numero:03d} emitida com sucesso!", "success")
+        #     printer.cut()
+        #     printer.close()
 
-        except Exception as e:
-            logger.warning(f"{usuario_logado}: Erro ao imprimir senha {novo_numero:03d} para visitante CPF {cpf}. Registro feito. Erro: {e}")
-            flash(f"Senha Nº {novo_numero:03d} registrada com sucesso, mas houve erro na impressão.", "warning")
+        #     logger.info(f"{usuario_logado}: Impressão da senha {novo_numero:03d} para visitante CPF {cpf} concluída.")
+        #     flash(f"Senha Nº {novo_numero:03d} emitida com sucesso!", "success")
+
+        # except Exception as e:
+        #     logger.warning(f"{usuario_logado}: Erro ao imprimir senha {novo_numero:03d} para visitante CPF {cpf}. Registro feito. Erro: {e}")
+        #     flash(f"Senha Nº {novo_numero:03d} registrada com sucesso, mas houve erro na impressão.", "warning")
+
+        flash(f"Senha Nº {novo_numero:03d} emitida com sucesso!", "success")
 
         return redirect(url_for('senha_visitante'))
 
