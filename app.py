@@ -1,23 +1,24 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, make_response, send_file
 from flask_mysqldb import MySQL
 from datetime import datetime, date
-from escpos.printer import Network
 from io import BytesIO
-import os
-import re
 import pandas as pd
 import pdfkit
 import matplotlib.pyplot as plt
 import base64
 import io
-import time
 
-from log_config import logger  # Importar o logger
+
+from log_config import logger
 
 ##################################CONFIGS##################################
+# Inicializa o logger antes de criar o app
+logger = logger()
+
 app = Flask(__name__)
 app.secret_key = 'gtr_hmpa'
 logger.info("🚀 Aplicação iniciada.")
+
 
 
 # Configuração de navegador, para não armazenar dados no cache
@@ -55,15 +56,14 @@ def validar_cpf(cpf):
 def get_usuario_logado():
     return session.get('usuario_nome', 'Usuário não autenticado')
 
-
-config_pdf = pdfkit.configuration(wkhtmltopdf='/usr/bin/wkhtmltopdf')  # ajuste conforme o caminho da sua instalação
+# Diretório do PDFKIT
+config_pdf = pdfkit.configuration(wkhtmltopdf='/usr/bin/wkhtmltopdf')  
 
 # Configuração do MySQL
 app.config['MYSQL_HOST'] = 'localhost'
 app.config['MYSQL_USER'] = 'gtruser'
 app.config['MYSQL_PASSWORD'] = 'Hmsn@cqua'
 app.config['MYSQL_DB'] = 'gtr'
-
 mysql = MySQL(app)
 
 ##################################APP##################################
@@ -151,6 +151,7 @@ def emissao_senha_tablet():
 @app.route('/cadastro', methods=['GET', 'POST'])
 def cadastro():
     usuario_logado = get_usuario_logado()
+    logger.info(f"{usuario_logado} Acessou a tela de cadastro de colaborador")
 
     # Obtendo o valor de pesquisa de colaborador, se houver
     search = request.args.get('search', '').strip()
@@ -165,6 +166,7 @@ def cadastro():
     # Obtem o total de colaboradores para calcular o total de páginas
     if search:
         # Se houver uma pesquisa, vamos filtrar pelo nome ou CPF
+        logger.info(f"{usuario_logado} pesquisou por um colaborador usando '{search}'")
         cur.execute("""
             SELECT COUNT(*) FROM colaboradores
             WHERE nome LIKE %s OR cpf LIKE %s;
@@ -239,6 +241,7 @@ def cadastro():
         except Exception as e:
             mysql.connection.rollback()
             flash(f"Erro ao cadastrar colaborador: {str(e)}", "error")
+            logger.error(f"{usuario_logado} enfrentou este erro na aplicação: {str(e)}")
 
         return redirect(url_for('cadastro'))
 
@@ -248,6 +251,7 @@ def cadastro():
 def relatorio_totalEmissao():
     usuario_logado = get_usuario_logado()
     perfil = session.get('usuario_perfil', 'desconhecido')  # Exemplo: 'totem_desktop' ou 'totem_tablet'
+    logger.info(f"{usuario_logado} Acessou a tela de relatório total de senhas emitidas")
 
     if request.method == 'POST':
         data_inicial = request.form.get('data_inicial')
@@ -407,6 +411,7 @@ def relatorio_totalEmissao():
 def relatorio_emissaoDiaria():
     usuario_logado = get_usuario_logado()
     perfil = session.get('usuario_perfil', 'desconhecido')  # Exemplo: 'totem_desktop' ou 'totem_tablet'
+    logger.info(f"{usuario_logado} Acessou a tela de relatório relação de emissões diárias")
 
     if request.method == 'POST':
         data_unica = request.form.get('data_unica')

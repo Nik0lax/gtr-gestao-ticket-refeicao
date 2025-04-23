@@ -34,8 +34,10 @@ Adicionado o nome do usuário na barra superior na tela de admin/usuário
 	<img src="https://github.com/user-attachments/assets/303e0dcd-f5c7-494a-a120-b6d36c8f9179"/>
 </p>
 <p align="center">
-  
-GTR é uma aplicação web construída com Flask, com o intuito de automatizar o registro de quantitativo de pessoas que almoçam no ambiente corporativo. Fornecendo insights valiosos em relatórios para tomada de decisões.
+
+GTR é uma aplicação web construída com Flask, visado facilitar o registro de quantitativo de pessoas que almoçam no ambiente corporativo e fornecendo uma visão administrativa sobre estes dados. Além de fornecer insights valiosos em relatórios para tomada de decisões.
+
+<br>Pensado para melhorar o processo de faturamento, automatizar os processos e garantir a autenticidade dos dados no momento de tratar a contabilidade com terceirizados.
 </p>
 
 ### Funcionalidades

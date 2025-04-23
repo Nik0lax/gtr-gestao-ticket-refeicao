@@ -1,40 +1,33 @@
+# log_config.py
+
+import os
 import logging
 from logging.handlers import TimedRotatingFileHandler
-import os
 
-# Criar diretório para armazenar logs, caso não exista
-log_dir = 'logs'
-if not os.path.exists(log_dir):
-    os.makedirs(log_dir)
+def logger(log_dir=None, backup_count=30):
+    # 1. Cria (se necessário) a pasta de logs
+    if log_dir is None:
+        log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'logs')
+    os.makedirs(log_dir, exist_ok=True)
 
-# Definir o nome base do arquivo de log (sem a data)
-log_file_base = os.path.join(log_dir, 'gtr.log')
+    # 2. Configura o handler para rotacionar à meia-noite, mantendo N backups
+    log_file = os.path.join(log_dir, 'gtr.log')
+    handler = TimedRotatingFileHandler(
+        filename=log_file,
+        when='midnight',      # rotaciona todo dia à 00:00
+        interval=1,           # intervalo de 1 dia
+        backupCount=backup_count,
+        encoding='utf-8',
+        utc=False
+    )
+    handler.suffix = "%Y-%m-%d"  # sufixo de data para os arquivos rotacionados
 
-# Criar um handler que rotaciona os arquivos diariamente à meia-noite
-file_handler = TimedRotatingFileHandler(
-    log_file_base,
-    when='midnight',
-    interval=1,
-    backupCount=7,
-    encoding='utf-8',
-    utc=False  # Usa horário local; coloque True se preferir UTC
-)
+    # 3. Formato: timestamp, nível e nome do logger
+    fmt = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+    handler.setFormatter(logging.Formatter(fmt))
 
-# Nome do arquivo rotacionado incluirá a data no final, ex: gtr.log.2025-04-22
-file_handler.suffix = "%Y-%m-%d"
-
-# Formato do log
-log_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-file_handler.setFormatter(log_formatter)
-
-# Handler para o console
-console_handler = logging.StreamHandler()
-console_handler.setFormatter(log_formatter)
-
-# Configurar o logger principal
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
-logger.addHandler(file_handler)
-logger.addHandler(console_handler)
-
-print(f"Logs diários serão gravados em: {log_file_base}")
+    # 4. Cria e retorna o logger configurado
+    logger = logging.getLogger('gtr')
+    logger.setLevel(logging.INFO)
+    logger.addHandler(handler)
+    return logger
