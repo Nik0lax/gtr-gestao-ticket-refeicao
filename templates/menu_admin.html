@@ -99,7 +99,7 @@
             </div>
           
             <div class="form-actions">
-              <button type="submit">Cadastrar</button>
+              <button type="submit" id="btn-enviar">Cadastrar</button>
             </div>
           </form>
           <div class="lista_colaboradores">
@@ -110,7 +110,7 @@
                 <input type="text" name="search" id="search" placeholder="Insira o Nome ou o CPF para buscar" class="search-input">
               </div>
               <div class="form-actions">
-                <button type="submit">Buscar</button>
+                <button type="submit" id="btn-enviar">Buscar</button>
               </div>
               
             </form>
@@ -123,6 +123,7 @@
                 <th>Cargo</th>
                 <th>Departamento</th>
                 <th>Quantidade de Refeições/dia</th>
+                <th>Ação</th>
               </tr>
             </thead>
             <tbody>
@@ -135,11 +136,16 @@
                     <td>{{ colaborador[3] }}</td> <!-- Cargo -->
                     <td>{{ colaborador[4] }}</td> <!-- Departamento -->
                     <td>{{ colaborador[5] }}</td> <!-- Tipo -->
+                    <td>
+                      <form method="POST" id="form_excluir" action="{{ url_for('excluir_colaborador', colaborador_id=colaborador[0]) }}" onsubmit="return confirm('Tem certeza que deseja excluir este colaborador?');">
+                        <button type="submit" id="btn-excluir">✖</button>
+                      </form>
+                    </td>
                   </tr>
                 {% endfor %}
               {% else %}
                 <tr>
-                  <td colspan="6">Nenhum colaborador encontrado.</td>
+                  <td colspan="7">Nenhum colaborador encontrado.</td>
                 </tr>
               {% endif %}
             </tbody>
@@ -169,7 +175,7 @@
             <label for="data_final">Data Final:</label>
             <input type="date" name="data_final" required>
         
-            <button type="submit">Exportar em PDF</button>
+            <button type="submit" id="btn-enviar">Exportar em PDF</button>
           </form>
         </div>
 
@@ -178,7 +184,7 @@
           <h2>Relação de Emissões Diárias</h2>
           <form method="POST" action="{{ url_for('relatorio_emissaoDiaria') }}">
             <label>Data: <input type="date" name="data_unica" required></label>
-            <button type="submit">Gerar Relatório</button>
+            <button type="submit" id="btn-enviar">Exportar em PDF</button>
           </form>
         </div>
       {% elif module == 'configuracoes' %}

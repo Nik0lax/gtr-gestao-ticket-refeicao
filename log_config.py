@@ -4,14 +4,14 @@ import os
 import logging
 from logging.handlers import TimedRotatingFileHandler
 
-def logger(log_dir=None, backup_count=30):
-    # 1. Cria (se necessário) a pasta de logs
+def logger(name='gtr', log_dir=None, backup_count=30):
+    # 1. Cria a pasta de logs
     if log_dir is None:
         log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'logs')
     os.makedirs(log_dir, exist_ok=True)
 
-    # 2. Configura o handler para rotacionar à meia-noite, mantendo N backups
-    log_file = os.path.join(log_dir, 'gtr.log')
+    # 2. Configura o handler para rotacionar à meia-noite, mantendo 30 backups
+    log_file = os.path.join(log_dir, f'{name}.log')
     handler = TimedRotatingFileHandler(
         filename=log_file,
         when='midnight',      # rotaciona todo dia à 00:00
@@ -27,7 +27,11 @@ def logger(log_dir=None, backup_count=30):
     handler.setFormatter(logging.Formatter(fmt))
 
     # 4. Cria e retorna o logger configurado
-    logger = logging.getLogger('gtr')
-    logger.setLevel(logging.INFO)
-    logger.addHandler(handler)
-    return logger
+    log = logging.getLogger(name)
+    log.setLevel(logging.INFO)
+
+    # Evita múltiplos handlers duplicados
+    if not log.hasHandlers():
+        log.addHandler(handler)
+
+    return log

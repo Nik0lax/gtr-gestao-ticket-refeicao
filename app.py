@@ -2,7 +2,6 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from flask_mysqldb import MySQL
 from datetime import datetime, date
 from io import BytesIO
-import pandas as pd
 import pdfkit
 import matplotlib.pyplot as plt
 import base64
@@ -18,8 +17,6 @@ logger = logger()
 app = Flask(__name__)
 app.secret_key = 'gtr_hmpa'
 logger.info("🚀 Aplicação iniciada.")
-
-
 
 # Configuração de navegador, para não armazenar dados no cache
 @app.after_request
@@ -158,7 +155,7 @@ def cadastro():
 
     # Configuração da paginação da lista de colaboradores
     page = request.args.get('page', 1, type=int)
-    per_page = 20
+    per_page = 20 # Quantidade de colaboradores por página
     offset = (page - 1) * per_page
 
     cur = mysql.connection.cursor()  # <-- Criar o cursor no MySQL
@@ -245,7 +242,26 @@ def cadastro():
 
         return redirect(url_for('cadastro'))
 
-    return render_template('menu_admin.html', colaboradores=colaboradores, departamentos=departamentos, page=page, total_pages=total_pages, search=search, module='cadastro')
+    return render_template('menu_admin.html', colaboradores=colaboradores, departamentos=departamentos, page=page, total_pages=total_pages, search=search, module='cadastro', usuario=usuario_logado)
+
+@app.route('/excluir_colaborador/<int:colaborador_id>', methods=['POST'])
+def excluir_colaborador(colaborador_id):
+    usuario_logado = get_usuario_logado()
+    try:
+        cur = mysql.connection.cursor()
+        cur.execute("DELETE FROM colaboradores WHERE id = %s", (colaborador_id,))
+        mysql.connection.commit()
+        cur.close()
+
+        logger.info(f"{usuario_logado} excluiu o colaborador com ID {colaborador_id}")
+        flash("Colaborador excluído com sucesso.", "success")
+    except Exception as e:
+        mysql.connection.rollback()
+        logger.error(f"{usuario_logado} teve erro ao excluir colaborador ID {colaborador_id}: {str(e)}")
+        flash("Erro ao excluir colaborador.", "error")
+
+    return redirect(url_for('cadastro'))
+
 
 @app.route('/relatorio/total', methods=['GET', 'POST'])
 def relatorio_totalEmissao():
@@ -296,7 +312,7 @@ def relatorio_totalEmissao():
         # Total de senhas cafe
         cursor.execute("""
             SELECT COUNT(*) FROM emissoes_senha
-            WHERE TIME(data_hora) BETWEEN '06:00:00' AND '09:00:00'
+            WHERE TIME(data_hora) BETWEEN '02:00:00' AND '11:00:00'
             AND DATE(data_hora) BETWEEN %s AND %s
         """, (data_inicio, data_fim))
         senhas_cafe = cursor.fetchone()[0]
@@ -304,7 +320,7 @@ def relatorio_totalEmissao():
         # Total de senhas almoço
         cursor.execute("""
             SELECT COUNT(*) FROM emissoes_senha
-            WHERE TIME(data_hora) BETWEEN '11:00:00' AND '15:00:00'
+            WHERE TIME(data_hora) BETWEEN '11:50:00' AND '17:59:00'
             AND DATE(data_hora) BETWEEN %s AND %s
         """, (data_inicio, data_fim))
         senhas_almoco = cursor.fetchone()[0]
@@ -403,9 +419,9 @@ def relatorio_totalEmissao():
         return send_file(BytesIO(pdf), download_name='relatorio_totalEmissao.pdf', as_attachment=True)
 
     if perfil == 'admin':
-        return render_template('menu_admin.html', modulo='relatorio_totalEmissao')
+        return render_template('menu_admin.html', modulo='relatorio_totalEmissao', usuario=usuario_logado)
     else:
-        return render_template('menu_usuario.html', modulo='relatorio_totalEmissao')# Renderização baseada no perfil
+        return render_template('menu_usuario.html', modulo='relatorio_totalEmissao', usuario=usuario_logado)# Renderização baseada no perfil
     
 @app.route('/relatorio/diario', methods=['GET', 'POST'])
 def relatorio_emissaoDiaria():
@@ -451,9 +467,9 @@ def relatorio_emissaoDiaria():
         return send_file(BytesIO(pdf), download_name='relatorio_emissoesDiarias.pdf', as_attachment=True)
 
     if perfil == 'admin':
-        return render_template('menu_admin.html', modulo='relatorio_emissaoDiaria')
+        return render_template('menu_admin.html', modulo='relatorio_emissaoDiaria', usuario=usuario_logado)
     else:
-        return render_template('menu_usuario.html', modulo='relatorio_emissaoDiaria')# Renderização baseada no perfil
+        return render_template('menu_usuario.html', modulo='relatorio_emissaoDiaria', usuario=usuario_logado)# Renderização baseada no perfil
 
 @app.route('/senha/colaborador', methods=['GET', 'POST'])
 def senha_colaborador():
