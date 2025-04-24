@@ -16,14 +16,10 @@
 </p>
 <br>
 
-### V1.3:
+### V1.4:
 Adicionado o nome do usuário na barra superior na tela de admin/usuário
-<br>Adicionado bloqueio de números no input de Nome na tela de Senha Visitante
-<br>Adicionado som de sucesso e falha ao emitir senha nas rotas de Senha
-<br>Corrigido bug do log que não registrava o conteúdo e apagava o histórico
-<br>Adicionado campo de busca de colaborador na tela de Cadastro
-<br>Ocultado o botão de sair do Totem
-<br>Removido a lógica da impressora térmica
+<br>Adicionado botão de excluir colaborador pelo front
+<br>Corrigido configuração de log
 
 ## Sobre o GTR
 
