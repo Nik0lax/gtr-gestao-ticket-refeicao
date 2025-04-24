@@ -16,10 +16,8 @@
 </p>
 <br>
 
-### V1.4:
-Adicionado o nome do usuário na barra superior na tela de admin/usuário
-<br>Adicionado botão de excluir colaborador pelo front
-<br>Corrigido configuração de log
+### V1.5:
+<br>Adicionado requirements, schema.sql do banco e exemplo de arquivo gtr.service
 
 ## Sobre o GTR
 
