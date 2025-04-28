@@ -80,12 +80,21 @@
         {% elif tipo_senha == 'visitante' %}
         <a href="{{ url_for('emissao_senha_tablet') }}" class="btn-voltar">⬅ Voltar</a>
 
-        <form action="{{ url_for('senha_visitante') }}" method="post" class="form-cpf" onsubmit="return validarFormulario()">
-            <input type="text" name="nome" id="nome" placeholder="Digite o nome completo" autocomplete="off" autocorrect="off" inputmode="text" oninput="validarNome(this)" required>           
-            <input type="tel" inputmode="numeric" name="cpf" id="cpf" placeholder="Digite o CPF" required maxlength="14" autocomplete="off" autocorrect="off" oninput="formatarEValidarCPF(this)">
+        <form action="{{ url_for('senha_visitante') }}" method="post" class="form-cpf" onsubmit="return validarFormularioVisitante()">
+            <input type="text" name="nome" id="nome" placeholder="Digite o nome completo" autocomplete="off" autocorrect="off" required oninput="validarNome(this)">           
+        
+            <select name="localizacoes" id="localizacoes" required>
+                <option value="" disabled selected>Selecione a localização</option>
+                {% for local in localizacoes %}
+                    <option value="{{ local }}">{{ local }}</option>
+                {% endfor %}
+            </select>
+        
+            <input type="text" name="cpf" id="cpf" placeholder="Digite o CPF" required maxlength="14" autocomplete="off" autocorrect="off" oninput="formatarEValidarCPF(this)">
             <div id="cpf-feedback" style="color: red; font-size: 12px;"></div>           
+        
             <button type="submit">Emitir Senha</button>
-        </form>        
+        </form>               
         {% endif %}
     </main>
     <script src="{{ url_for('static', filename='js/form-validations.js') }}"></script>

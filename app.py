@@ -8,11 +8,11 @@ import base64
 import io
 
 
-from log_config import logger
+from log_config import get_logger
 
 ##################################CONFIGS##################################
 # Inicializa o logger antes de criar o app
-logger = logger()
+logger = get_logger()
 
 app = Flask(__name__)
 app.secret_key = 'gtr_hmpa'
@@ -294,14 +294,14 @@ def relatorio_totalEmissao():
         # Total de visitantes no período
         cursor.execute("""
             SELECT COUNT(*) FROM emissoes_senha 
-            WHERE departamento = 'VISITANTE' AND DATE(data_hora) BETWEEN %s AND %s
+            WHERE cargo = 'VISITANTE' AND DATE(data_hora) BETWEEN %s AND %s
         """, (data_inicio, data_fim))
         total_visitantes = cursor.fetchone()[0]
 
         # Total de colaborador no período
         cursor.execute("""
             SELECT COUNT(*) FROM emissoes_senha 
-            WHERE departamento != 'VISITANTE' AND DATE(data_hora) BETWEEN %s AND %s
+            WHERE cargo != 'VISITANTE' AND DATE(data_hora) BETWEEN %s AND %s
         """, (data_inicio, data_fim))
         total_colaborador = cursor.fetchone()[0]
 
@@ -312,7 +312,7 @@ def relatorio_totalEmissao():
         # Total de senhas cafe
         cursor.execute("""
             SELECT COUNT(*) FROM emissoes_senha
-            WHERE TIME(data_hora) BETWEEN '02:00:00' AND '11:00:00'
+            WHERE TIME(data_hora) BETWEEN '02:00:00' AND '10:59:00'
             AND DATE(data_hora) BETWEEN %s AND %s
         """, (data_inicio, data_fim))
         senhas_cafe = cursor.fetchone()[0]
@@ -320,7 +320,7 @@ def relatorio_totalEmissao():
         # Total de senhas almoço
         cursor.execute("""
             SELECT COUNT(*) FROM emissoes_senha
-            WHERE TIME(data_hora) BETWEEN '11:50:00' AND '17:59:00'
+            WHERE TIME(data_hora) BETWEEN '11:00:00' AND '17:59:00'
             AND DATE(data_hora) BETWEEN %s AND %s
         """, (data_inicio, data_fim))
         senhas_almoco = cursor.fetchone()[0]
@@ -328,7 +328,7 @@ def relatorio_totalEmissao():
         # Total de senhas janta
         cursor.execute("""
             SELECT COUNT(*) FROM emissoes_senha
-            WHERE TIME(data_hora) BETWEEN '18:00:00' AND '23:59:00'
+            WHERE TIME(data_hora) BETWEEN '18:00:00' AND '01:59:00'
             AND DATE(data_hora) BETWEEN %s AND %s
         """, (data_inicio, data_fim))
         senhas_janta = cursor.fetchone()[0]
@@ -569,10 +569,17 @@ def senha_visitante():
     usuario_logado = get_usuario_logado()
     perfil = session.get('usuario_perfil', 'desconhecido')  # Exemplo: 'totem_desktop' ou 'totem_tablet'
 
+    #Busca a localização no Banco para exibir na tela visitantes
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT nome FROM localizacoes ORDER BY nome ASC")  # Suponho que você tenha uma tabela `localizacoes`
+    localizacoes = [row[0] for row in cur.fetchall()]
+    cur.close()
+
     if request.method == 'POST':
         nome = request.form['nome'].strip().upper()
         cpf = request.form['cpf'].strip()
-
+        localizacoes = request.form['localizacoes'].strip().upper()
+        
         if not validar_cpf(cpf):
             logger.error(f"{usuario_logado}: {cpf} é inválido.")
             flash("CPF inválido. Por favor, insira um CPF válido.", "error")
@@ -604,7 +611,7 @@ def senha_visitante():
 
         data_hora = datetime.now()
         cargo = "VISITANTE"
-        departamento = "VISITANTE"
+        departamento = localizacoes
 
         try:
             # Registrar emissão no banco
@@ -660,9 +667,9 @@ def senha_visitante():
 
     # Renderização baseada no perfil
     if perfil == 'totem_tablet':
-        return render_template('emissao_senha_tablet.html', tipo_senha='visitante')
+        return render_template('emissao_senha_tablet.html', tipo_senha='visitante', localizacoes=localizacoes)
     else:
-        return render_template('emissao_senha.html', tipo_senha='visitante')
+        return render_template('emissao_senha.html', tipo_senha='visitante', localizacoes=localizacoes)
 
 @app.route('/logout')
 def logout():

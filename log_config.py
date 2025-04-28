@@ -4,34 +4,36 @@ import os
 import logging
 from logging.handlers import TimedRotatingFileHandler
 
-def logger(name='gtr', log_dir=None, backup_count=30):
-    # 1. Cria a pasta de logs
-    if log_dir is None:
-        log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'logs')
+def get_logger():
+    # Define o diretório de logs e o arquivo de log
+    log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'logs')
     os.makedirs(log_dir, exist_ok=True)
+    log_file = os.path.join(log_dir, 'gtr.log')
 
-    # 2. Configura o handler para rotacionar à meia-noite, mantendo 30 backups
-    log_file = os.path.join(log_dir, f'{name}.log')
+    # Cria o logger
+    logger = logging.getLogger('gtr')
+    logger.setLevel(logging.INFO)
+
+    # Remove handlers existentes para evitar duplicidade
+    if logger.hasHandlers():
+        logger.handlers.clear()
+
+    # Cria o handler de rotação diária
     handler = TimedRotatingFileHandler(
         filename=log_file,
-        when='midnight',      # rotaciona todo dia à 00:00
-        interval=1,           # intervalo de 1 dia
-        backupCount=backup_count,
+        when='midnight',
+        interval=1,
+        backupCount=30,
         encoding='utf-8',
         utc=False
     )
-    handler.suffix = "%Y-%m-%d"  # sufixo de data para os arquivos rotacionados
+    handler.suffix = "%Y-%m-%d"
 
-    # 3. Formato: timestamp, nível e nome do logger
-    fmt = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
-    handler.setFormatter(logging.Formatter(fmt))
+    # Define o formato do log
+    formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
+    handler.setFormatter(formatter)
 
-    # 4. Cria e retorna o logger configurado
-    log = logging.getLogger(name)
-    log.setLevel(logging.INFO)
+    # Adiciona o handler ao logger
+    logger.addHandler(handler)
 
-    # Evita múltiplos handlers duplicados
-    if not log.hasHandlers():
-        log.addHandler(handler)
-
-    return log
+    return logger
