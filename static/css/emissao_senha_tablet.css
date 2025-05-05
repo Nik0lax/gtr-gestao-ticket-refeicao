@@ -4,6 +4,8 @@ body, html {
     font-family: 'Poppins', sans-serif;
     background-color: #fff;
     height: 100%;
+    overflow: hidden;
+    touch-action: none;
 }
 
 .flash-overlay {

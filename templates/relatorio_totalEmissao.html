@@ -94,43 +94,33 @@
     <div class="title">
         <span><strong>Relatório</strong> Total de Senhas Emitidas</span>
     </div>
-    <p><strong>Data:</strong> {{ total.data_geracao }} <strong>Base Atual de Colaboradores: </strong> {{ total.base_colaboradores }}</p>
+    <p><strong>Data:</strong> {{ total.data_geracao }} 
+    <br><strong>Base Atual de Colaboradores: </strong> {{ total.base_colaboradores }}</p>
 
     <div class="total-grafico">
         <div class="total">
             <h3>Resumo</h3>
             <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
                 <tr style="background-color: #f2f2f2;">
-                    <th style="padding: 10px; text-align: left;">Periodo</th>
-                    <th style="padding: 10px; text-align: right;">Quantidade</th>
-                </tr>
-                <tr>
-                    <td style="padding: 10px;">Café</td>
-                    <td style="padding: 10px; text-align: right;">{{ total.senhas_cafe }}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 10px;">Almoço</td>
-                    <td style="padding: 10px; text-align: right;">{{ total.senhas_almoco }}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 10px;">Janta</td>
-                    <td style="padding: 10px; text-align: right;">{{ total.senhas_janta }}</td>
-                </tr>
-                <tr style="background-color: #f2f2f2;">
                     <th style="padding: 10px; text-align: left;">Tipo</th>
-                    <th style="padding: 10px; text-align: right;">Quantidade</th>
+                    <th style="padding: 10px; text-align: right;">Café</th>
+                    <th style="padding: 10px; text-align: right;">Almoço</th>
+                    <th style="padding: 10px; text-align: right;">Janta</th>
+                    <th style="padding: 10px; text-align: right;">Total</th>
                 </tr>
                 <tr>
-                    <td style="padding: 10px;">Visitantes</td>
-                    <td style="padding: 10px; text-align: right;">{{ total.senhas_visitantes }}</td>
+                    <td style="padding: 10px;">Visitante</td>
+                    <td style="padding: 10px; text-align: right;">{{ total.senhas_cafe_visitante }}</td>
+                    <td style="padding: 10px; text-align: right;">{{ total.senhas_almoco_visitante }}</td>
+                    <td style="padding: 10px; text-align: right;">{{ total.senhas_janta_visitante }}</td>
+                    <td style="padding: 10px; text-align: right;">{{ total.total_visitantes }}</td>
                 </tr>
                 <tr>
                     <td style="padding: 10px;">Colaborador</td>
-                    <td style="padding: 10px; text-align: right;">{{ total.senhas_colaborador }}</td>
-                </tr>
-                <tr>
-                    <th style="padding: 10px;">Total</th>
-                    <th style="padding: 10px; text-align: right;"><strong>{{ total.total_senhas }}</strong></th>
+                    <td style="padding: 10px; text-align: right;">{{ total.senhas_cafe_colaborador }}</td>
+                    <td style="padding: 10px; text-align: right;">{{ total.senhas_almoco_colaborador }}</td>
+                    <td style="padding: 10px; text-align: right;">{{ total.senhas_janta_colaborador }}</td>
+                    <td style="padding: 10px; text-align: right;">{{ total.total_colaborador }}</td>
                 </tr>
             </table>
         </div>

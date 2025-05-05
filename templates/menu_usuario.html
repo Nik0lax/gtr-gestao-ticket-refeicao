@@ -37,6 +37,7 @@
         <ul id="submenu-relatorios" style="display: none;">
           <li><a href="{{ url_for('relatorio_totalEmissao') }}">Total de Senhas Emitidas</a></li>
           <li><a href="{{ url_for('relatorio_emissaoDiaria') }}">Relação de Emissões Diárias</a></li>
+          <li><a href="{{ url_for('relatorio_totalVisitantes') }}">Total por Tipo de Visitantes</a></li>
         </ul>
       </nav>
     </aside>
@@ -62,6 +63,23 @@
           <form method="POST" action="{{ url_for('relatorio_emissaoDiaria') }}">
             <label>Data: <input type="date" name="data_unica" required></label>
             <button type="submit">Gerar Relatório</button>
+          </form>
+        </div>
+      {% elif modulo == 'relatorio_totalVisitantes' %}
+        <div class="relatorios-content">
+          <h2>Total por Tipo de Visitantes</h2>
+          <form method="POST" action="{{ url_for('relatorio_totalVisitantes') }}">
+            <label>Data: <input type="date" name="data_unica" required></label>
+            
+            <label for="departamento">Departamento:</label>
+            <select name="departamento" required>
+              <option value="" disabled selected>Selecione</option>
+              {% for loc in localizacoes %}
+                <option value="{{ loc }}">{{ loc }}</option>
+              {% endfor %}
+            </select>
+
+            <button type="submit" id="btn-enviar">Exportar em PDF</button>
           </form>
         </div>
       {% else %}

@@ -33,6 +33,9 @@
         <a href="{{ url_for('cadastro') }}">
           <i class="fas fa-user-plus"></i> Cadastro Colaborador
         </a>
+        <a href="{{ url_for('cadastro_usuario') }}">
+          <i class="fas fa-user-plus"></i> Cadastro Usuário
+        </a>
         <a href="#" id="menu-relatorios">
           <i class="fas fa-chart-bar"></i> Relatórios
           <i class="fas fa-chevron-down arrow"></i>
@@ -40,6 +43,7 @@
         <ul id="submenu-relatorios" style="display: none;">
           <li><a href="{{ url_for('relatorio_totalEmissao') }}">Total de Senhas Emitidas</a></li>
           <li><a href="{{ url_for('relatorio_emissaoDiaria') }}">Relação de Emissões Diárias</a></li>
+          <li><a href="{{ url_for('relatorio_totalVisitantes') }}">Total por Tipo de Visitantes</a></li>
         </ul>
         <a href= '#' id="menu-configuracoes">
           <i class="fas fa-cogs"></i> Configurações
@@ -165,7 +169,91 @@
             {% endif %}
           </div>
         </div>
-        {% elif modulo == 'relatorio_totalEmissao' %}
+        
+        {% elif module == 'cadastro_usuario' %}
+        <div id="cadastro-usuario-content">
+          <h2>Cadastro de Usuário</h2>
+          {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+              <div class="flash-container" id="flash-container">
+                {% for category, message in messages %}
+                  <div class="flash-message {{ category }}">{{ message }}</div>
+                {% endfor %}
+              </div>
+            {% endif %}
+          {% endwith %}
+
+          <form method="POST" action="{{ url_for('cadastro_usuario') }}" class="form-grid">
+            <div class="form-group">
+              <label for="nome">Nome:</label>
+              <input type="text" id="nome" name="nome" required>
+            </div>
+
+            <div class="form-group">
+              <label for="usuario">Usuário:</label>
+              <input type="text" id="usuario" name="usuario" required>
+            </div>
+
+            <div class="form-group">
+              <label for="senha">Senha:</label>
+              <input type="password" id="senha" name="senha" required>
+            </div>
+
+            <div class="form-group">
+              <label for="perfil">Perfil:</label>
+              <select id="perfil" name="perfil" required>
+                <option value="" disabled selected>Selecione o perfil</option>
+                <option value="admin">Administrador</option>
+                <option value="usuario">Usuário</option>
+                <option value="totem_desktop">Totem Desktop</option>
+                <option value="totem_tablet">Totem Tablet</option>
+              </select>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" id="btn-enviar">Cadastrar</button>
+            </div>
+          </form>
+
+          <div class="lista_usuarios">
+            <h3>Lista de Usuários</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Nome</th>
+                  <th>Usuário</th>
+                  <th>Perfil</th>
+                  <th>Ação</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% if usuarios %}
+                  {% for u in usuarios %}
+                    <tr>
+                      <td>{{ u[0] }}</td> <!-- ID -->
+                      <td>{{ u[1] }}</td> <!-- Nome -->
+                      <td>{{ u[2] }}</td> <!-- Usuário -->
+                      <td>{{ u[3] }}</td> <!-- Perfil -->
+                      <td>
+                        <form method="POST" id="form_excluir" action="{{ url_for('excluir_usuario', usuario_id=u[0]) }}" onsubmit="return confirm('Tem certeza que deseja excluir este usuário?');">
+                          <button type="submit" id="btn-excluir">✖</button>
+                        </form>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                {% else %}
+                  <tr>
+                    <td colspan="4">Nenhum usuário encontrado.</td>
+                  </tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        
+      {% elif modulo == 'relatorio_totalEmissao' %}
         <div class="relatorios-content">
           <h2>Total de Senhas Emitidas</h2>
           <form method="POST" action="{{ url_for('relatorio_totalEmissao') }}">
@@ -184,6 +272,23 @@
           <h2>Relação de Emissões Diárias</h2>
           <form method="POST" action="{{ url_for('relatorio_emissaoDiaria') }}">
             <label>Data: <input type="date" name="data_unica" required></label>
+            <button type="submit" id="btn-enviar">Exportar em PDF</button>
+          </form>
+        </div>
+      {% elif modulo == 'relatorio_totalVisitantes' %}
+        <div class="relatorios-content">
+          <h2>Total por Tipo de Visitantes</h2>
+          <form method="POST" action="{{ url_for('relatorio_totalVisitantes') }}">
+            <label>Data: <input type="date" name="data_unica" required></label>
+            
+            <label for="departamento">Departamento:</label>
+            <select name="departamento" required>
+              <option value="" disabled selected>Selecione</option>
+              {% for loc in localizacoes %}
+                <option value="{{ loc }}">{{ loc }}</option>
+              {% endfor %}
+            </select>
+
             <button type="submit" id="btn-enviar">Exportar em PDF</button>
           </form>
         </div>

@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, make_response, send_file
 from flask_mysqldb import MySQL
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from io import BytesIO
 import pdfkit
 import matplotlib.pyplot as plt
@@ -244,6 +244,84 @@ def cadastro():
 
     return render_template('menu_admin.html', colaboradores=colaboradores, departamentos=departamentos, page=page, total_pages=total_pages, search=search, module='cadastro', usuario=usuario_logado)
 
+@app.route('/cadastro_usuario', methods=['GET', 'POST'])
+def cadastro_usuario():
+    usuario_logado = get_usuario_logado()
+    logger.info(f"{usuario_logado} acessou a tela de cadastro de usuário")
+
+    cur = mysql.connection.cursor()
+
+    # Buscar lista de usuários existentes para exibição
+    cur.execute("SELECT id, nome, usuario, perfil FROM usuarios ORDER BY id DESC;")
+    usuarios = cur.fetchall()
+    cur.close()
+
+    if request.method == 'POST':
+        nome = request.form['nome'].strip().upper()
+        usuario = request.form['usuario'].strip()
+        senha = request.form['senha'].strip()
+        perfil = request.form['perfil'].strip()
+
+        # Verificar campos obrigatórios
+        if not all([nome, usuario, senha, perfil]):
+            flash("Todos os campos são obrigatórios.", "error")
+            logger.error(f"{usuario_logado} tentou cadastrar um usuário com campos faltando.")
+            return redirect(url_for('cadastro_usuario'))
+
+        # Verificar se o nome de usuário já existe
+        cur = mysql.connection.cursor()
+        cur.execute("SELECT * FROM usuarios WHERE usuario = %s", (usuario,))
+        usuario_existente = cur.fetchone()
+        cur.close()
+
+        if usuario_existente:
+            flash("Esse nome de usuário já está cadastrado. Escolha outro.", "error")
+            logger.warning(f"{usuario_logado} tentou cadastrar o usuário '{usuario}' já existente.")
+            return redirect(url_for('cadastro_usuario'))
+
+        # Inserir novo usuário
+        try:
+            cur = mysql.connection.cursor()
+            cur.execute("""
+                INSERT INTO usuarios (nome, usuario, senha, perfil, status, criado_em)
+                VALUES (%s, %s, %s, %s, 1, NOW());
+            """, (nome, usuario, senha, perfil))
+            mysql.connection.commit()
+            cur.close()
+            logger.info(f"{usuario_logado} cadastrou o usuário '{usuario}' com sucesso.")
+            flash("Usuário cadastrado com sucesso!", "success")
+
+        except Exception as e:
+            mysql.connection.rollback()
+            flash(f"Erro ao cadastrar usuário: {str(e)}", "error")
+            logger.error(f"{usuario_logado} enfrentou erro ao cadastrar usuário: {str(e)}")
+
+        return redirect(url_for('cadastro_usuario'))
+
+    return render_template(
+        'menu_admin.html',
+        usuarios=usuarios,
+        module='cadastro_usuario',
+        usuario=usuario_logado
+    )
+
+@app.route('/excluir_usuario/<int:usuario_id>', methods=['POST'])
+def excluir_usuario(usuario_id):
+    usuario_logado = get_usuario_logado()
+    try:
+        cur = mysql.connection.cursor()
+        cur.execute("DELETE FROM usuarios WHERE id = %s", (usuario_id,))
+        mysql.connection.commit()
+        cur.close()
+
+        logger.info(f"{usuario_logado} excluiu o usuário com ID {usuario_id}")
+        flash("Usuário excluído com sucesso.", "success")
+    except Exception as e:
+        mysql.connection.rollback()
+        logger.error(f"{usuario_logado} teve erro ao excluir usuário ID {usuario_id}: {str(e)}")
+        flash("Erro ao excluir usuário.", "error")
+    return redirect(url_for('cadastro_usuario'))
+
 @app.route('/excluir_colaborador/<int:colaborador_id>', methods=['POST'])
 def excluir_colaborador(colaborador_id):
     usuario_logado = get_usuario_logado()
@@ -261,7 +339,6 @@ def excluir_colaborador(colaborador_id):
         flash("Erro ao excluir colaborador.", "error")
 
     return redirect(url_for('cadastro'))
-
 
 @app.route('/relatorio/total', methods=['GET', 'POST'])
 def relatorio_totalEmissao():
@@ -309,29 +386,59 @@ def relatorio_totalEmissao():
         cursor.execute("SELECT COUNT(DISTINCT cpf) FROM colaboradores")
         base_colaboradores = cursor.fetchone()[0]
         
-        # Total de senhas cafe
+        # Total de senhas cafe colaborador
         cursor.execute("""
             SELECT COUNT(*) FROM emissoes_senha
             WHERE TIME(data_hora) BETWEEN '02:00:00' AND '10:59:00'
+            AND cargo != 'VISITANTE'
             AND DATE(data_hora) BETWEEN %s AND %s
         """, (data_inicio, data_fim))
-        senhas_cafe = cursor.fetchone()[0]
+        senhas_cafe_colaborador = cursor.fetchone()[0]
 
-        # Total de senhas almoço
+        # Total de senhas cafe visitante
+        cursor.execute("""
+            SELECT COUNT(*) FROM emissoes_senha
+            WHERE TIME(data_hora) BETWEEN '02:00:00' AND '10:59:00'
+            AND cargo = 'VISITANTE'
+            AND DATE(data_hora) BETWEEN %s AND %s
+        """, (data_inicio, data_fim))
+        senhas_cafe_visitante = cursor.fetchone()[0]
+
+        # Total de senhas almoço colaborador
         cursor.execute("""
             SELECT COUNT(*) FROM emissoes_senha
             WHERE TIME(data_hora) BETWEEN '11:00:00' AND '17:59:00'
+            AND cargo != 'VISITANTE'
             AND DATE(data_hora) BETWEEN %s AND %s
         """, (data_inicio, data_fim))
-        senhas_almoco = cursor.fetchone()[0]
+        senhas_almoco_colaborador = cursor.fetchone()[0]
 
-        # Total de senhas janta
+        # Total de senhas almoço visitante
+        cursor.execute("""
+            SELECT COUNT(*) FROM emissoes_senha
+            WHERE TIME(data_hora) BETWEEN '11:00:00' AND '17:59:00'
+            AND cargo = 'VISITANTE'
+            AND DATE(data_hora) BETWEEN %s AND %s
+        """, (data_inicio, data_fim))
+        senhas_almoco_visitante = cursor.fetchone()[0]
+
+        # Total de senhas janta colaborador
         cursor.execute("""
             SELECT COUNT(*) FROM emissoes_senha
             WHERE TIME(data_hora) BETWEEN '18:00:00' AND '01:59:00'
+            AND cargo != 'VISITANTE'
             AND DATE(data_hora) BETWEEN %s AND %s
         """, (data_inicio, data_fim))
-        senhas_janta = cursor.fetchone()[0]
+        senhas_janta_colaborador = cursor.fetchone()[0]
+
+        # Total de senhas janta visitante
+        cursor.execute("""
+            SELECT COUNT(*) FROM emissoes_senha
+            WHERE TIME(data_hora) BETWEEN '18:00:00' AND '01:59:00'
+            AND cargo = 'VISITANTE'
+            AND DATE(data_hora) BETWEEN %s AND %s
+        """, (data_inicio, data_fim))
+        senhas_janta_visitante = cursor.fetchone()[0]
 
         # Top 5 departamentos no período
         cursor.execute("""
@@ -360,11 +467,14 @@ def relatorio_totalEmissao():
         dados_total = {
             "base_colaboradores": base_colaboradores,
             "total_senhas": total_senhas,
-            "senhas_cafe": senhas_cafe,
-            "senhas_almoco": senhas_almoco,
-            "senhas_janta": senhas_janta,
-            "senhas_visitantes": total_visitantes,
-            "senhas_colaborador": total_colaborador,
+            "senhas_cafe_colaborador": senhas_cafe_colaborador,
+            "senhas_cafe_visitante": senhas_cafe_visitante,
+            "senhas_almoco_colaborador": senhas_almoco_colaborador,
+            "senhas_almoco_visitante": senhas_almoco_visitante,
+            "senhas_janta_colaborador": senhas_janta_colaborador,
+            "senhas_janta_visitante": senhas_janta_visitante,
+            "total_visitantes": total_visitantes,
+            "total_colaborador": total_colaborador,
             "lista_departamentos": lista_departamentos,
             "data_geracao": f"{data_inicio.strftime('%d/%m/%Y')} até {data_fim.strftime('%d/%m/%Y')}"
         }
@@ -470,6 +580,98 @@ def relatorio_emissaoDiaria():
         return render_template('menu_admin.html', modulo='relatorio_emissaoDiaria', usuario=usuario_logado)
     else:
         return render_template('menu_usuario.html', modulo='relatorio_emissaoDiaria', usuario=usuario_logado)# Renderização baseada no perfil
+
+@app.route('/relatorio/totalVisitantes', methods=['GET', 'POST'])
+def relatorio_totalVisitantes():
+    usuario_logado = get_usuario_logado()
+    perfil = session.get('usuario_perfil', 'desconhecido')
+    logger.info(f"{usuario_logado} Acessou a tela de relatório total de visitantes")
+
+    cursor = mysql.connection.cursor()
+
+    cursor.execute("SELECT nome FROM localizacoes ORDER BY nome ASC")
+    localizacoes = [row[0] for row in cursor.fetchall()]
+
+    cursor.close()
+
+    if request.method == 'POST':
+        data_unica = request.form.get('data_unica')
+        departamento = request.form.get('departamento')
+
+        try:
+            data_ref = datetime.strptime(data_unica, "%Y-%m-%d").date()
+        except ValueError:
+            logger.error(f"{usuario_logado} tentou emitir o relatório, porém preencheu com datas inválidas.")
+            flash("Data inválida.")
+            return redirect(url_for('relatorio_emissaoDiaria'))
+
+        cursor = mysql.connection.cursor()
+
+        # Faixas de horário por período (em formato datetime completo)
+        dt_inicio_cafe = f"{data_ref} 02:00:00"
+        dt_fim_cafe = f"{data_ref} 10:59:59"
+
+        dt_inicio_almoco = f"{data_ref} 11:00:00"
+        dt_fim_almoco = f"{data_ref} 17:59:59"
+
+        # Para o período da janta, vai até o dia seguinte às 01:59
+        dt_inicio_janta = f"{data_ref} 18:00:00"
+        dt_fim_janta = f"{(data_ref + timedelta(days=1))} 01:59:59"
+
+        # Consulta do total de cada período
+        cursor.execute("""
+            SELECT COUNT(*) FROM emissoes_senha
+            WHERE data_hora BETWEEN %s AND %s AND departamento = %s
+        """, (dt_inicio_cafe, dt_fim_cafe, departamento))
+        total_cafe = cursor.fetchone()[0]
+
+        cursor.execute("""
+            SELECT COUNT(*) FROM emissoes_senha
+            WHERE data_hora BETWEEN %s AND %s AND departamento = %s
+        """, (dt_inicio_almoco, dt_fim_almoco, departamento))
+        total_almoco = cursor.fetchone()[0]
+
+        cursor.execute("""
+            SELECT COUNT(*) FROM emissoes_senha
+            WHERE data_hora BETWEEN %s AND %s AND departamento = %s
+        """, (dt_inicio_janta, dt_fim_janta, departamento))
+        total_janta = cursor.fetchone()[0]
+
+        # Consulta de todos os registros do dia/dep
+        cursor.execute("""
+            SELECT numero_senha, cpf, nome, cargo, departamento, data_hora
+            FROM emissoes_senha
+            WHERE DATE(data_hora) = %s AND departamento = %s
+            ORDER BY data_hora ASC
+        """, (data_ref, departamento))
+
+        results = cursor.fetchall()
+        colunas = [desc[0] for desc in cursor.description]
+        registros = [dict(zip(colunas, row)) for row in results]
+
+        cursor.close()
+
+        data_geracao = data_ref.strftime('%d/%m/%Y')
+        agora = datetime.now().strftime('%d/%m/%Y %H:%M')
+
+        html = render_template('relatorio_totalVisitantes.html',
+                               registros=registros,
+                               data_geracao=data_geracao,
+                               agora=agora,
+                               departamento=departamento,
+                               total_cafe=total_cafe,
+                               total_almoco=total_almoco,
+                               total_janta=total_janta)
+
+        pdf = pdfkit.from_string(html, False, configuration=config_pdf)
+        logger.info(f"{usuario_logado} emitiu o relatório total de visitantes com sucesso!")
+
+        return send_file(BytesIO(pdf), download_name='relatorio_totalVisitantes.pdf', as_attachment=True)
+
+    if perfil == 'admin':
+        return render_template('menu_admin.html', modulo='relatorio_totalVisitantes', usuario=usuario_logado, localizacoes=localizacoes)
+    else:
+        return render_template('menu_usuario.html', modulo='relatorio_totalVisitantes', usuario=usuario_logado, localizacoes=localizacoes)
 
 @app.route('/senha/colaborador', methods=['GET', 'POST'])
 def senha_colaborador():
