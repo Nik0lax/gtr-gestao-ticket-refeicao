@@ -44,6 +44,7 @@
           <li><a href="{{ url_for('relatorio_totalEmissao') }}">Total de Senhas Emitidas</a></li>
           <li><a href="{{ url_for('relatorio_emissaoDiaria') }}">Relação de Emissões Diárias</a></li>
           <li><a href="{{ url_for('relatorio_totalVisitantes') }}">Total por Tipo de Visitantes</a></li>
+          <li><a href="{{ url_for('relatorio_totalDepartamento') }}">Total por Departamento</a></li>
         </ul>
         <a href= '#' id="menu-configuracoes">
           <i class="fas fa-cogs"></i> Configurações
@@ -281,11 +282,29 @@
           <form method="POST" action="{{ url_for('relatorio_totalVisitantes') }}">
             <label>Data: <input type="date" name="data_unica" required></label>
             
-            <label for="departamento">Departamento:</label>
+            <label for="departamento">Localização:</label>
             <select name="departamento" required>
               <option value="" disabled selected>Selecione</option>
               {% for loc in localizacoes %}
                 <option value="{{ loc }}">{{ loc }}</option>
+              {% endfor %}
+            </select>
+
+            <button type="submit" id="btn-enviar">Exportar em PDF</button>
+          </form>
+        </div>
+
+      {% elif modulo == 'relatorio_totalDepartamento' %}
+        <div class="relatorios-content">
+          <h2>Total por Departamentos</h2>
+          <form method="POST" action="{{ url_for('relatorio_totalDepartamento') }}">
+            <label>Data: <input type="date" name="data_unica" required></label>
+            
+            <label for="departamento">Departamento:</label>
+            <select name="departamento" required>
+              <option value="" disabled selected>Selecione</option>
+              {% for dep in departamentos %}
+                <option value="{{ dep }}">{{ dep }}</option>
               {% endfor %}
             </select>
 

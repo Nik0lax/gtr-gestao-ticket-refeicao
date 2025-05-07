@@ -16,8 +16,8 @@
 </p>
 <br>
 
-### V1.8:
-<br>Corrigindo relatórios e adicionando limite de 3 emissões de senha para visitante ACOMPANHANTE
+### V1.9:
+<br>Corrigindo relatórios, adicionando relatório total por departamentos e adicionando limite de 3 emissões de senha para visitante ACOMPANHANTE
 
 ## Sobre o GTR
 

@@ -616,7 +616,7 @@ def relatorio_totalVisitantes():
 
         # Para o período da janta, vai até o dia seguinte às 01:59
         dt_inicio_janta = f"{data_ref} 18:00:00"
-        dt_fim_janta = f"{(data_ref + timedelta(days=1))} 01:59:59"
+        dt_fim_janta = f"{data_ref} 23:59:59"
 
         # Consulta do total de cada período
         cursor.execute("""
@@ -672,6 +672,98 @@ def relatorio_totalVisitantes():
         return render_template('menu_admin.html', modulo='relatorio_totalVisitantes', usuario=usuario_logado, localizacoes=localizacoes)
     else:
         return render_template('menu_usuario.html', modulo='relatorio_totalVisitantes', usuario=usuario_logado, localizacoes=localizacoes)
+
+@app.route('/relatorio/totalDepartamento', methods=['GET', 'POST'])
+def relatorio_totalDepartamento():
+    usuario_logado = get_usuario_logado()
+    perfil = session.get('usuario_perfil', 'desconhecido')
+    logger.info(f"{usuario_logado} Acessou a tela de relatório total por Departamento")
+
+    cursor = mysql.connection.cursor()
+
+    cursor.execute("SELECT nome FROM departamentos ORDER BY nome ASC")
+    departamentos = [row[0] for row in cursor.fetchall()]
+
+    cursor.close()
+
+    if request.method == 'POST':
+        data_unica = request.form.get('data_unica')
+        departamento = request.form.get('departamento')
+
+        try:
+            data_ref = datetime.strptime(data_unica, "%Y-%m-%d").date()
+        except ValueError:
+            logger.error(f"{usuario_logado} tentou emitir o relatório, porém preencheu com datas inválidas.")
+            flash("Data inválida.")
+            return redirect(url_for('relatorio_totalDepartamentos'))
+
+        cursor = mysql.connection.cursor()
+
+        # Faixas de horário por período (em formato datetime completo)
+        dt_inicio_cafe = f"{data_ref} 02:00:00"
+        dt_fim_cafe = f"{data_ref} 10:59:59"
+
+        dt_inicio_almoco = f"{data_ref} 11:00:00"
+        dt_fim_almoco = f"{data_ref} 17:59:59"
+
+        # Para o período da janta, vai até o dia seguinte às 01:59
+        dt_inicio_janta = f"{data_ref} 18:00:00"
+        dt_fim_janta = f"{(data_ref + timedelta(days=1))} 01:59:59"
+
+        # Consulta do total de cada período
+        cursor.execute("""
+            SELECT COUNT(*) FROM emissoes_senha
+            WHERE data_hora BETWEEN %s AND %s AND departamento = %s
+        """, (dt_inicio_cafe, dt_fim_cafe, departamento))
+        total_cafe = cursor.fetchone()[0]
+
+        cursor.execute("""
+            SELECT COUNT(*) FROM emissoes_senha
+            WHERE data_hora BETWEEN %s AND %s AND departamento = %s
+        """, (dt_inicio_almoco, dt_fim_almoco, departamento))
+        total_almoco = cursor.fetchone()[0]
+
+        cursor.execute("""
+            SELECT COUNT(*) FROM emissoes_senha
+            WHERE data_hora BETWEEN %s AND %s AND departamento = %s
+        """, (dt_inicio_janta, dt_fim_janta, departamento))
+        total_janta = cursor.fetchone()[0]
+
+        # Consulta de todos os registros do dia/dep
+        cursor.execute("""
+            SELECT numero_senha, cpf, nome, cargo, departamento, data_hora
+            FROM emissoes_senha
+            WHERE DATE(data_hora) = %s AND departamento = %s
+            ORDER BY data_hora ASC
+        """, (data_ref, departamento))
+
+        results = cursor.fetchall()
+        colunas = [desc[0] for desc in cursor.description]
+        registros = [dict(zip(colunas, row)) for row in results]
+
+        cursor.close()
+
+        data_geracao = data_ref.strftime('%d/%m/%Y')
+        agora = datetime.now().strftime('%d/%m/%Y %H:%M')
+
+        html = render_template('relatorio_totalDepartamentos.html',
+                               registros=registros,
+                               data_geracao=data_geracao,
+                               agora=agora,
+                               departamento=departamento,
+                               total_cafe=total_cafe,
+                               total_almoco=total_almoco,
+                               total_janta=total_janta)
+
+        pdf = pdfkit.from_string(html, False, configuration=config_pdf)
+        logger.info(f"{usuario_logado} emitiu o relatório total por departamentos com sucesso!")
+
+        return send_file(BytesIO(pdf), download_name='relatorio_totalDepartamentos.pdf', as_attachment=True)
+
+    if perfil == 'admin':
+        return render_template('menu_admin.html', modulo='relatorio_totalDepartamento', usuario=usuario_logado, departamentos=departamentos)
+    else:
+        return render_template('menu_usuario.html', modulo='relatorio_totalDepartamento', usuario=usuario_logado, departamentos=departamentos)
 
 @app.route('/senha/colaborador', methods=['GET', 'POST'])
 def senha_colaborador():

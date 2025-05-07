@@ -2,7 +2,6 @@
 
 import os
 import logging
-from logging.handlers import TimedRotatingFileHandler
 
 def get_logger():
     # Define o diretório de logs e o arquivo de log
@@ -18,17 +17,9 @@ def get_logger():
     if logger.hasHandlers():
         logger.handlers.clear()
 
-    # Cria o handler de rotação diária
-    handler = TimedRotatingFileHandler(
-        filename=log_file,
-        when='midnight',
-        interval=1,
-        backupCount=30,
-        encoding='utf-8',
-        utc=False
-    )
-    handler.suffix = "%Y-%m-%d"
-
+    # Cria um handler simples sem rotação
+    handler = logging.FileHandler(log_file, encoding='utf-8')
+    
     # Define o formato do log
     formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
     handler.setFormatter(formatter)
