@@ -16,8 +16,8 @@
 </p>
 <br>
 
-### V1.5:
-<br>Adicionado requirements, schema.sql do banco e exemplo de arquivo gtr.service
+### V1.8:
+<br>Corrigindo relatórios e adicionando limite de 3 emissões de senha para visitante ACOMPANHANTE
 
 ## Sobre o GTR
 

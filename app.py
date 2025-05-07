@@ -389,7 +389,7 @@ def relatorio_totalEmissao():
         # Total de senhas cafe colaborador
         cursor.execute("""
             SELECT COUNT(*) FROM emissoes_senha
-            WHERE TIME(data_hora) BETWEEN '02:00:00' AND '10:59:00'
+            WHERE TIME(data_hora) BETWEEN '02:00:00' AND '10:59:59'
             AND cargo != 'VISITANTE'
             AND DATE(data_hora) BETWEEN %s AND %s
         """, (data_inicio, data_fim))
@@ -398,7 +398,7 @@ def relatorio_totalEmissao():
         # Total de senhas cafe visitante
         cursor.execute("""
             SELECT COUNT(*) FROM emissoes_senha
-            WHERE TIME(data_hora) BETWEEN '02:00:00' AND '10:59:00'
+            WHERE TIME(data_hora) BETWEEN '00:00:00' AND '10:59:59'
             AND cargo = 'VISITANTE'
             AND DATE(data_hora) BETWEEN %s AND %s
         """, (data_inicio, data_fim))
@@ -407,7 +407,7 @@ def relatorio_totalEmissao():
         # Total de senhas almoço colaborador
         cursor.execute("""
             SELECT COUNT(*) FROM emissoes_senha
-            WHERE TIME(data_hora) BETWEEN '11:00:00' AND '17:59:00'
+            WHERE TIME(data_hora) BETWEEN '11:00:00' AND '17:59:59'
             AND cargo != 'VISITANTE'
             AND DATE(data_hora) BETWEEN %s AND %s
         """, (data_inicio, data_fim))
@@ -416,7 +416,7 @@ def relatorio_totalEmissao():
         # Total de senhas almoço visitante
         cursor.execute("""
             SELECT COUNT(*) FROM emissoes_senha
-            WHERE TIME(data_hora) BETWEEN '11:00:00' AND '17:59:00'
+            WHERE TIME(data_hora) BETWEEN '11:00:00' AND '17:59:59'
             AND cargo = 'VISITANTE'
             AND DATE(data_hora) BETWEEN %s AND %s
         """, (data_inicio, data_fim))
@@ -425,7 +425,7 @@ def relatorio_totalEmissao():
         # Total de senhas janta colaborador
         cursor.execute("""
             SELECT COUNT(*) FROM emissoes_senha
-            WHERE TIME(data_hora) BETWEEN '18:00:00' AND '01:59:00'
+            WHERE TIME(data_hora) BETWEEN '18:00:00' AND '23:59:59'
             AND cargo != 'VISITANTE'
             AND DATE(data_hora) BETWEEN %s AND %s
         """, (data_inicio, data_fim))
@@ -434,7 +434,7 @@ def relatorio_totalEmissao():
         # Total de senhas janta visitante
         cursor.execute("""
             SELECT COUNT(*) FROM emissoes_senha
-            WHERE TIME(data_hora) BETWEEN '18:00:00' AND '01:59:00'
+            WHERE TIME(data_hora) BETWEEN '18:00:00' AND '23:59:59'
             AND cargo = 'VISITANTE'
             AND DATE(data_hora) BETWEEN %s AND %s
         """, (data_inicio, data_fim))
@@ -790,16 +790,19 @@ def senha_visitante():
         cur = mysql.connection.cursor()
         data_hoje = date.today()
 
-        # Verificar se já emitiu senha hoje
+        # Definir limite de emissão com base na localização
+        limite_diario = 3 if localizacoes == "ACOMPANHANTE" else 1
+
+        # Verificar se já atingiu o limite de senhas hoje
         cur.execute("""
             SELECT COUNT(*) FROM emissoes_senha
             WHERE cpf = %s AND DATE(data_hora) = %s
         """, (cpf, data_hoje))
         qtd_emissoes_hoje = cur.fetchone()[0]
 
-        if qtd_emissoes_hoje >= 1:
-            logger.error(f"{usuario_logado}: {cpf} de visitante atingiu a quantidade máxima de emissões por hoje")
-            flash(f"Você atingiu o limite diário de emissões por visitante.", "error")
+        if qtd_emissoes_hoje >= limite_diario:
+            logger.error(f"{usuario_logado}: {cpf} ({localizacoes}) atingiu o limite de {limite_diario} senhas hoje.")
+            flash(f"Você atingiu o limite diário de {limite_diario} senha(s) para este tipo de visitante.", "error")
             cur.close()
             return redirect(url_for('senha_visitante'))
 
@@ -833,36 +836,7 @@ def senha_visitante():
 
         finally:
             cur.close()
-
-        # Remover a parte de impressão da senha física
-        # O código de impressão foi removido abaixo:
-
-        # try:
-        #     printer = Network("10.10.4.70")
-
-        #     printer.set(align='center')
-        #     printer.image("static/images/logo_gtr.png")
-        #     printer.text("\n\n")
-
-        #     printer.set(align='center', width=5, height=5)
-        #     printer.text(f"SENHA {novo_numero:03d}\n")
-        #     printer.text("\n")
-
-        #     printer.set(align='left', width=1, height=1)
-        #     printer.text(f"Nome: {nome}\n")
-        #     printer.text(f"Cargo: {cargo}\n")
-        #     printer.text(f"Data/Hora: {data_hora.strftime('%d/%m/%Y %H:%M:%S')}\n")
-
-        #     printer.cut()
-        #     printer.close()
-
-        #     logger.info(f"{usuario_logado}: Impressão da senha {novo_numero:03d} para visitante CPF {cpf} concluída.")
-        #     flash(f"Senha Nº {novo_numero:03d} emitida com sucesso!", "success")
-
-        # except Exception as e:
-        #     logger.warning(f"{usuario_logado}: Erro ao imprimir senha {novo_numero:03d} para visitante CPF {cpf}. Registro feito. Erro: {e}")
-        #     flash(f"Senha Nº {novo_numero:03d} registrada com sucesso, mas houve erro na impressão.", "warning")
-
+            
         flash(f"Senha Nº {novo_numero:03d} emitida com sucesso!", "success")
 
         return redirect(url_for('senha_visitante'))
