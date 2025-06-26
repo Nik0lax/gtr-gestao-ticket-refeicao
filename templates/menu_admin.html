@@ -46,9 +46,6 @@
           <li><a href="{{ url_for('relatorio_totalVisitantes') }}">Total por Tipo de Visitantes</a></li>
           <li><a href="{{ url_for('relatorio_totalDepartamento') }}">Total por Departamento</a></li>
         </ul>
-        <a href= '#' id="menu-configuracoes">
-          <i class="fas fa-cogs"></i> Configurações
-        </a>
       </nav>
     </aside>
 
@@ -273,14 +270,20 @@
           <h2>Relação de Emissões Diárias</h2>
           <form method="POST" action="{{ url_for('relatorio_emissaoDiaria') }}">
             <label>Data: <input type="date" name="data_unica" required></label>
-            <button type="submit" id="btn-enviar">Exportar em PDF</button>
+            
+            <div style="display: flex; gap: 10px;">
+              <button type="submit" name="tipo_relatorio" value="pdf" id="btn-enviar">Exportar em PDF</button>
+              <button type="submit" name="tipo_relatorio" value="excel" id="btn-enviar">Exportar em Excel</button>
+            </div>
+
           </form>
         </div>
       {% elif modulo == 'relatorio_totalVisitantes' %}
         <div class="relatorios-content">
           <h2>Total por Tipo de Visitantes</h2>
           <form method="POST" action="{{ url_for('relatorio_totalVisitantes') }}">
-            <label>Data: <input type="date" name="data_unica" required></label>
+            <label>Data Inicial: <input type="date" name="data_inicial" required></label>
+            <label>Data Final: <input type="date" name="data_final" required></label>
             
             <label for="departamento">Localização:</label>
             <select name="departamento" required>
@@ -290,7 +293,10 @@
               {% endfor %}
             </select>
 
-            <button type="submit" id="btn-enviar">Exportar em PDF</button>
+            <div style="display: flex; gap: 10px;">
+              <button type="submit" name="tipo_relatorio" value="pdf" id="btn-enviar">Exportar em PDF</button>
+              <button type="submit" name="tipo_relatorio" value="excel" id="btn-enviar">Exportar em Excel</button>
+            </div>
           </form>
         </div>
 
@@ -298,7 +304,8 @@
         <div class="relatorios-content">
           <h2>Total por Departamentos</h2>
           <form method="POST" action="{{ url_for('relatorio_totalDepartamento') }}">
-            <label>Data: <input type="date" name="data_unica" required></label>
+            <label>Data Inicial: <input type="date" name="data_inicial" required></label>
+            <label>Data Final: <input type="date" name="data_final" required></label>
             
             <label for="departamento">Departamento:</label>
             <select name="departamento" required>
@@ -308,17 +315,39 @@
               {% endfor %}
             </select>
 
-            <button type="submit" id="btn-enviar">Exportar em PDF</button>
+            <div style="display: flex; gap: 10px;">
+              <button type="submit" name="tipo_relatorio" value="pdf" id="btn-enviar">Exportar em PDF</button>
+              <button type="submit" name="tipo_relatorio" value="excel" id="btn-enviar">Exportar em Excel</button>
+            </div>
           </form>
-        </div>
-      {% elif module == 'configuracoes' %}
-        <div class="configuracoes-content">
-          <!-- Configurações -->
         </div>
       {% else %}
         <div class="intro-content">
           <h2>Bem-vindo ao Painel Admin!</h2>
           <p>Escolha um módulo no menu à esquerda para começar.</p>
+          <div class="dashboard-indicadores">
+            <div class="card-indicador">
+              <h3>Senhas Emitidas Hoje</h3>
+              <p>{{ dashboard_data.total_hoje }}</p>
+            </div>
+            <div class="card-indicador">
+              <h3>Última Emissão</h3>
+              <p>{{ dashboard_data.ultima_emissao }}</p>
+            </div>
+            <div class="card-indicador">
+              <h3>Total de Senhas</h3>
+              <p>{{ dashboard_data.total_senhas }}</p>
+            </div>
+            <div class="card-indicador">
+              <h3>Total de Colaboradores</h3>
+              <p>{{ dashboard_data.total_colaboradores }}</p>
+            </div>
+            <div class="card-indicador">
+              <h3>Departamentos Ativos</h3>
+              <p>{{ dashboard_data.total_departamentos }}</p>
+            </div>
+            
+          </div>
         </div>
       {% endif %}
     </main>

@@ -54,6 +54,36 @@ body, html {
   }
 }
 
+
+.dashboard-indicadores {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-top: 30px;
+  }
+
+  .card-indicador {
+    flex: 1 1 200px;
+    padding: 20px;
+    background: #eef7fa;
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    text-align: center;
+  }
+
+  .card-indicador h3 {
+    font-size: 16px;
+    color: #007ea7;
+    margin-bottom: 10px;
+  }
+
+  .card-indicador p {
+    font-size: 24px;
+    font-weight: bold;
+    color: #333;
+  }
+
+
 .top-bar {
   background-color: #217d9d;
   padding: 10px 20px;
