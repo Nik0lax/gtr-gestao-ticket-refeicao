@@ -16,8 +16,8 @@
 </p>
 <br>
 
-### V1.9:
-<br>Corrigindo relatórios, adicionando relatório total por departamentos e adicionando limite de 3 emissões de senha para visitante ACOMPANHANTE
+### v1.9.1:
+<br>Adicionando exportação em excel e indicadores
 
 ## Sobre o GTR
 
