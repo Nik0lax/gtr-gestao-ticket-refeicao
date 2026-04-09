@@ -1,81 +1,373 @@
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-body, html {
-    height: 100%;
-    background: linear-gradient(120deg, #41c8b0, #157ea9);
+:root {
+  --blue-dark:  #1a5f78;
+  --blue-mid:   #217d9d;
+  --blue-light: #7ab8cc;
+  --teal:       #41c8b0;
+  --teal-light: #a8e6da;
+  --bg:         #f0f4f7;
+  --text-main:  #1e2d3a;
+  --text-muted: #7a9baa;
+  --border:     #d5e5ec;
 }
 
-.background {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
+html, body {
+  height: 100%;
+  font-family: 'Poppins', sans-serif;
+  background: var(--bg);
 }
 
-.login-box {
-    background: white;
-    padding: 30px;
-    border-radius: 15px;
-    width: 320px;
-    box-shadow: 0 0 20px rgba(0,0,0,0.1);
-    text-align: center;
+/* ── LAYOUT SPLIT ── */
+.login-wrapper {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 100vh;
 }
 
-.login-box h1 {
-    font-size: 34px;
-    font-weight: bold;
+/* ── PAINEL ESQUERDO ── */
+.login-panel-left {
+  background: linear-gradient(150deg, #0e3d50 0%, #1a5f78 40%, #217d9d 75%, #41c8b0 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 48px;
+  position: relative;
+  overflow: hidden;
 }
 
-.subtitulo {
-    color: #157ea9;
-    font-size: 18px;
-    margin-top: -5px;
-    margin-bottom: 10px;
+/* Decoração geométrica de fundo */
+.login-panel-left::before {
+  content: '';
+  position: absolute;
+  width: 420px;
+  height: 420px;
+  border-radius: 50%;
+  border: 60px solid rgba(255,255,255,0.05);
+  top: -120px;
+  right: -120px;
 }
 
-.acesso {
-    margin: 20px 0 20px;
-    font-size: 14px;
+.login-panel-left::after {
+  content: '';
+  position: absolute;
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  border: 40px solid rgba(255,255,255,0.06);
+  bottom: -80px;
+  left: -80px;
 }
 
-form {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
+.brand {
+  text-align: center;
+  position: relative;
+  z-index: 1;
+  animation: fadeUp 0.7s ease both;
 }
 
-label {
-    text-align: left;
-    font-size: 12px;
-    color: #333;
-    margin: 10px 0 5px;
+.brand-icon {
+  width: 80px;
+  height: 80px;
+  background: rgba(255,255,255,0.14);
+  border: 2px solid rgba(255,255,255,0.22);
+  border-radius: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+  font-size: 32px;
+  color: #fff;
+  backdrop-filter: blur(8px);
 }
 
-input {
-    padding: 8px;
-    border: none;
-    border-bottom: 1px solid #aaa;
-    outline: none;
-    font-size: 14px;
-    color: #444;
+.brand h1 {
+  font-size: 52px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 6px;
+  line-height: 1;
+  text-shadow: 0 2px 20px rgba(0,0,0,0.2);
 }
 
-button {
-    margin-top: 20px;
-    padding: 10px;
-    background-color: #157ea9;
-    color: white;
-    font-weight: bold;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
+.brand-sub {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.6);
+  margin-top: 8px;
 }
 
-button:hover {
-    background-color: #126d91;
+.brand-divider {
+  width: 48px;
+  height: 3px;
+  background: var(--teal);
+  border-radius: 2px;
+  margin: 24px auto;
+}
+
+.brand-desc {
+  font-size: 14px;
+  font-weight: 400;
+  color: rgba(255,255,255,0.72);
+  line-height: 1.7;
+  max-width: 280px;
+  text-align: center;
+}
+
+/* Pills de features */
+.brand-pills {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 36px;
+  width: 100%;
+  max-width: 280px;
+  position: relative;
+  z-index: 1;
+  animation: fadeUp 0.7s 0.15s ease both;
+}
+
+.brand-pill {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 12px;
+  padding: 12px 16px;
+  backdrop-filter: blur(6px);
+}
+
+.brand-pill i {
+  font-size: 16px;
+  color: var(--teal);
+  width: 20px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.brand-pill span {
+  font-size: 13px;
+  color: rgba(255,255,255,0.85);
+  font-weight: 400;
+}
+
+/* ── PAINEL DIREITO ── */
+.login-panel-right {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 48px;
+  background: #fff;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 380px;
+  animation: fadeUp 0.6s 0.1s ease both;
+}
+
+.login-card-header {
+  margin-bottom: 36px;
+}
+
+.login-card-header h2 {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 6px;
+}
+
+.login-card-header p {
+  font-size: 13.5px;
+  color: var(--text-muted);
+}
+
+/* Form */
+.form-field {
+  margin-bottom: 20px;
+}
+
+.form-field label {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.input-wrapper {
+  position: relative;
+}
+
+.input-wrapper i {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--blue-light);
+  font-size: 14px;
+  pointer-events: none;
+  transition: color 0.2s;
+}
+
+.input-wrapper input {
+  width: 100%;
+  padding: 12px 14px 12px 40px;
+  font-size: 14px;
+  font-family: 'Poppins', sans-serif;
+  color: var(--text-main);
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.input-wrapper input:focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(65,200,176,0.14);
+  background: #fff;
+}
+
+.input-wrapper input:focus + i,
+.input-wrapper:focus-within i {
+  color: var(--teal);
+}
+
+/* Fix icon inside wrapper — icon comes after input in DOM for CSS sibling trick */
+.input-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.input-wrapper input {
+  flex: 1;
+}
+
+.input-icon {
+  position: absolute;
+  left: 14px;
+  color: var(--blue-light);
+  font-size: 14px;
+  pointer-events: none;
+  transition: color 0.2s;
+  z-index: 1;
+}
+
+.input-wrapper input:focus ~ .input-icon { color: var(--teal); }
+
+/* Botão */
+.btn-login {
+  width: 100%;
+  padding: 13px;
+  background: linear-gradient(135deg, #217d9d 0%, #1a5f78 100%);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  letter-spacing: 0.5px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  margin-top: 8px;
+  box-shadow: 0 4px 14px rgba(33,125,157,0.3);
+  transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-login:hover {
+  opacity: 0.93;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(33,125,157,0.38);
+}
+
+.btn-login:active {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* Erro */
+.mensagem-erro {
+  margin-top: 20px;
+  padding: 12px 16px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mensagem-erro::before {
+  content: '\f071';
+  font-family: 'Font Awesome 6 Free';
+  font-weight: 900;
+  color: #ef4444;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.mensagem-erro p {
+  font-size: 13px;
+  color: #b91c1c;
+  font-weight: 500;
+  margin: 0;
+}
+
+/* Footer do card */
+.login-card-footer {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid #edf2f5;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ── ANIMAÇÕES ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── RESPONSIVO ── */
+@media (max-width: 768px) {
+  .login-wrapper {
+    grid-template-columns: 1fr;
+  }
+
+  .login-panel-left {
+    padding: 48px 32px 36px;
+    min-height: auto;
+  }
+
+  .brand h1 { font-size: 40px; }
+  .brand-pills { display: none; }
+
+  .login-panel-right {
+    padding: 40px 24px;
+    background: var(--bg);
+  }
+
+  .login-card {
+    background: #fff;
+    padding: 32px 24px;
+    border-radius: 18px;
+    box-shadow: 0 4px 24px rgba(33,125,157,0.1);
+  }
 }

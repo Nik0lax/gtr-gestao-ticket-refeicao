@@ -1,101 +1,305 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Emissão de Senha - GTR</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/emissao_senha.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Emissão de Senha — GTR</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="/static/css/emissao_senha.css">
 </head>
 <body>
-    <header class="top-bar">
-        <div class="logo">
-            <h1>GTR</h1>
-            <p>GESTÃO DE TICKET REFEIÇÃO</p>
+
+  <!-- TOP BAR -->
+  <header class="top-bar">
+    <div class="logo">
+      <div class="logo-icon"><i class="fas fa-utensils"></i></div>
+      <div>
+        <h1>GTR</h1>
+        <p>Gestão de Ticket Refeição</p>
+      </div>
+    </div>
+    <div class="logout">
+      <a href="/logout"><i class="fas fa-sign-out-alt"></i> Sair</a>
+    </div>
+  </header>
+
+  <!-- FLASH OVERLAY -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="flash-overlay" id="flash-overlay">
+      <div class="flash-popup">
+        {% for category, message in messages %}
+          <div class="flash-popup-icon {{ category }}">
+            {% if category == 'success' %}<i class="fas fa-check"></i>
+            {% else %}<i class="fas fa-times"></i>{% endif %}
+          </div>
+          <div class="flash-message {{ category }}">{{ message }}</div>
+          <p class="flash-sub">
+            {% if category == 'success' %}Redirecionando em instantes...
+            {% else %}Tente novamente.{% endif %}
+          </p>
+        {% endfor %}
+      </div>
+    </div>
+    <script>
+      window.addEventListener('DOMContentLoaded', () => {
+        const ok  = document.querySelector('.flash-message.success');
+        const err = document.querySelector('.flash-message.error');
+        if (ok) {
+          new Audio('{{ url_for("static", filename="sounds/sucesso.mp3") }}').play().catch(()=>{});
+          setTimeout(() => { window.location.href = "{{ url_for('emissao_senha') }}"; }, 4000);
+        }
+        if (err) {
+          const a = new Audio('{{ url_for("static", filename="sounds/falha.mp3") }}');
+          a.volume = 1.0; a.play().catch(()=>{});
+          setTimeout(() => { window.location.href = "{{ url_for('emissao_senha') }}"; }, 4000);
+        }
+      });
+    </script>
+    {% endif %}
+  {% endwith %}
+
+  <!-- MAIN -->
+  <main class="container">
+
+    {% if tipo_senha == 'menu' %}
+    <div class="menu-screen">
+      <p class="menu-title">Como deseja emitir sua senha?</p>
+
+      <a href="{{ url_for('senha_colaborador') }}" class="btn-senha colaborador">
+        <div class="btn-senha-icon"><i class="fas fa-id-badge"></i></div>
+        <div class="btn-senha-text">
+          <strong>Senha Colaborador</strong>
+          <small>Funcionários cadastrados no sistema</small>
         </div>
-        <div class="logout">
-            <a href="/logout"><i class="fas fa-sign-out-alt"></i> SAIR</a>
+        <i class="fas fa-chevron-right" style="margin-left:auto;font-size:15px;opacity:0.4;"></i>
+      </a>
+
+      <a href="{{ url_for('senha_visitante') }}" class="btn-senha visitante">
+        <div class="btn-senha-icon"><i class="fas fa-user-clock"></i></div>
+        <div class="btn-senha-text">
+          <strong>Senha Visitante</strong>
+          <small>Externos, acompanhantes e visitantes</small>
         </div>
-    </header>
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-        <div class="flash-overlay" id="flash-overlay">
-            <div class="flash-popup">
-                {% for category, message in messages %}
-                    <div class="flash-message {{ category }}">{{ message }}</div>
-                {% endfor %}
+        <i class="fas fa-chevron-right" style="margin-left:auto;font-size:15px;opacity:0.4;"></i>
+      </a>
+    </div>
+
+    {% elif tipo_senha == 'colaborador' %}
+    <div class="form-screen">
+      <div class="form-screen-header">
+        <a href="{{ url_for('emissao_senha') }}" class="btn-voltar" title="Voltar">
+          <i class="fas fa-arrow-left"></i>
+        </a>
+        <div>
+          <div class="form-screen-title">Senha Colaborador</div>
+          <div class="form-screen-sub">Digite o CPF do colaborador para emitir a senha</div>
+        </div>
+      </div>
+
+      <form action="{{ url_for('senha_colaborador') }}" method="post" onsubmit="return validarFormulario()">
+        <div class="field-group">
+          <span class="field-label"><i class="fas fa-id-card" style="margin-right:5px;"></i>CPF</span>
+          <input type="text" name="cpf" id="cpf" placeholder="000.000.000-00"
+                 required maxlength="14" autocomplete="off"
+                 class="field-input" oninput="formatarEValidarCPF(this)" autofocus>
+        </div>
+        <div class="field-feedback" id="cpf-feedback"></div>
+        <button type="submit" class="btn-emitir">
+          <i class="fas fa-ticket-alt"></i> Emitir Senha
+        </button>
+      </form>
+    </div>
+
+    {% elif tipo_senha == 'colaborador_cardapio' %}
+    <div class="form-screen" style="max-height:calc(100vh - 80px);display:flex;flex-direction:column;gap:12px;">
+      <div class="form-screen-header">
+        <a href="{{ url_for('emissao_senha') }}" class="btn-voltar" title="Voltar">
+          <i class="fas fa-arrow-left"></i>
+        </a>
+        <div>
+          <div class="form-screen-title">Senha Colaborador</div>
+          <div class="form-screen-sub">Informe o CPF e selecione o cardápio do dia</div>
+        </div>
+      </div>
+
+      {% if not cardapios_hoje %}
+        <div style="text-align:center;padding:30px 20px;background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.3);border-radius:10px;">
+          <i class="fas fa-exclamation-triangle" style="font-size:32px;color:#e74c3c;margin-bottom:10px;display:block;"></i>
+          <strong style="color:#e74c3c;">Cardápio não disponível</strong>
+          <p style="color:#9ab5c0;font-size:13px;margin-top:6px;">Nenhum cardápio foi cadastrado para hoje. Por favor, contate o administrador.</p>
+        </div>
+      {% else %}
+        <form action="{{ url_for('senha_colaborador_cardapio') }}" method="post" onsubmit="return validarFormularioCardapio()"
+              style="display:flex;flex-direction:column;gap:12px;flex:1;min-height:0;">
+
+          <div class="field-group" style="flex-shrink:0;">
+            <span class="field-label"><i class="fas fa-id-card" style="margin-right:5px;"></i>CPF</span>
+            <input type="text" name="cpf" id="cpf" placeholder="000.000.000-00"
+                   required maxlength="14" autocomplete="off"
+                   class="field-input" oninput="formatarEValidarCPF(this)" autofocus>
+          </div>
+          <div class="field-feedback" id="cpf-feedback" style="flex-shrink:0;margin-top:-6px;"></div>
+
+          <!-- Lista de cardápios com scroll interno -->
+          <div style="flex-shrink:0;">
+            <span class="field-label" style="display:block;margin-bottom:8px;">
+              <i class="fas fa-utensils" style="margin-right:5px;"></i>Cardápio do Dia
+            </span>
+          </div>
+          <div style="overflow-y:auto;flex:1;min-height:0;display:flex;flex-direction:column;gap:10px;
+                      padding-right:4px;scrollbar-width:thin;scrollbar-color:#2a3f4a transparent;">
+            {% for c in cardapios_hoje %}
+            <label style="display:flex;align-items:center;gap:14px;padding:14px 16px;
+                          border:2px solid #2a3f4a;border-radius:10px;cursor:pointer;
+                          transition:border-color .2s;flex-shrink:0;background:var(--white);"
+                   onclick="selecionarCardapio(this)">
+              <input type="radio" name="cardapio_id" value="{{ c.id }}" required
+                     style="width:20px;height:20px;accent-color:#00b4d8;flex-shrink:0;">
+              {% if c.foto %}
+              <img src="{{ url_for('static', filename='uploads/cardapio/' ~ c.foto) }}"
+                   style="width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0;">
+              {% endif %}
+              <div style="flex:1;">
+                <strong style="font-size:16px;color:#e0e0e0;">{{ c.tipo_refeicao }}</strong>
+                {% if c.descricao %}
+                <p style="color:#9ab5c0;font-size:13px;margin:4px 0 0;line-height:1.4;">{{ c.descricao }}</p>
+                {% endif %}
+              </div>
+            </label>
+            {% endfor %}
+          </div>
+          <div class="field-feedback" id="cardapio-feedback" style="flex-shrink:0;margin-top:-4px;"></div>
+
+          <button type="submit" class="btn-emitir" style="flex-shrink:0;">
+            <i class="fas fa-ticket-alt"></i> Emitir Senha
+          </button>
+        </form>
+      {% endif %}
+    </div>
+
+    {% elif tipo_senha == 'visitante' %}
+    <div class="form-screen" style="max-height:calc(100vh - 80px);display:flex;flex-direction:column;gap:12px;">
+      <div class="form-screen-header">
+        <a href="{{ url_for('emissao_senha') }}" class="btn-voltar" title="Voltar">
+          <i class="fas fa-arrow-left"></i>
+        </a>
+        <div>
+          <div class="form-screen-title">Senha Visitante</div>
+          <div class="form-screen-sub">Preencha os dados para emitir a senha</div>
+        </div>
+      </div>
+
+      <form action="{{ url_for('senha_visitante') }}" method="post"
+            class="fields-stack" onsubmit="return validarFormularioVisitante()"
+            style="display:flex;flex-direction:column;gap:12px;flex:1;min-height:0;">
+
+        <div class="field-group" style="flex-shrink:0;">
+          <span class="field-label"><i class="fas fa-user" style="margin-right:5px;"></i>Nome Completo</span>
+          <input type="text" name="nome" id="nome" placeholder="Digite o nome completo"
+                 required autocomplete="off" class="field-input"
+                 style="font-size:18px;" oninput="validarNome(this)" autofocus>
+        </div>
+
+        <div class="field-group" style="flex-shrink:0;">
+          <span class="field-label"><i class="fas fa-map-marker-alt" style="margin-right:5px;"></i>Origem / Localização</span>
+          <select name="localizacoes" id="localizacoes" required class="field-select">
+            <option value="" disabled selected>Selecione a localização</option>
+            {% for local in localizacoes %}
+              <option value="{{ local }}">{{ local }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="field-group" style="flex-shrink:0;">
+          <span class="field-label"><i class="fas fa-id-card" style="margin-right:5px;"></i>CPF</span>
+          <input type="text" name="cpf" id="cpf" placeholder="000.000.000-00"
+                 required maxlength="14" autocomplete="off"
+                 class="field-input" oninput="formatarEValidarCPF(this)">
+        </div>
+        <div class="field-feedback" id="cpf-feedback" style="flex-shrink:0;margin-top:-6px;"></div>
+
+        {% if tipo_emissao == 'cardapio' %}
+          <div style="flex-shrink:0;">
+            <span class="field-label" style="display:block;margin-bottom:8px;">
+              <i class="fas fa-utensils" style="margin-right:5px;"></i>Cardápio do Dia
+            </span>
+          </div>
+          {% if cardapios_hoje %}
+            <div style="overflow-y:auto;flex:1;min-height:0;display:flex;flex-direction:column;gap:10px;
+                        padding-right:4px;scrollbar-width:thin;scrollbar-color:#2a3f4a transparent;">
+              {% for c in cardapios_hoje %}
+              <label style="display:flex;align-items:center;gap:14px;padding:14px 16px;
+                            border:2px solid #2a3f4a;border-radius:10px;cursor:pointer;
+                            transition:border-color .2s;flex-shrink:0;background:var(--white);"
+                     onclick="selecionarCardapioVisit(this)">
+                <input type="radio" name="cardapio_id" value="{{ c.id }}" required
+                       style="width:20px;height:20px;accent-color:#00b4d8;flex-shrink:0;">
+                {% if c.foto %}
+                <img src="{{ url_for('static', filename='uploads/cardapio/' ~ c.foto) }}"
+                     style="width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0;">
+                {% endif %}
+                <div style="flex:1;">
+                  <strong style="font-size:16px;color:#e0e0e0;">{{ c.tipo_refeicao }}</strong>
+                  {% if c.descricao %}
+                  <p style="color:#9ab5c0;font-size:13px;margin:4px 0 0;line-height:1.4;">{{ c.descricao }}</p>
+                  {% endif %}
+                </div>
+              </label>
+              {% endfor %}
             </div>
-        </div>
-        <script>
-            window.addEventListener('DOMContentLoaded', () => {
-                // Verificar se há mensagem de sucesso
-                const successMessage = document.querySelector('.flash-message.success');
-                const errorMessage = document.querySelector('.flash-message.error');
-
-                if (successMessage) {
-                    // Tocar som de sucesso
-                    const audio = new Audio('{{ url_for("static", filename="sounds/sucesso.mp3") }}');
-                    audio.play().catch(e => {
-                        console.warn("Falha ao tentar tocar o som de sucesso:", e);
-                    });
-
-                    // Aguardar 5 segundos e redirecionar
-                    setTimeout(() => {
-                        window.location.href = "{{ url_for('emissao_senha_tablet') }}";
-                    }, 5000);
-                }
-
-                if (errorMessage) {
-                    // Tocar som de erro
-                    const audioErro = new Audio('{{ url_for("static", filename="sounds/falha.mp3") }}');
-                    audioErro.volume = 1.0;  // Volume máximo
-                    audioErro.play().catch(e => {
-                        console.warn("Falha ao tentar tocar o som de erro:", e);
-                    });
-                   
-                    // Aguardar 5 segundos e redirecionar para a tela de emissão de senha
-                    setTimeout(() => {
-                        window.location.href = "{{ url_for('emissao_senha_tablet') }}";  // Redireciona para a tela de seleção de senha
-                    }, 5000);
-                }
-            });
-        </script>
+          {% else %}
+            <div style="padding:16px;background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.3);border-radius:10px;flex-shrink:0;">
+              <i class="fas fa-exclamation-triangle" style="color:#e74c3c;margin-right:8px;"></i>
+              <span style="color:#e74c3c;">Nenhum cardápio disponível hoje. Contate o administrador.</span>
+            </div>
+          {% endif %}
+          <div class="field-feedback" id="cardapio-visit-feedback" style="flex-shrink:0;margin-top:-4px;"></div>
         {% endif %}
-    {% endwith %}
-    <main class="container">       
-        {% if tipo_senha == 'menu' %}
-            <a href="{{ url_for('senha_colaborador') }}" class="btn-senha">SENHA COLABORADOR</a>
-            <a href="{{ url_for('senha_visitante') }}" class="btn-senha">SENHA VISITANTE</a>
-        {% elif tipo_senha == 'colaborador' %}
-        <a href="{{ url_for('emissao_senha') }}" class="btn-voltar">⬅ Voltar</a>
 
-            <form action="{{ url_for('senha_colaborador') }}" method="post" class="form-cpf" onsubmit="return validarFormulario()">
-                <input type="text" name="cpf" id="cpf" placeholder="Digite o CPF" required maxlength="14" autocomplete="off" autocorrect="off" oninput="formatarEValidarCPF(this)">
-                <div id="cpf-feedback" style="color: red; font-size: 12px;"></div>
-                <button type="submit">Emitir Senha</button>
-            </form>
-        {% elif tipo_senha == 'visitante' %}
-        <a href="{{ url_for('emissao_senha') }}" class="btn-voltar">⬅ Voltar</a>
+        <button type="submit" class="btn-emitir" style="flex-shrink:0;"
+                {% if tipo_emissao == 'cardapio' and not cardapios_hoje %}disabled{% endif %}>
+          <i class="fas fa-ticket-alt"></i> Emitir Senha
+        </button>
+      </form>
+    </div>
+    {% endif %}
 
-        <form action="{{ url_for('senha_visitante') }}" method="post" class="form-cpf" onsubmit="return validarFormularioVisitante()">
-            <input type="text" name="nome" id="nome" placeholder="Digite o nome completo" autocomplete="off" autocorrect="off" required oninput="validarNome(this)">           
-        
-            <select name="localizacoes" id="localizacoes" required>
-                <option value="" disabled selected>Selecione a localização</option>
-                {% for local in localizacoes %}
-                    <option value="{{ local }}">{{ local }}</option>
-                {% endfor %}
-            </select>
-        
-            <input type="text" name="cpf" id="cpf" placeholder="Digite o CPF" required maxlength="14" autocomplete="off" autocorrect="off" oninput="formatarEValidarCPF(this)">
-            <div id="cpf-feedback" style="color: red; font-size: 12px;"></div>           
-        
-            <button type="submit">Emitir Senha</button>
-        </form>       
-        {% endif %}
-    </main>
-    <script src="{{ url_for('static', filename='js/form-validations.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/flash-message.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/sound-validation.js') }}"></script>
+  </main>
+
+  <script src="{{ url_for('static', filename='js/form-validations.js') }}"></script>
+  <script>
+    // ── Emissão com Cardápio ──────────────────────────────────────────────────
+    function validarFormularioCardapio() {
+      var cpf = document.getElementById('cpf');
+      var radios = document.querySelectorAll('input[name="cardapio_id"]');
+      var cardapioSelecionado = Array.from(radios).some(function(r){ return r.checked; });
+
+      if (cpf && cpf.value.replace(/\D/g,'').length !== 11) {
+        var fb = document.getElementById('cpf-feedback');
+        if (fb) { fb.textContent = 'CPF inválido.'; fb.style.color = '#e74c3c'; }
+        return false;
+      }
+      if (!cardapioSelecionado) {
+        var fb2 = document.getElementById('cardapio-feedback');
+        if (fb2) { fb2.textContent = 'Selecione um cardápio.'; fb2.style.color = '#e74c3c'; }
+        return false;
+      }
+      return true;
+    }
+
+    function selecionarCardapio(label) {
+      document.querySelectorAll('label[onclick]').forEach(function(l) {
+        l.style.borderColor = '#2a3f4a';
+      });
+      label.style.borderColor = '#00b4d8';
+    }
+
+    function selecionarCardapioVisit(label) {
+      selecionarCardapio(label);
+    }
+  </script>
+
 </body>
 </html>

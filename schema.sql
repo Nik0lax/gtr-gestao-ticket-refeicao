@@ -1,13 +1,14 @@
--- MySQL dump 10.13  Distrib 8.0.41, for Linux (x86_64)
+/*M!999999\- enable the sandbox mode */ 
+-- MariaDB dump 10.19  Distrib 10.11.13-MariaDB, for debian-linux-gnu (x86_64)
 --
 -- Host: localhost    Database: gtr
 -- ------------------------------------------------------
--- Server version	8.0.41-0ubuntu0.22.04.1
+-- Server version	10.11.13-MariaDB-0ubuntu0.24.04.1
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!50503 SET NAMES utf8mb4 */;
+/*!40101 SET NAMES utf8mb4 */;
 /*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
 /*!40103 SET TIME_ZONE='+00:00' */;
 /*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
@@ -21,18 +22,17 @@
 
 DROP TABLE IF EXISTS `colaboradores`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `colaboradores` (
-  `id` int NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `nome` varchar(255) NOT NULL,
   `cpf` varchar(14) NOT NULL,
   `cargo` varchar(100) DEFAULT NULL,
   `departamento` varchar(100) DEFAULT NULL,
-  `tipo` int DEFAULT NULL,
+  `tipo` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `cpf` (`cpf`),
-  CONSTRAINT `chk_cpf` CHECK (regexp_like(`cpf`,_utf8mb4'^[0-9]{3}.[0-9]{3}.[0-9]{3}-[0-9]{2}$'))
-) ENGINE=InnoDB AUTO_INCREMENT=2650 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  UNIQUE KEY `cpf` (`cpf`)
+) ENGINE=InnoDB AUTO_INCREMENT=4703 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -41,13 +41,13 @@ CREATE TABLE `colaboradores` (
 
 DROP TABLE IF EXISTS `departamentos`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `departamentos` (
-  `id` int NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `nome` varchar(100) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `nome` (`nome`)
-) ENGINE=InnoDB AUTO_INCREMENT=33 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=74 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -56,17 +56,31 @@ CREATE TABLE `departamentos` (
 
 DROP TABLE IF EXISTS `emissoes_senha`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `emissoes_senha` (
-  `id` int NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `nome` varchar(255) NOT NULL,
   `cpf` varchar(14) NOT NULL,
   `cargo` varchar(255) NOT NULL,
   `departamento` varchar(255) NOT NULL,
   `data_hora` datetime NOT NULL,
-  `numero_senha` int DEFAULT NULL,
+  `numero_senha` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=944 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=65705 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `localizacoes`
+--
+
+DROP TABLE IF EXISTS `localizacoes`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `localizacoes` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `nome` varchar(100) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -75,18 +89,21 @@ CREATE TABLE `emissoes_senha` (
 
 DROP TABLE IF EXISTS `usuarios`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `usuarios` (
-  `id` int NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `nome` varchar(100) NOT NULL,
   `usuario` varchar(50) NOT NULL,
   `senha` varchar(255) NOT NULL,
-  `perfil` enum('admin','usuario','totem_desktop','totem_tablet') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `status` tinyint(1) DEFAULT '1',
-  `criado_em` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `perfil` enum('admin','usuario','totem_desktop','totem_tablet') NOT NULL,
+  `status` tinyint(1) DEFAULT 1,
+  `criado_em` timestamp NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
   UNIQUE KEY `usuario` (`usuario`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+INSERT INTO `usuarios` VALUES
+(1,'Administrador','admin','admin','admin',1,'2025-04-25 12:26:06');
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -98,4 +115,19 @@ CREATE TABLE `usuarios` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-04-24 16:12:16
+-- Dump completed on 2026-04-08 14:28:56
+
+-- ─── CARDÁPIO ────────────────────────────────────────────────────────────────
+-- Execute este bloco no banco de dados para ativar o módulo de cardápio.
+
+CREATE TABLE IF NOT EXISTS `cardapios` (
+  `id`            int(11)      NOT NULL AUTO_INCREMENT,
+  `data_cardapio` date         NOT NULL,
+  `tipo_refeicao` varchar(50)  NOT NULL,          -- 'Café da Manhã' | 'Almoço' | 'Jantar' | 'Lanche'
+  `descricao`     text         NOT NULL,
+  `foto`          varchar(255) DEFAULT NULL,       -- nome do arquivo em static/uploads/cardapio/
+  `ativo`         tinyint(1)   NOT NULL DEFAULT 1,
+  `criado_em`     timestamp    NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_data_ativo` (`data_cardapio`, `ativo`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;

@@ -16,8 +16,8 @@
 </p>
 <br>
 
-### v1.9.1:
-<br>Adicionando exportação em excel e indicadores
+### XXX:
+<br>XXX
 
 ## Sobre o GTR
 

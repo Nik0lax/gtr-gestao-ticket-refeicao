@@ -1,36 +1,102 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - GTR</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — GTR</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body>
-    <div class="background">
-        <div class="login-box">
-            <h1>GTR</h1>
-            <p class="subtitulo">GESTÃO DE TICKET REFEIÇÃO</p>
-            <p class="acesso">Insira as suas <strong>CREDENCIAIS</strong></p>
-            <form method="POST" action="/">
-                <label for="usuario">USUÁRIO</label>
-                <input type="text" name="usuario" id="usuario" placeholder="Digite o seu usuário" required>
-            
-                <label for="senha">SENHA</label>
-                <input type="password" name="senha" id="senha" placeholder="Digite sua senha" required>
-            
-                <button type="submit">ENTRAR</button>
-            </form>
-            {% with messages = get_flashed_messages() %}
-                {% if messages %}
-                    <div class="mensagem-erro">
-                    {% for message in messages %}
-                        <p>{{ message }}</p>
-                    {% endfor %}
-                    </div>
-                {% endif %}
-            {% endwith %}
+
+  <div class="login-wrapper">
+
+    <!-- ── LADO ESQUERDO: IDENTIDADE ── -->
+    <div class="login-panel-left">
+
+      <div class="brand">
+        <div class="brand-icon">
+          <i class="fas fa-utensils"></i>
         </div>
+        <h1>GTR</h1>
+        <p class="brand-sub">Gestão de Ticket Refeição</p>
+        <div class="brand-divider"></div>
+        <p class="brand-desc">
+          Plataforma integrada de controle e emissão de tickets de refeição corporativos.
+        </p>
+      </div>
+
+      <div class="brand-pills">
+        <div class="brand-pill">
+          <i class="fas fa-ticket-alt"></i>
+          <span>Emissão de senhas em tempo real</span>
+        </div>
+        <div class="brand-pill">
+          <i class="fas fa-chart-bar"></i>
+          <span>Relatórios e indicadores gerenciais</span>
+        </div>
+        <div class="brand-pill">
+          <i class="fas fa-users"></i>
+          <span>Gestão de colaboradores e departamentos</span>
+        </div>
+      </div>
+
     </div>
+
+    <!-- ── LADO DIREITO: FORMULÁRIO ── -->
+    <div class="login-panel-right">
+
+      <div class="login-card">
+
+        <div class="login-card-header">
+          <h2>Bem-vindo de volta</h2>
+          <p>Insira suas credenciais para acessar o sistema</p>
+        </div>
+
+        <form method="POST" action="/">
+
+          <div class="form-field">
+            <label for="usuario">Usuário</label>
+            <div class="input-wrapper">
+              <i class="fas fa-user input-icon"></i>
+              <input type="text" id="usuario" name="usuario"
+                     placeholder="Digite seu usuário" required autocomplete="username">
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label for="senha">Senha</label>
+            <div class="input-wrapper">
+              <i class="fas fa-lock input-icon"></i>
+              <input type="password" id="senha" name="senha"
+                     placeholder="Digite sua senha" required autocomplete="current-password">
+            </div>
+          </div>
+
+          <button type="submit" class="btn-login">
+            <i class="fas fa-sign-in-alt"></i> Entrar
+          </button>
+
+        </form>
+
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            <div class="mensagem-erro">
+              {% for message in messages %}
+                <p>{{ message }}</p>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        <div class="login-card-footer">
+          Desenvolvido by Gabriel Nicolas
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
 </body>
 </html>

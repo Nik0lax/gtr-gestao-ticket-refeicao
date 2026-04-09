@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cardápio de Hoje — GTR</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Poppins', sans-serif; background: #f0f4f7; color: #1e2d3a; min-height: 100vh; }
+    .topo { background: linear-gradient(135deg, #1a5f78 0%, #217d9d 100%); padding: 22px 24px 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.15); }
+    .topo-marca { display: flex; align-items: center; gap: 14px; }
+    .topo-icone { width: 46px; height: 46px; background: rgba(255,255,255,0.18); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 20px; }
+    .topo-texto h1 { color: #fff; font-size: 20px; font-weight: 700; letter-spacing: 0.3px; line-height: 1.2; }
+    .topo-texto p { color: rgba(255,255,255,0.65); font-size: 12px; margin-top: 2px; }
+    .topo-hora { background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.22); border-radius: 20px; padding: 5px 14px; color: rgba(255,255,255,0.88); font-size: 12px; white-space: nowrap; }
+    .container { max-width: 1000px; margin: 0 auto; padding: 32px 16px 56px; }
+    .dia-header { display: flex; align-items: center; gap: 14px; margin-bottom: 28px; }
+    .dia-icone { width: 44px; height: 44px; background: #217d9d; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 18px; flex-shrink: 0; }
+    .dia-titulo { font-size: 18px; font-weight: 700; color: #1a5f78; text-transform: capitalize; }
+    .dia-subtitulo { font-size: 13px; color: #7a9baa; margin-top: 2px; }
+    .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px; }
+    .card { background: #fff; border-radius: 18px; overflow: hidden; border: 1px solid #e2ecf1; display: flex; flex-direction: column; transition: box-shadow 0.25s, transform 0.25s; }
+    .card:hover { box-shadow: 0 10px 32px rgba(33,125,157,0.15); transform: translateY(-3px); }
+    .card-foto-wrapper { position: relative; height: 200px; overflow: hidden; background: #d4edf5; }
+    .card-foto { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.4s ease; }
+    .card:hover .card-foto { transform: scale(1.05); }
+    .card-tag { position: absolute; bottom: 12px; left: 14px; display: inline-flex; align-items: center; gap: 6px; padding: 5px 13px; border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
+    .tag-cafe    { background: rgba(255,243,205,0.94); color: #7a5600; }
+    .tag-almoco  { background: rgba(209,231,221,0.94); color: #0a4128; }
+    .tag-jantar  { background: rgba(207,226,255,0.94); color: #073180; }
+    .tag-lanche  { background: rgba(248,215,218,0.94); color: #6b1722; }
+    .tag-default { background: rgba(226,226,226,0.94); color: #3a3a3a; }
+    .card-foto-placeholder { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: linear-gradient(145deg, #d8eef5, #b8dce8); gap: 10px; }
+    .card-foto-placeholder i { font-size: 38px; color: #6aafca; }
+    .card-foto-placeholder span { font-size: 12px; color: #5494aa; }
+    .card-corpo { padding: 18px 20px 22px; flex: 1; display: flex; flex-direction: column; gap: 12px; }
+    .card-titulo { font-size: 13px; font-weight: 600; color: #41c8b0; text-transform: uppercase; letter-spacing: 0.5px; }
+    .itens-lista { list-style: none; display: flex; flex-direction: column; gap: 7px; }
+    .itens-lista li { display: flex; align-items: flex-start; gap: 9px; font-size: 14px; color: #2e4a57; line-height: 1.45; }
+    .item-bullet { width: 7px; height: 7px; border-radius: 50%; background: #41c8b0; flex-shrink: 0; margin-top: 5px; }
+    .card-descricao-texto { font-size: 14px; color: #4a6a78; line-height: 1.65; }
+    .sem-cardapio { text-align: center; padding: 80px 20px; }
+    .sem-cardapio-icone { width: 80px; height: 80px; border-radius: 50%; background: #d8eef5; display: flex; align-items: center; justify-content: center; margin: 0 auto 22px; font-size: 30px; color: #6aafca; }
+    .sem-cardapio h2 { font-size: 19px; color: #5a7a88; font-weight: 600; }
+    .sem-cardapio p { margin-top: 8px; font-size: 14px; color: #93b0bb; }
+    footer { border-top: 1px solid #dde8ed; padding: 20px 24px; text-align: center; font-size: 13px; color: #93b0bb; }
+    footer a { color: #217d9d; text-decoration: none; font-weight: 500; }
+    footer a:hover { text-decoration: underline; }
+    @media (max-width: 480px) { .cards-grid { grid-template-columns: 1fr; } .topo-hora { display: none; } .topo-texto h1 { font-size: 17px; } }
+  </style>
+</head>
+<body>
+
+  <header class="topo">
+    <div class="topo-marca">
+      <div class="topo-icone"><i class="fas fa-utensils"></i></div>
+      <div class="topo-texto">
+        <h1>Cardápio de Hoje</h1>
+        <p>Gestão de Ticket Refeição — GTR</p>
+      </div>
+    </div>
+    <div class="topo-hora">
+      <i class="fas fa-clock"></i> {{ agora }}
+    </div>
+  </header>
+
+  <div class="container">
+
+    {% if not cardapios_hoje %}
+      <div class="sem-cardapio">
+        <div class="sem-cardapio-icone"><i class="fas fa-clipboard-list"></i></div>
+        <h2>Nenhum cardápio disponível para hoje</h2>
+        <p>Em breve o cardápio será atualizado pela equipe.</p>
+      </div>
+
+    {% else %}
+      <div class="dia-header">
+        <div class="dia-icone"><i class="fas fa-calendar-day"></i></div>
+        <div>
+          <div class="dia-titulo">{{ dia_fmt }}</div>
+          <div class="dia-subtitulo">{{ cardapios_hoje | length }} refeição(ões) disponível(is)</div>
+        </div>
+      </div>
+
+      <div class="cards-grid">
+        {% for c in cardapios_hoje %}
+          <div class="card">
+            <div class="card-foto-wrapper">
+              {% if c['foto'] %}
+                <img class="card-foto"
+                     src="{{ url_for('static', filename='uploads/cardapio/' + c['foto']) }}"
+                     alt="{{ c['tipo_refeicao'] }}">
+              {% else %}
+                <div class="card-foto-placeholder">
+                  <i class="fas fa-bowl-food"></i>
+                  <span>sem foto</span>
+                </div>
+              {% endif %}
+              {% set tipo_lower = c['tipo_refeicao']|lower %}
+              {% if 'caf' in tipo_lower %}
+                <span class="card-tag tag-cafe"><i class="fas fa-mug-hot" style="font-size:11px;"></i>{{ c['tipo_refeicao'] }}</span>
+              {% elif 'almo' in tipo_lower %}
+                <span class="card-tag tag-almoco"><i class="fas fa-sun" style="font-size:11px;"></i>{{ c['tipo_refeicao'] }}</span>
+              {% elif 'jant' in tipo_lower %}
+                <span class="card-tag tag-jantar"><i class="fas fa-moon" style="font-size:11px;"></i>{{ c['tipo_refeicao'] }}</span>
+              {% elif 'lanch' in tipo_lower %}
+                <span class="card-tag tag-lanche"><i class="fas fa-cookie-bite" style="font-size:11px;"></i>{{ c['tipo_refeicao'] }}</span>
+              {% else %}
+                <span class="card-tag tag-default"><i class="fas fa-utensils" style="font-size:11px;"></i>{{ c['tipo_refeicao'] }}</span>
+              {% endif %}
+            </div>
+            <div class="card-corpo">
+              <p class="card-titulo">O que tem hoje?</p>
+              {% set linhas = c['descricao'].split('\n') %}
+              {% set linhas_validas = linhas | select | list %}
+              {% if linhas_validas | length > 1 %}
+                <ul class="itens-lista">
+                  {% for linha in linhas_validas %}
+                    <li><span class="item-bullet"></span>{{ linha.strip() }}</li>
+                  {% endfor %}
+                </ul>
+              {% else %}
+                <p class="card-descricao-texto">{{ c['descricao'] }}</p>
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+  </div>
+
+  <footer>
+    GTR — Gestão de Ticket Refeição &nbsp;|&nbsp;
+    <a href="/">Acessar o sistema</a>
+  </footer>
+
+</body>
+</html>

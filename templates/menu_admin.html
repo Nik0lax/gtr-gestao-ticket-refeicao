@@ -24,337 +24,942 @@
 
   <div class="container">
     <aside class="sidebar">
-      <a href="{{ url_for('admin') }}">
+      <a href="{{ url_for('admin') }}" class="sidebar-brand">
         <h1>GTR</h1>
         <p class="subtitulo">GESTÃO DE TICKET REFEIÇÃO</p>
       </a>
 
       <nav class="menu">
-        <a href="{{ url_for('cadastro') }}">
-          <i class="fas fa-user-plus"></i> Cadastro Colaborador
+
+        <!-- CADASTRO -->
+        <a href="#" class="menu-group-toggle {% if module in ['cadastro','cadastro_usuario','departamentos'] %}active{% endif %}" id="menu-cadastro">
+          <i class="fas fa-folder-open"></i> Cadastro
+          <i class="fas fa-chevron-down arrow"></i>
         </a>
-        <a href="{{ url_for('cadastro_usuario') }}">
-          <i class="fas fa-user-plus"></i> Cadastro Usuário
+        <ul class="submenu {% if module in ['cadastro','cadastro_usuario','departamentos'] %}open{% endif %}" id="submenu-cadastro">
+          <li>
+            <a href="{{ url_for('cadastro') }}" class="{% if module == 'cadastro' %}active-item{% endif %}">
+              <i class="fas fa-user-plus"></i> Colaboradores
+            </a>
+          </li>
+          <li>
+            <a href="{{ url_for('cadastro_usuario') }}" class="{% if module == 'cadastro_usuario' %}active-item{% endif %}">
+              <i class="fas fa-user-cog"></i> Usuários
+            </a>
+          </li>
+          <li>
+            <a href="{{ url_for('departamentos') }}" class="{% if module == 'departamentos' %}active-item{% endif %}">
+              <i class="fas fa-building"></i> Departamentos
+            </a>
+          </li>
+        </ul>
+
+        <!-- CARDÁPIO -->
+        <a href="#" class="menu-group-toggle {% if module in ['cardapio_lista','cardapio_novo','cardapio_editar'] %}active{% endif %}" id="menu-cardapio">
+          <i class="fas fa-utensils"></i> Cardápio
+          <i class="fas fa-chevron-down arrow"></i>
         </a>
-        <a href="#" id="menu-relatorios">
+        <ul class="submenu {% if module in ['cardapio_lista','cardapio_novo','cardapio_editar'] %}open{% endif %}" id="submenu-cardapio">
+          <li>
+            <a href="{{ url_for('cardapio_admin') }}" class="{% if module == 'cardapio_lista' %}active-item{% endif %}">
+              <i class="fas fa-list-alt"></i> Gerenciar
+            </a>
+          </li>
+          <li>
+            <a href="{{ url_for('cardapio_novo') }}" class="{% if module == 'cardapio_novo' %}active-item{% endif %}">
+              <i class="fas fa-plus-circle"></i> Novo Cardápio
+            </a>
+          </li>
+          <li>
+            <a href="{{ url_for('cardapio_publico') }}" target="_blank">
+              <i class="fas fa-eye"></i> Ver Página Pública
+            </a>
+          </li>
+        </ul>
+
+        <!-- RELATÓRIOS -->
+        {% set rel_modules = ['relatorio_totalEmissao','relatorio_emissaoDiaria','relatorio_totalVisitantes','relatorio_totalDepartamento','relatorio_cardapio'] %}
+        <a href="#" class="menu-group-toggle {% if modulo in rel_modules %}active{% endif %}" id="menu-relatorios">
           <i class="fas fa-chart-bar"></i> Relatórios
           <i class="fas fa-chevron-down arrow"></i>
         </a>
-        <ul id="submenu-relatorios" style="display: none;">
-          <li><a href="{{ url_for('relatorio_totalEmissao') }}">Total de Senhas Emitidas</a></li>
-          <li><a href="{{ url_for('relatorio_emissaoDiaria') }}">Relação de Emissões Diárias</a></li>
-          <li><a href="{{ url_for('relatorio_totalVisitantes') }}">Total por Tipo de Visitantes</a></li>
-          <li><a href="{{ url_for('relatorio_totalDepartamento') }}">Total por Departamento</a></li>
+        <ul class="submenu {% if modulo in rel_modules %}open{% endif %}" id="submenu-relatorios">
+          <li>
+            <a href="{{ url_for('relatorio_totalEmissao') }}" class="{% if modulo == 'relatorio_totalEmissao' %}active-item{% endif %}">
+              <i class="fas fa-ticket-alt"></i> Total de Senhas
+            </a>
+          </li>
+          <li>
+            <a href="{{ url_for('relatorio_emissaoDiaria') }}" class="{% if modulo == 'relatorio_emissaoDiaria' %}active-item{% endif %}">
+              <i class="fas fa-calendar-day"></i> Senhas por Período
+            </a>
+          </li>
+          <li>
+            <a href="{{ url_for('relatorio_totalVisitantes') }}" class="{% if modulo == 'relatorio_totalVisitantes' %}active-item{% endif %}">
+              <i class="fas fa-user-friends"></i> Total de Visitantes
+            </a>
+          </li>
+          <li>
+            <a href="{{ url_for('relatorio_totalDepartamento') }}" class="{% if modulo == 'relatorio_totalDepartamento' %}active-item{% endif %}">
+              <i class="fas fa-sitemap"></i> Por Departamento
+            </a>
+          </li>
+          <li>
+            <a href="{{ url_for('relatorio_cardapio') }}" class="{% if modulo == 'relatorio_cardapio' %}active-item{% endif %}">
+              <i class="fas fa-utensils"></i> Emissões com Cardápio
+            </a>
+          </li>
         </ul>
+
+        <!-- CONFIGURAÇÕES -->
+        <a href="#" class="menu-group-toggle {% if module in ['config_localizacoes', 'config_emissao_senha'] %}active{% endif %}" id="menu-config">
+          <i class="fas fa-cog"></i> Configurações
+          <i class="fas fa-chevron-down arrow"></i>
+        </a>
+        <ul class="submenu {% if module in ['config_localizacoes', 'config_emissao_senha'] %}open{% endif %}" id="submenu-config">
+          <li>
+            <a href="{{ url_for('config_localizacoes') }}" class="{% if module == 'config_localizacoes' %}active-item{% endif %}">
+              <i class="fas fa-map-marker-alt"></i> Localizações
+            </a>
+          </li>
+          <li>
+            <a href="{{ url_for('config_emissao_senha') }}" class="{% if module == 'config_emissao_senha' %}active-item{% endif %}">
+              <i class="fas fa-ticket-alt"></i> Emissão de Senha
+            </a>
+          </li>
+        </ul>
+
       </nav>
     </aside>
 
     <main class="main-content">
-      {% if module == 'cadastro' %}
-        <div id="cadastro-content">
-          <h2>Cadastro de Colaborador</h2>
-          {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-              <div class="flash-container" id="flash-container">
-                {% for category, message in messages %}
-                  <div class="flash-message {{ category }}">{{ message }}</div>
-                {% endfor %}
+
+      <!-- DASHBOARD -->
+      {% if not module and not modulo %}
+        <div class="intro-content">
+
+          <!-- Saudação -->
+          <div class="dash-header">
+            <div>
+              <h2>Painel Administrativo</h2>
+              <p class="dash-sub">Visão geral do sistema · GTR</p>
+            </div>
+          </div>
+
+          <!-- KPI Cards -->
+          <div class="kpi-grid">
+            <div class="kpi-card kpi-blue">
+              <div class="kpi-icon"><i class="fas fa-ticket-alt"></i></div>
+              <div class="kpi-info">
+                <span class="kpi-label">Senhas Hoje</span>
+                <span class="kpi-value">{{ dashboard_data.total_hoje }}</span>
               </div>
-            {% endif %}
+            </div>
+            <div class="kpi-card kpi-teal">
+              <div class="kpi-icon"><i class="fas fa-calendar-alt"></i></div>
+              <div class="kpi-info">
+                <span class="kpi-label">Senhas no Mês</span>
+                <span class="kpi-value">{{ dashboard_data.total_senhas }}</span>
+              </div>
+            </div>
+            <div class="kpi-card kpi-green">
+              <div class="kpi-icon"><i class="fas fa-users"></i></div>
+              <div class="kpi-info">
+                <span class="kpi-label">Colaboradores</span>
+                <span class="kpi-value">{{ dashboard_data.total_colaboradores }}</span>
+              </div>
+            </div>
+            <div class="kpi-card kpi-purple">
+              <div class="kpi-icon"><i class="fas fa-building"></i></div>
+              <div class="kpi-info">
+                <span class="kpi-label">Departamentos</span>
+                <span class="kpi-value">{{ dashboard_data.total_departamentos }}</span>
+              </div>
+            </div>
+            <div class="kpi-card kpi-orange">
+              <div class="kpi-icon"><i class="fas fa-clock"></i></div>
+              <div class="kpi-info">
+                <span class="kpi-label">Última Emissão</span>
+                <span class="kpi-value kpi-small">{{ dashboard_data.ultima_emissao }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Gráficos -->
+          <div class="charts-grid">
+            <div class="chart-card">
+              <div class="chart-title"><i class="fas fa-chart-bar"></i> Emissões — Últimos 7 dias</div>
+              <div class="chart-wrap">
+                <canvas id="chartBarras"></canvas>
+              </div>
+            </div>
+            <div class="chart-card">
+              <div class="chart-title"><i class="fas fa-chart-pie"></i> Top Departamentos (mês)</div>
+              <div class="chart-wrap chart-wrap-pizza">
+                <canvas id="chartPizza"></canvas>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Chart.js data injection -->
+        <script>
+          const dashLabels7 = {{ dashboard_data.labels_7dias | tojson }};
+          const dashValores7 = {{ dashboard_data.valores_7dias | tojson }};
+          const dashLabelsDeps = {{ dashboard_data.labels_deps | tojson }};
+          const dashValoresDeps = {{ dashboard_data.valores_deps | tojson }};
+        </script>
+
+      <!-- CADASTRO COLABORADOR -->
+      {% elif module == 'cadastro' %}
+        <div id="cadastro-content">
+          <div class="card-box"><h2><i class="fas fa-user-plus"></i> Cadastro de Colaborador</h2>
+          {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}<div class="flash-container" id="flash-container">
+              {% for category, message in messages %}<div class="flash-message {{ category }}">{{ message }}</div>{% endfor %}
+            </div>{% endif %}
           {% endwith %}
           <form method="POST" action="{{ url_for('cadastro') }}" onsubmit="return validarFormulario()" class="form-grid">
             <div class="form-group">
               <label for="nome">Nome:</label>
               <input type="text" id="nome" name="nome" required>
             </div>
-          
             <div class="form-group">
               <label for="cpf">CPF:</label>
               <input type="text" id="cpf" name="cpf" required maxlength="14" oninput="formatarEValidarCPF(this)">
-              <small id="cpf-feedback" style="font-size: 12px; color: red;"></small>
+              <small id="cpf-feedback"></small>
             </div>
-          
             <div class="form-group">
               <label for="cargo">Cargo:</label>
               <input type="text" id="cargo" name="cargo" required>
             </div>
-          
             <div class="form-group">
               <label for="departamento">Departamento:</label>
               <select id="departamento" name="departamento" required>
                 <option value="" disabled selected>Selecione o departamento</option>
-                {% for d in departamentos %}
-                  <option value="{{ d }}">{{ d }}</option>
-                {% endfor %}
+                {% for d in departamentos %}<option value="{{ d }}">{{ d }}</option>{% endfor %}
               </select>
             </div>
-          
             <div class="form-group">
-              <label for="tipo">Tipo:</label>
+              <label for="tipo">Refeições/dia:</label>
               <select id="tipo" name="tipo" required>
-                <option value="" disabled selected>Selecione a quantidade de refeições pode emitir por dia</option>
-                <option value="1">1</option>
-                <option value="2">2</option>
-                <option value="3">3</option>
-                <option value="4">4</option>
+                <option value="" disabled selected>Selecione</option>
+                <option value="1">1</option><option value="2">2</option>
+                <option value="3">3</option><option value="4">4</option>
               </select>
             </div>
-          
             <div class="form-actions">
-              <button type="submit" id="btn-enviar">Cadastrar</button>
+              <button type="submit" id="btn-enviar"><i class="fas fa-save"></i> Cadastrar</button>
             </div>
           </form>
-          <div class="lista_colaboradores">
-            <h3>Lista de Colaboradores</h3>
-
-            <form method="GET" class="form-grid" action="{{ url_for('cadastro') }}">
-              <div class="form-group">
-                <input type="text" name="search" id="search" placeholder="Insira o Nome ou o CPF para buscar" class="search-input">
+          </div><!-- /card-box -->
+          <div class="card-box"><h3><i class="fas fa-users"></i> Lista de Colaboradores</h3>
+            <form method="GET" style="display:flex;gap:10px;align-items:flex-end;max-width:480px;" action="{{ url_for('cadastro') }}">
+              <div class="form-group" style="flex:1;">
+                <label>Buscar</label>
+                <input type="text" name="search" placeholder="Nome ou CPF" value="{{ search or '' }}">
               </div>
-              <div class="form-actions">
-                <button type="submit" id="btn-enviar">Buscar</button>
-              </div>
-              
+              <button type="submit" id="btn-enviar" style="flex-shrink:0;"><i class="fas fa-search"></i> Buscar</button>
             </form>
-          <table>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Nome</th>
-                <th>CPF</th>
-                <th>Cargo</th>
-                <th>Departamento</th>
-                <th>Quantidade de Refeições/dia</th>
-                <th>Ação</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% if colaboradores %}
-                {% for colaborador in colaboradores %}
+            <table>
+              <thead><tr><th>ID</th><th>Nome</th><th>CPF</th><th>Cargo</th><th>Departamento</th><th>Ref./dia</th><th>Ação</th></tr></thead>
+              <tbody>
+                {% if colaboradores %}{% for c in colaboradores %}
                   <tr>
-                    <td>{{ colaborador[0] }}</td> <!-- ID -->
-                    <td>{{ colaborador[1] }}</td> <!-- Nome -->
-                    <td>{{ colaborador[2] }}</td> <!-- CPF -->
-                    <td>{{ colaborador[3] }}</td> <!-- Cargo -->
-                    <td>{{ colaborador[4] }}</td> <!-- Departamento -->
-                    <td>{{ colaborador[5] }}</td> <!-- Tipo -->
+                    <td>{{ c[0] }}</td><td>{{ c[1] }}</td><td>{{ c[2] }}</td>
+                    <td>{{ c[3] }}</td><td>{{ c[4] }}</td><td>{{ c[5] }}</td>
                     <td>
-                      <form method="POST" id="form_excluir" action="{{ url_for('excluir_colaborador', colaborador_id=colaborador[0]) }}" onsubmit="return confirm('Tem certeza que deseja excluir este colaborador?');">
+                      <form method="POST" id="form_excluir" action="{{ url_for('excluir_colaborador', colaborador_id=c[0]) }}" onsubmit="return confirm('Excluir este colaborador?');">
                         <button type="submit" id="btn-excluir">✖</button>
                       </form>
                     </td>
                   </tr>
-                {% endfor %}
-              {% else %}
-                <tr>
-                  <td colspan="7">Nenhum colaborador encontrado.</td>
-                </tr>
-              {% endif %}
-            </tbody>
-          </table>
+                {% endfor %}{% else %}
+                  <tr><td colspan="7">Nenhum colaborador encontrado.</td></tr>
+                {% endif %}
+              </tbody>
+            </table>
           </div>
-          
-
           <div class="pagination">
-            {% if page > 1 %}
-              <a href="{{ url_for('cadastro', page=page-1) }}">&laquo; Anterior</a>
-            {% endif %}
-
+            {% if page > 1 %}<a href="{{ url_for('cadastro', page=page-1) }}">&laquo; Anterior</a>{% endif %}
             Página {{ page }} de {{ total_pages }}
-
-            {% if page < total_pages %}
-              <a href="{{ url_for('cadastro', page=page+1) }}">Próxima &raquo;</a>
-            {% endif %}
+            {% if page < total_pages %}<a href="{{ url_for('cadastro', page=page+1) }}">Próxima &raquo;</a>{% endif %}
           </div>
         </div>
-        
-        {% elif module == 'cadastro_usuario' %}
+
+      <!-- CADASTRO USUÁRIO -->
+      {% elif module == 'cadastro_usuario' %}
         <div id="cadastro-usuario-content">
-          <h2>Cadastro de Usuário</h2>
+          <div class="card-box"><h2><i class="fas fa-user-cog"></i> Cadastro de Usuário</h2>
           {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-              <div class="flash-container" id="flash-container">
-                {% for category, message in messages %}
-                  <div class="flash-message {{ category }}">{{ message }}</div>
-                {% endfor %}
-              </div>
-            {% endif %}
+            {% if messages %}<div class="flash-container" id="flash-container">
+              {% for category, message in messages %}<div class="flash-message {{ category }}">{{ message }}</div>{% endfor %}
+            </div>{% endif %}
           {% endwith %}
-
           <form method="POST" action="{{ url_for('cadastro_usuario') }}" class="form-grid">
+            <div class="form-group"><label>Nome:</label><input type="text" name="nome" required></div>
+            <div class="form-group"><label>Usuário:</label><input type="text" name="usuario" required></div>
+            <div class="form-group"><label>Senha:</label><input type="password" name="senha" required></div>
             <div class="form-group">
-              <label for="nome">Nome:</label>
-              <input type="text" id="nome" name="nome" required>
-            </div>
-
-            <div class="form-group">
-              <label for="usuario">Usuário:</label>
-              <input type="text" id="usuario" name="usuario" required>
-            </div>
-
-            <div class="form-group">
-              <label for="senha">Senha:</label>
-              <input type="password" id="senha" name="senha" required>
-            </div>
-
-            <div class="form-group">
-              <label for="perfil">Perfil:</label>
-              <select id="perfil" name="perfil" required>
-                <option value="" disabled selected>Selecione o perfil</option>
+              <label>Perfil:</label>
+              <select name="perfil" required>
+                <option value="" disabled selected>Selecione</option>
                 <option value="admin">Administrador</option>
                 <option value="usuario">Usuário</option>
                 <option value="totem_desktop">Totem Desktop</option>
                 <option value="totem_tablet">Totem Tablet</option>
               </select>
             </div>
-
-            <div class="form-actions">
-              <button type="submit" id="btn-enviar">Cadastrar</button>
-            </div>
+            <div class="form-actions" style="grid-column:span 3;"><button type="submit" id="btn-enviar">Cadastrar</button></div>
           </form>
-
-          <div class="lista_usuarios">
-            <h3>Lista de Usuários</h3>
+          </div><!-- /card-box -->
+          <div class="card-box"><h3><i class="fas fa-list"></i> Lista de Usuários</h3>
             <table>
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Nome</th>
-                  <th>Usuário</th>
-                  <th>Perfil</th>
-                  <th>Ação</th>
-                </tr>
-              </thead>
+              <thead><tr><th>ID</th><th>Nome</th><th>Usuário</th><th>Perfil</th><th>Ação</th></tr></thead>
               <tbody>
-                {% if usuarios %}
-                  {% for u in usuarios %}
-                    <tr>
-                      <td>{{ u[0] }}</td> <!-- ID -->
-                      <td>{{ u[1] }}</td> <!-- Nome -->
-                      <td>{{ u[2] }}</td> <!-- Usuário -->
-                      <td>{{ u[3] }}</td> <!-- Perfil -->
-                      <td>
-                        <form method="POST" id="form_excluir" action="{{ url_for('excluir_usuario', usuario_id=u[0]) }}" onsubmit="return confirm('Tem certeza que deseja excluir este usuário?');">
-                          <button type="submit" id="btn-excluir">✖</button>
-                        </form>
-                      </td>
-                    </tr>
-                  {% endfor %}
-                {% else %}
+                {% if usuarios %}{% for u in usuarios %}
                   <tr>
-                    <td colspan="4">Nenhum usuário encontrado.</td>
+                    <td>{{ u[0] }}</td><td>{{ u[1] }}</td><td>{{ u[2] }}</td><td>{{ u[3] }}</td>
+                    <td>
+                      <form method="POST" id="form_excluir" action="{{ url_for('excluir_usuario', usuario_id=u[0]) }}" onsubmit="return confirm('Excluir este usuário?');">
+                        <button type="submit" id="btn-excluir">✖</button>
+                      </form>
+                    </td>
                   </tr>
+                {% endfor %}{% else %}
+                  <tr><td colspan="5">Nenhum usuário encontrado.</td></tr>
                 {% endif %}
               </tbody>
             </table>
           </div>
         </div>
 
-        
+      <!-- DEPARTAMENTOS -->
+      {% elif module == 'departamentos' %}
+        <div id="departamentos-content">
+          <div class="card-box"><h2><i class="fas fa-building"></i> Departamentos</h2>
+          {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}<div class="flash-container" id="flash-container">
+              {% for category, message in messages %}<div class="flash-message {{ category }}">{{ message }}</div>{% endfor %}
+            </div>{% endif %}
+          {% endwith %}
+          <form method="POST" action="{{ url_for('departamentos') }}" class="form-grid">
+            <div class="form-group"><label>Nome do Departamento</label><input type="text" name="nome" required placeholder="Ex: Tecnologia da Informação"></div>
+            <div class="form-actions" style="grid-column:span 3;"><button type="submit" id="btn-enviar"><i class="fas fa-plus"></i> Adicionar</button></div>
+          </form>
+          </div><!-- /card-box -->
+          <div class="card-box"><h3><i class="fas fa-list"></i> Lista de Departamentos</h3>
+            <form method="GET" style="display:flex;gap:10px;align-items:flex-end;max-width:440px;" action="{{ url_for('departamentos') }}">
+              <div class="form-group" style="flex:1;">
+                <label>Buscar</label>
+                <input type="text" name="search" placeholder="Nome do departamento" value="{{ search or '' }}">
+              </div>
+              <button type="submit" id="btn-enviar" style="flex-shrink:0;"><i class="fas fa-search"></i> Buscar</button>
+            </form>
+            <table>
+              <thead><tr><th>ID</th><th>Nome</th><th>Colaboradores</th><th>Ação</th></tr></thead>
+              <tbody>
+                {% if lista_departamentos %}{% for dep in lista_departamentos %}
+                  <tr>
+                    <td>{{ dep[0] }}</td>
+                    <td>{{ dep[1] }}</td>
+                    <td>{{ dep[2] }}</td>
+                    <td style="display:flex;gap:6px;">
+                      <button type="button" class="btn-edit"
+                              onclick="abrirModalDep({{ dep[0] }}, '{{ dep[1]|e }}')"
+                              title="Editar departamento">
+                        <i class="fas fa-edit"></i>
+                      </button>
+                      <form method="POST" action="{{ url_for('excluir_departamento', dep_id=dep[0]) }}" onsubmit="return confirm('Excluir o departamento &quot;{{ dep[1]|e }}&quot;?');" style="background:none;box-shadow:none;padding:0;margin:0;">
+                        <button type="submit" id="btn-excluir" title="Excluir">✖</button>
+                      </form>
+                    </td>
+                  </tr>
+                {% endfor %}{% else %}
+                  <tr><td colspan="4">Nenhum departamento encontrado.</td></tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      <!-- CARDÁPIO — LISTA -->
+      {% elif module == 'cardapio_lista' %}
+        <div id="cardapio-content">
+          <div class="card-box">
+          <div class="page-header">
+            <h2><i class="fas fa-utensils"></i> Gerenciar Cardápios</h2>
+            <a href="{{ url_for('cardapio_novo') }}" class="btn-action"><i class="fas fa-plus"></i> Novo</a>
+          </div>
+          {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}<div class="flash-container" id="flash-container">
+              {% for category, message in messages %}<div class="flash-message {{ category }}">{{ message }}</div>{% endfor %}
+            </div>{% endif %}
+          {% endwith %}
+          <table>
+            <thead>
+              <tr><th>Data</th><th>Refeição</th><th>Descrição</th><th>Foto</th><th>Status</th><th>Ações</th></tr>
+            </thead>
+            <tbody>
+              {% if cardapios %}{% for c in cardapios %}
+                <tr>
+                  <td>{{ c[1].strftime('%d/%m/%Y') if c[1] else '-' }}</td>
+                  <td><span class="badge-refeicao">{{ c[2] }}</span></td>
+                  <td style="max-width:260px;font-size:13px;">{{ c[3][:70] }}{% if c[3]|length > 70 %}…{% endif %}</td>
+                  <td>
+                    {% if c[4] %}
+                      <img src="{{ url_for('static', filename='uploads/cardapio/' + c[4]) }}" style="width:44px;height:44px;object-fit:cover;border-radius:6px;">
+                    {% else %}<span style="color:#aaa;font-size:12px;">—</span>{% endif %}
+                  </td>
+                  <td>
+                    <form method="POST" action="{{ url_for('cardapio_toggle', cardapio_id=c[0]) }}" style="background:none;box-shadow:none;padding:0;margin:0;">
+                      <button type="submit" class="badge-status {% if c[5] %}ativo{% else %}inativo{% endif %}">
+                        {{ 'Ativo' if c[5] else 'Inativo' }}
+                      </button>
+                    </form>
+                  </td>
+                  <td style="display:flex;gap:6px;">
+                    <a href="{{ url_for('cardapio_editar', cardapio_id=c[0]) }}" class="btn-edit"><i class="fas fa-edit"></i></a>
+                    <form method="POST" action="{{ url_for('cardapio_excluir', cardapio_id=c[0]) }}" onsubmit="return confirm('Excluir cardápio?');" style="background:none;box-shadow:none;padding:0;margin:0;">
+                      <button type="submit" id="btn-excluir">✖</button>
+                    </form>
+                  </td>
+                </tr>
+              {% endfor %}{% else %}
+                <tr><td colspan="6" style="text-align:center;color:#888;padding:20px;">Nenhum cardápio cadastrado.</td></tr>
+              {% endif %}
+            </tbody>
+          </table>
+          </div><!-- /card-box -->
+        </div>
+
+      <!-- CARDÁPIO — NOVO / EDITAR -->
+      {% elif module in ['cardapio_novo', 'cardapio_editar'] %}
+        <div id="cardapio-form-content">
+          <div class="card-box"><h2><i class="fas fa-utensils"></i> {{ 'Editar Cardápio' if module == 'cardapio_editar' else 'Novo Cardápio' }}</h2>
+          {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}<div class="flash-container" id="flash-container">
+              {% for category, message in messages %}<div class="flash-message {{ category }}">{{ message }}</div>{% endfor %}
+            </div>{% endif %}
+          {% endwith %}
+          <form method="POST"
+                action="{{ url_for('cardapio_salvar', cardapio_id=cardapio_edit[0]) if module == 'cardapio_editar' else url_for('cardapio_salvar') }}"
+                enctype="multipart/form-data"
+                class="form-grid">
+            <div class="form-group">
+              <label>Data:</label>
+              <input type="date" name="data_cardapio" required
+                     value="{{ cardapio_edit[1].strftime('%Y-%m-%d') if module == 'cardapio_editar' and cardapio_edit[1] else '' }}">
+            </div>
+            <div class="form-group">
+              <label>Tipo de Refeição:</label>
+              <select name="tipo_refeicao" required>
+                <option value="" disabled {% if module != 'cardapio_editar' %}selected{% endif %}>Selecione</option>
+                {% for tipo in ['Café da Manhã', 'Almoço', 'Jantar', 'Lanche'] %}
+                  <option value="{{ tipo }}" {% if module == 'cardapio_editar' and cardapio_edit[2] == tipo %}selected{% endif %}>{{ tipo }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Status:</label>
+              <select name="ativo">
+                <option value="1" {% if module != 'cardapio_editar' or cardapio_edit[5] %}selected{% endif %}>Ativo</option>
+                <option value="0" {% if module == 'cardapio_editar' and not cardapio_edit[5] %}selected{% endif %}>Inativo</option>
+              </select>
+            </div>
+            <div class="form-group span-3">
+              <label>Descrição do Cardápio:</label>
+              <textarea name="descricao" rows="5" required>{{ cardapio_edit[3] if module == 'cardapio_editar' else '' }}</textarea>
+              <small style="color:#888;margin-top:4px;">Ex.: Arroz, feijão, frango grelhado, salada de alface...</small>
+            </div>
+            <div class="form-group span-3">
+              <label>Foto do Cardápio: <small>(opcional — JPG/PNG, máx. 5MB)</small></label>
+              <input type="file" name="foto" accept="image/jpeg,image/png,image/webp">
+              {% if module == 'cardapio_editar' and cardapio_edit[4] %}
+                <div class="foto-preview">
+                  <img src="{{ url_for('static', filename='uploads/cardapio/' + cardapio_edit[4]) }}" alt="foto atual">
+                  <small>Foto atual. Selecione uma nova para substituir.</small>
+                </div>
+              {% endif %}
+            </div>
+            <div class="form-actions span-3">
+              <a href="{{ url_for('cardapio_admin') }}" class="btn-cancelar">Cancelar</a>
+              <button type="submit" id="btn-enviar">
+                {{ 'Salvar Alterações' if module == 'cardapio_editar' else 'Cadastrar Cardápio' }}
+              </button>
+            </div>
+          </form>
+          </div><!-- /card-box -->
+        </div>
+
+      <!-- RELATÓRIOS -->
       {% elif modulo == 'relatorio_totalEmissao' %}
         <div class="relatorios-content">
-          <h2>Total de Senhas Emitidas</h2>
-          <form method="POST" action="{{ url_for('relatorio_totalEmissao') }}">
-            <label for="data_inicial">Data Inicial:</label>
-            <input type="date" name="data_inicial" required>
-            
-            <label for="data_final">Data Final:</label>
-            <input type="date" name="data_final" required>
-        
-            <button type="submit" id="btn-enviar">Exportar em PDF</button>
-          </form>
+          <h2><i class="fas fa-ticket-alt"></i> Total de Senhas Emitidas</h2>
+          <div class="relatorio-form-card">
+            <form method="POST" action="{{ url_for('relatorio_totalEmissao') }}" class="form-grid" style="grid-template-columns:1fr 1fr;">
+              <div class="form-group">
+                <label>Data Inicial</label>
+                <input type="date" name="data_inicial" required>
+              </div>
+              <div class="form-group">
+                <label>Data Final</label>
+                <input type="date" name="data_final" required>
+              </div>
+              <div class="form-actions" style="grid-column:span 2;">
+                <button type="submit" id="btn-enviar"><i class="fas fa-file-pdf"></i> Exportar em PDF</button>
+              </div>
+            </form>
+          </div>
         </div>
 
       {% elif modulo == 'relatorio_emissaoDiaria' %}
         <div class="relatorios-content">
-          <h2>Relação de Emissões Diárias</h2>
-          <form method="POST" action="{{ url_for('relatorio_emissaoDiaria') }}">
-            <label>Data: <input type="date" name="data_unica" required></label>
-            
-            <div style="display: flex; gap: 10px;">
-              <button type="submit" name="tipo_relatorio" value="pdf" id="btn-enviar">Exportar em PDF</button>
-              <button type="submit" name="tipo_relatorio" value="excel" id="btn-enviar">Exportar em Excel</button>
-            </div>
-
-          </form>
+          <h2><i class="fas fa-calendar-day"></i> Lista de Senhas Emitidas</h2>
+          <div class="relatorio-form-card">
+            <form method="POST" action="{{ url_for('relatorio_emissaoDiaria') }}" class="form-grid" style="grid-template-columns:1fr 1fr;">
+              <div class="form-group">
+                <label>Data Inicial</label>
+                <input type="date" name="data_inicio" required>
+              </div>
+              <div class="form-group">
+                <label>Data Final</label>
+                <input type="date" name="data_fim" required>
+              </div>
+              <div class="relatorio-actions" style="grid-column:span 2;">
+                <button type="submit" name="tipo_relatorio" value="pdf" id="btn-enviar"><i class="fas fa-file-pdf"></i> Exportar em PDF</button>
+                <button type="submit" name="tipo_relatorio" value="excel" class="btn-cancelar"><i class="fas fa-file-excel"></i> Exportar em Excel</button>
+              </div>
+            </form>
+          </div>
         </div>
+
       {% elif modulo == 'relatorio_totalVisitantes' %}
         <div class="relatorios-content">
-          <h2>Total por Tipo de Visitantes</h2>
-          <form method="POST" action="{{ url_for('relatorio_totalVisitantes') }}">
-            <label>Data Inicial: <input type="date" name="data_inicial" required></label>
-            <label>Data Final: <input type="date" name="data_final" required></label>
-            
-            <label for="departamento">Localização:</label>
-            <select name="departamento" required>
-              <option value="" disabled selected>Selecione</option>
-              {% for loc in localizacoes %}
-                <option value="{{ loc }}">{{ loc }}</option>
-              {% endfor %}
-            </select>
-
-            <div style="display: flex; gap: 10px;">
-              <button type="submit" name="tipo_relatorio" value="pdf" id="btn-enviar">Exportar em PDF</button>
-              <button type="submit" name="tipo_relatorio" value="excel" id="btn-enviar">Exportar em Excel</button>
-            </div>
-          </form>
+          <h2><i class="fas fa-user-friends"></i> Total por Tipo de Visitantes</h2>
+          <div class="relatorio-form-card">
+            <form method="POST" action="{{ url_for('relatorio_totalVisitantes') }}" class="form-grid" style="grid-template-columns:1fr 1fr;">
+              <div class="form-group">
+                <label>Data Inicial</label>
+                <input type="date" name="data_inicial" required>
+              </div>
+              <div class="form-group">
+                <label>Data Final</label>
+                <input type="date" name="data_final" required>
+              </div>
+              <div class="form-group" style="grid-column:span 2;">
+                <label>Localização</label>
+                <select name="departamento" required>
+                  <option value="" disabled selected>Selecione a localização</option>
+                  {% for loc in localizacoes %}<option value="{{ loc }}">{{ loc }}</option>{% endfor %}
+                </select>
+              </div>
+              <div class="relatorio-actions" style="grid-column:span 2;">
+                <button type="submit" name="tipo_relatorio" value="pdf" id="btn-enviar"><i class="fas fa-file-pdf"></i> Exportar em PDF</button>
+                <button type="submit" name="tipo_relatorio" value="excel" class="btn-cancelar"><i class="fas fa-file-excel"></i> Exportar em Excel</button>
+              </div>
+            </form>
+          </div>
         </div>
 
       {% elif modulo == 'relatorio_totalDepartamento' %}
         <div class="relatorios-content">
-          <h2>Total por Departamentos</h2>
-          <form method="POST" action="{{ url_for('relatorio_totalDepartamento') }}">
-            <label>Data Inicial: <input type="date" name="data_inicial" required></label>
-            <label>Data Final: <input type="date" name="data_final" required></label>
-            
-            <label for="departamento">Departamento:</label>
-            <select name="departamento" required>
-              <option value="" disabled selected>Selecione</option>
-              {% for dep in departamentos %}
-                <option value="{{ dep }}">{{ dep }}</option>
-              {% endfor %}
-            </select>
-
-            <div style="display: flex; gap: 10px;">
-              <button type="submit" name="tipo_relatorio" value="pdf" id="btn-enviar">Exportar em PDF</button>
-              <button type="submit" name="tipo_relatorio" value="excel" id="btn-enviar">Exportar em Excel</button>
-            </div>
-          </form>
-        </div>
-      {% else %}
-        <div class="intro-content">
-          <h2>Bem-vindo ao Painel Admin!</h2>
-          <p>Escolha um módulo no menu à esquerda para começar.</p>
-          <div class="dashboard-indicadores">
-            <div class="card-indicador">
-              <h3>Senhas Emitidas Hoje</h3>
-              <p>{{ dashboard_data.total_hoje }}</p>
-            </div>
-            <div class="card-indicador">
-              <h3>Última Emissão</h3>
-              <p>{{ dashboard_data.ultima_emissao }}</p>
-            </div>
-            <div class="card-indicador">
-              <h3>Total de Senhas</h3>
-              <p>{{ dashboard_data.total_senhas }}</p>
-            </div>
-            <div class="card-indicador">
-              <h3>Total de Colaboradores</h3>
-              <p>{{ dashboard_data.total_colaboradores }}</p>
-            </div>
-            <div class="card-indicador">
-              <h3>Departamentos Ativos</h3>
-              <p>{{ dashboard_data.total_departamentos }}</p>
-            </div>
-            
+          <h2><i class="fas fa-sitemap"></i> Total por Departamentos</h2>
+          <div class="relatorio-form-card">
+            <form method="POST" action="{{ url_for('relatorio_totalDepartamento') }}" class="form-grid" style="grid-template-columns:1fr 1fr;">
+              <div class="form-group">
+                <label>Data Inicial</label>
+                <input type="date" name="data_inicial" required>
+              </div>
+              <div class="form-group">
+                <label>Data Final</label>
+                <input type="date" name="data_final" required>
+              </div>
+              <div class="form-group" style="grid-column:span 2;">
+                <label>Departamento</label>
+                <select name="departamento" required>
+                  <option value="" disabled selected>Selecione o departamento</option>
+                  <option value="TODOS">TODOS</option>
+                  {% for dep in departamentos %}<option value="{{ dep }}">{{ dep }}</option>{% endfor %}
+                </select>
+              </div>
+              <div class="relatorio-actions" style="grid-column:span 2;">
+                <button type="submit" name="tipo_relatorio" value="pdf" id="btn-enviar"><i class="fas fa-file-pdf"></i> Exportar em PDF</button>
+                <button type="submit" name="tipo_relatorio" value="excel" class="btn-cancelar"><i class="fas fa-file-excel"></i> Exportar em Excel</button>
+              </div>
+            </form>
           </div>
         </div>
+
+      {% elif modulo == 'relatorio_cardapio' %}
+        <div class="relatorios-content">
+          <h2><i class="fas fa-utensils"></i> Emissões com Cardápio</h2>
+          <div class="relatorio-form-card">
+            <form method="POST" action="{{ url_for('relatorio_cardapio') }}" class="form-grid" style="grid-template-columns:1fr 1fr;">
+              <div class="form-group">
+                <label>Data Inicial</label>
+                <input type="date" name="data_inicial" required>
+              </div>
+              <div class="form-group">
+                <label>Data Final</label>
+                <input type="date" name="data_final" required>
+              </div>
+              <div class="form-group">
+                <label>Departamento</label>
+                <select name="departamento">
+                  <option value="TODOS">Todos</option>
+                  {% for dep in departamentos %}<option value="{{ dep }}">{{ dep }}</option>{% endfor %}
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Tipo de Refeição</label>
+                <select name="tipo_refeicao">
+                  <option value="TODOS">Todos</option>
+                  {% for tr in tipos_refeicao %}<option value="{{ tr }}">{{ tr }}</option>{% endfor %}
+                </select>
+              </div>
+              <div class="form-group" style="grid-column:span 2;">
+                <label>Tipo de Pessoa</label>
+                <select name="tipo_pessoa">
+                  <option value="TODOS">Todos</option>
+                  <option value="colaborador">Colaborador</option>
+                  <option value="visitante">Visitante</option>
+                </select>
+              </div>
+              <div class="relatorio-actions" style="grid-column:span 2;">
+                <button type="submit" name="tipo_relatorio" value="pdf" id="btn-enviar"><i class="fas fa-file-pdf"></i> Exportar em PDF</button>
+                <button type="submit" name="tipo_relatorio" value="excel" class="btn-cancelar"><i class="fas fa-file-excel"></i> Exportar em Excel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+      {% elif module == 'config_localizacoes' %}
+        <div id="config-localizacoes-content">
+          <div class="card-box">
+            <h2><i class="fas fa-map-marker-alt"></i> Localizações de Visitantes</h2>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}<div class="flash-container" id="flash-container">
+                {% for category, message in messages %}<div class="flash-message {{ category }}">{{ message }}</div>{% endfor %}
+              </div>{% endif %}
+            {% endwith %}
+            <form method="POST" action="{{ url_for('config_localizacoes') }}" style="display:flex;gap:10px;align-items:flex-end;max-width:520px;">
+              <div class="form-group" style="flex:1;">
+                <label>Nova Localização</label>
+                <input type="text" name="nome" required placeholder="Ex: Médico, SESPA, Escritório ACQUA...">
+              </div>
+              <button type="submit" id="btn-enviar" style="flex-shrink:0;"><i class="fas fa-plus"></i> Adicionar</button>
+            </form>
+          </div>
+
+          <div class="card-box">
+            <h3><i class="fas fa-list"></i> Localizações Cadastradas</h3>
+            <form method="GET" style="display:flex;gap:10px;align-items:flex-end;max-width:440px;margin-bottom:4px;" action="{{ url_for('config_localizacoes') }}">
+              <div class="form-group" style="flex:1;">
+                <label>Buscar</label>
+                <input type="text" name="search" placeholder="Nome da localização" value="{{ search or '' }}">
+              </div>
+              <button type="submit" id="btn-enviar" style="flex-shrink:0;"><i class="fas fa-search"></i> Buscar</button>
+            </form>
+            <table>
+              <thead>
+                <tr><th>#</th><th>Nome</th><th>Ação</th></tr>
+              </thead>
+              <tbody>
+                {% if lista_localizacoes %}{% for loc in lista_localizacoes %}
+                  <tr>
+                    <td style="color:#9ab5c0;font-size:12px;">{{ loc[0] }}</td>
+                    <td><strong>{{ loc[1] }}</strong></td>
+                    <td style="display:flex;gap:6px;">
+                      <button type="button" class="btn-edit"
+                              onclick="abrirModalLoc({{ loc[0] }}, '{{ loc[1]|e }}')"
+                              title="Editar">
+                        <i class="fas fa-edit"></i>
+                      </button>
+                      <form method="POST" action="{{ url_for('excluir_localizacao', loc_id=loc[0]) }}"
+                            onsubmit="return confirm('Excluir a localização &quot;{{ loc[1]|e }}&quot;?');"
+                            style="background:none;box-shadow:none;padding:0;margin:0;">
+                        <button type="submit" id="btn-excluir" title="Excluir">✖</button>
+                      </form>
+                    </td>
+                  </tr>
+                {% endfor %}{% else %}
+                  <tr><td colspan="3" style="text-align:center;color:#9ab5c0;padding:24px;">Nenhuma localização cadastrada.</td></tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      {% elif module == 'config_emissao_senha' %}
+        <div id="config-emissao-senha-content">
+
+          <div class="card-box">
+            <h2><i class="fas fa-ticket-alt"></i> Tipo de Emissão de Senha</h2>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}<div class="flash-container" id="flash-container">
+                {% for category, message in messages %}<div class="flash-message {{ category }}">{{ message }}</div>{% endfor %}
+              </div>{% endif %}
+            {% endwith %}
+
+            <p style="color:#9ab5c0;margin-bottom:24px;font-size:14px;">
+              Define como as senhas serão emitidas no totem. A alteração tem efeito imediato para todos os totens.
+            </p>
+
+            <form method="POST" action="{{ url_for('config_emissao_senha') }}">
+              <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:28px;">
+
+                <label style="flex:1;min-width:220px;cursor:pointer;">
+                  <div style="border:2px solid {% if tipo_atual == 'padrao' %}#00b4d8{% else %}#2a3f4a{% endif %};border-radius:10px;padding:20px;transition:border-color .2s;">
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+                      <input type="radio" name="tipo_emissao" value="padrao"
+                             {% if tipo_atual == 'padrao' %}checked{% endif %}
+                             style="width:18px;height:18px;accent-color:#00b4d8;">
+                      <strong style="font-size:15px;"><i class="fas fa-id-card" style="color:#00b4d8;margin-right:6px;"></i> Emissão Padrão</strong>
+                    </div>
+                    <p style="color:#9ab5c0;font-size:13px;margin:0;padding-left:28px;">
+                      O colaborador informa apenas o <strong>CPF</strong> para receber a senha. Modelo sem cardápio.
+                    </p>
+                  </div>
+                </label>
+
+                <label style="flex:1;min-width:220px;cursor:pointer;">
+                  <div style="border:2px solid {% if tipo_atual == 'cardapio' %}#00b4d8{% else %}#2a3f4a{% endif %};border-radius:10px;padding:20px;transition:border-color .2s;">
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+                      <input type="radio" name="tipo_emissao" value="cardapio"
+                             {% if tipo_atual == 'cardapio' %}checked{% endif %}
+                             style="width:18px;height:18px;accent-color:#00b4d8;">
+                      <strong style="font-size:15px;"><i class="fas fa-utensils" style="color:#00b4d8;margin-right:6px;"></i> Emissão com Cardápio</strong>
+                    </div>
+                    <p style="color:#9ab5c0;font-size:13px;margin:0;padding-left:28px;">
+                      O colaborador informa o <strong>CPF</strong> e seleciona o cardápio do dia.
+                      Vincula nome, CPF, cargo, departamento e refeição nos relatórios.
+                    </p>
+                  </div>
+                </label>
+
+              </div>
+
+              <button type="submit" id="btn-enviar">
+                <i class="fas fa-save"></i> Salvar Configuração
+              </button>
+            </form>
+          </div>
+
+          <div class="card-box" style="border-left:3px solid #f0a500;">
+            <h3 style="margin-bottom:12px;">
+              <i class="fas fa-exclamation-triangle" style="color:#f0a500;margin-right:8px;"></i>
+              Requisito para Emissão com Cardápio
+            </h3>
+            <p style="color:#9ab5c0;font-size:13px;margin:0;">
+              Para usar a <strong style="color:#e0e0e0;">Emissão com Cardápio</strong>, é obrigatório cadastrar
+              os cardápios do dia em <strong style="color:#e0e0e0;">Cardápio → Novo Cardápio</strong> antes de
+              abrir o totem. Caso não haja cardápio cadastrado e ativo para o dia atual, o totem
+              exibirá um aviso e bloqueará a emissão de senhas de colaboradores.
+            </p>
+          </div>
+
+        </div>
+
       {% endif %}
     </main>
   </div>
-  
+
   <script src="{{ url_for('static', filename='js/form-validations.js') }}"></script>
   <script src="{{ url_for('static', filename='js/flash-message.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/submenu-hide.js') }}"></script>
+  <script>
+    document.querySelectorAll('.menu-group-toggle').forEach(function(toggle) {
+      toggle.addEventListener('click', function(e) {
+        e.preventDefault();
+        var submenuId = this.id.replace('menu-', 'submenu-');
+        var submenu = document.getElementById(submenuId);
+        var isOpen = submenu.classList.contains('open');
+        document.querySelectorAll('.submenu').forEach(function(sm){ sm.classList.remove('open'); });
+        document.querySelectorAll('.menu-group-toggle').forEach(function(t){ t.classList.remove('active'); });
+        if (!isOpen) { submenu.classList.add('open'); this.classList.add('active'); }
+      });
+    });
+  </script>
+
+  <!-- Chart.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script>
+    (function() {
+      const ctxBar = document.getElementById('chartBarras');
+      const ctxPie = document.getElementById('chartPizza');
+      if (!ctxBar || !ctxPie) return;
+
+      const palette = ['#217d9d','#41c8b0','#1a5f78','#7ab8cc','#a8e6da','#d4edf5'];
+
+      new Chart(ctxBar, {
+        type: 'bar',
+        data: {
+          labels: dashLabels7,
+          datasets: [{
+            label: 'Senhas emitidas',
+            data: dashValores7,
+            backgroundColor: 'rgba(33,125,157,0.75)',
+            borderColor: '#1a5f78',
+            borderWidth: 1.5,
+            borderRadius: 6,
+            borderSkipped: false,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#1a5f78',
+              titleFont: { family: 'Poppins', size: 12 },
+              bodyFont:  { family: 'Poppins', size: 13 },
+              callbacks: { label: ctx => ' ' + ctx.parsed.y + ' senhas' }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { font: { family: 'Poppins', size: 11 }, color: '#7a9baa' }
+            },
+            y: {
+              beginAtZero: true,
+              grid: { color: '#edf2f5' },
+              ticks: { font: { family: 'Poppins', size: 11 }, color: '#7a9baa', stepSize: 1 }
+            }
+          }
+        }
+      });
+
+      new Chart(ctxPie, {
+        type: 'doughnut',
+        data: {
+          labels: dashLabelsDeps,
+          datasets: [{
+            data: dashValoresDeps,
+            backgroundColor: palette,
+            borderColor: '#fff',
+            borderWidth: 3,
+            hoverOffset: 8,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '58%',
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                font: { family: 'Poppins', size: 11 },
+                color: '#4a6a78',
+                padding: 14,
+                usePointStyle: true,
+                pointStyleWidth: 10,
+              }
+            },
+            tooltip: {
+              backgroundColor: '#1a5f78',
+              titleFont: { family: 'Poppins', size: 12 },
+              bodyFont:  { family: 'Poppins', size: 13 },
+              callbacks: { label: ctx => ' ' + ctx.label + ': ' + ctx.parsed + ' senhas' }
+            }
+          }
+        }
+      });
+    })();
+  </script>
+
+  <!-- Modal Editar Departamento -->
+  <div id="modal-dep" class="modal-overlay" style="display:none;">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span class="modal-title"><i class="fas fa-building"></i> Editar Departamento</span>
+        <button class="modal-close" onclick="fecharModalDep()" title="Fechar">&times;</button>
+      </div>
+      <form id="modal-dep-form" method="POST" action="">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Nome do Departamento</label>
+            <input type="text" id="modal-dep-nome" name="nome" required
+                   placeholder="Ex: Tecnologia da Informação">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-cancelar" onclick="fecharModalDep()">
+            <i class="fas fa-times"></i> Cancelar
+          </button>
+          <button type="submit" id="btn-enviar">
+            <i class="fas fa-save"></i> Salvar Alterações
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function abrirModalDep(id, nome) {
+      document.getElementById('modal-dep-nome').value = nome;
+      document.getElementById('modal-dep-form').action = '/editar_departamento/' + id;
+      document.getElementById('modal-dep').style.display = 'flex';
+      setTimeout(() => document.getElementById('modal-dep-nome').focus(), 50);
+    }
+    function fecharModalDep() {
+      document.getElementById('modal-dep').style.display = 'none';
+    }
+    document.getElementById('modal-dep').addEventListener('click', function(e) {
+      if (e.target === this) fecharModalDep();
+    });
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') fecharModalDep();
+    });
+  </script>
+
+  <!-- Modal Editar Localização -->
+  <div id="modal-loc" class="modal-overlay" style="display:none;">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span class="modal-title"><i class="fas fa-map-marker-alt"></i> Editar Localização</span>
+        <button class="modal-close" onclick="fecharModalLoc()" title="Fechar">&times;</button>
+      </div>
+      <form id="modal-loc-form" method="POST" action="">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Nome da Localização</label>
+            <input type="text" id="modal-loc-nome" name="nome" required
+                   placeholder="Ex: Médico, SESPA, Escritório ACQUA">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-cancelar" onclick="fecharModalLoc()">
+            <i class="fas fa-times"></i> Cancelar
+          </button>
+          <button type="submit" id="btn-enviar">
+            <i class="fas fa-save"></i> Salvar Alterações
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function abrirModalLoc(id, nome) {
+      document.getElementById('modal-loc-nome').value = nome;
+      document.getElementById('modal-loc-form').action = '/admin/configuracoes/localizacoes/editar/' + id;
+      document.getElementById('modal-loc').style.display = 'flex';
+      setTimeout(() => document.getElementById('modal-loc-nome').focus(), 50);
+    }
+    function fecharModalLoc() {
+      document.getElementById('modal-loc').style.display = 'none';
+    }
+    document.getElementById('modal-loc').addEventListener('click', function(e) {
+      if (e.target === this) fecharModalLoc();
+    });
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') { fecharModalLoc(); fecharModalDep(); }
+    });
+  </script>
 </body>
 </html>

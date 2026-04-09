@@ -3,11 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Painel Admin - GTR</title>
+  <title>Painel Usuário - GTR</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/menu_admin.css') }}">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body>
+
   <header>
     <div class="top-bar">
       <div class="user-actions">
@@ -17,133 +18,340 @@
         <span class="separator">|</span>
         <a href="{{ url_for('logout') }}" class="btn-logout">
           <i class="fas fa-sign-out-alt"></i> SAIR
-        </a>        
+        </a>
       </div>
     </div>
   </header>
 
   <div class="container">
     <aside class="sidebar">
-      <a href="{{ url_for('usuario') }}">
+      <a href="{{ url_for('usuario') }}" class="sidebar-brand">
         <h1>GTR</h1>
         <p class="subtitulo">GESTÃO DE TICKET REFEIÇÃO</p>
       </a>
 
       <nav class="menu">
-        <a href="#" id="menu-relatorios">
+        <!-- RELATÓRIOS -->
+        {% set rel_modules = ['relatorio_totalEmissao','relatorio_emissaoDiaria','relatorio_totalVisitantes','relatorio_totalDepartamento'] %}
+        <a href="#" class="menu-group-toggle {% if modulo in rel_modules %}active{% endif %}" id="menu-relatorios">
           <i class="fas fa-chart-bar"></i> Relatórios
           <i class="fas fa-chevron-down arrow"></i>
         </a>
-        <ul id="submenu-relatorios" style="display: none;">
-          <li><a href="{{ url_for('relatorio_totalEmissao') }}">Total de Senhas Emitidas</a></li>
-          <li><a href="{{ url_for('relatorio_emissaoDiaria') }}">Relação de Emissões Diárias</a></li>
-          <li><a href="{{ url_for('relatorio_totalVisitantes') }}">Total por Tipo de Visitantes</a></li>
-          <li><a href="{{ url_for('relatorio_totalDepartamento') }}">Total por Departamento</a></li>
+        <ul class="submenu {% if modulo in rel_modules %}open{% endif %}" id="submenu-relatorios">
+          <li>
+            <a href="{{ url_for('relatorio_totalEmissao') }}" class="{% if modulo == 'relatorio_totalEmissao' %}active-item{% endif %}">
+              <i class="fas fa-ticket-alt"></i> Total de Senhas
+            </a>
+          </li>
+          <li>
+            <a href="{{ url_for('relatorio_emissaoDiaria') }}" class="{% if modulo == 'relatorio_emissaoDiaria' %}active-item{% endif %}">
+              <i class="fas fa-calendar-day"></i> Senhas por Período
+            </a>
+          </li>
+          <li>
+            <a href="{{ url_for('relatorio_totalVisitantes') }}" class="{% if modulo == 'relatorio_totalVisitantes' %}active-item{% endif %}">
+              <i class="fas fa-user-friends"></i> Total de Visitantes
+            </a>
+          </li>
+          <li>
+            <a href="{{ url_for('relatorio_totalDepartamento') }}" class="{% if modulo == 'relatorio_totalDepartamento' %}active-item{% endif %}">
+              <i class="fas fa-sitemap"></i> Por Departamento
+            </a>
+          </li>
         </ul>
       </nav>
     </aside>
 
-    <main class="main-content">      
-        {% if modulo == 'relatorio_totalEmissao' %}
+    <main class="main-content">
+
+      <!-- DASHBOARD -->
+      {% if not modulo %}
+        <div class="intro-content">
+
+          <div class="dash-header">
+            <div>
+              <h2>Painel de Usuário</h2>
+              <p class="dash-sub">Visão geral do sistema · GTR</p>
+            </div>
+          </div>
+
+          <!-- KPI Cards -->
+          <div class="kpi-grid">
+            <div class="kpi-card kpi-blue">
+              <div class="kpi-icon"><i class="fas fa-ticket-alt"></i></div>
+              <div class="kpi-info">
+                <span class="kpi-label">Senhas Hoje</span>
+                <span class="kpi-value">{{ dashboard_data.total_hoje }}</span>
+              </div>
+            </div>
+            <div class="kpi-card kpi-teal">
+              <div class="kpi-icon"><i class="fas fa-calendar-alt"></i></div>
+              <div class="kpi-info">
+                <span class="kpi-label">Senhas no Mês</span>
+                <span class="kpi-value">{{ dashboard_data.total_senhas }}</span>
+              </div>
+            </div>
+            <div class="kpi-card kpi-green">
+              <div class="kpi-icon"><i class="fas fa-users"></i></div>
+              <div class="kpi-info">
+                <span class="kpi-label">Colaboradores</span>
+                <span class="kpi-value">{{ dashboard_data.total_colaboradores }}</span>
+              </div>
+            </div>
+            <div class="kpi-card kpi-purple">
+              <div class="kpi-icon"><i class="fas fa-building"></i></div>
+              <div class="kpi-info">
+                <span class="kpi-label">Departamentos</span>
+                <span class="kpi-value">{{ dashboard_data.total_departamentos }}</span>
+              </div>
+            </div>
+            <div class="kpi-card kpi-orange">
+              <div class="kpi-icon"><i class="fas fa-clock"></i></div>
+              <div class="kpi-info">
+                <span class="kpi-label">Última Emissão</span>
+                <span class="kpi-value kpi-small">{{ dashboard_data.ultima_emissao }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Gráficos -->
+          <div class="charts-grid">
+            <div class="chart-card">
+              <div class="chart-title"><i class="fas fa-chart-bar"></i> Emissões — Últimos 7 dias</div>
+              <div class="chart-wrap">
+                <canvas id="chartBarras"></canvas>
+              </div>
+            </div>
+            <div class="chart-card">
+              <div class="chart-title"><i class="fas fa-chart-pie"></i> Top Departamentos (mês)</div>
+              <div class="chart-wrap chart-wrap-pizza">
+                <canvas id="chartPizza"></canvas>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <script>
+          const dashLabels7 = {{ dashboard_data.labels_7dias | tojson }};
+          const dashValores7 = {{ dashboard_data.valores_7dias | tojson }};
+          const dashLabelsDeps = {{ dashboard_data.labels_deps | tojson }};
+          const dashValoresDeps = {{ dashboard_data.valores_deps | tojson }};
+        </script>
+
+      <!-- RELATÓRIOS -->
+      {% elif modulo == 'relatorio_totalEmissao' %}
         <div class="relatorios-content">
-          <h2>Total de Senhas Emitidas</h2>
-          <form method="POST" action="{{ url_for('relatorio_totalEmissao') }}">
-            <label for="data_inicial">Data Inicial:</label>
-            <input type="date" name="data_inicial" required>
-            
-            <label for="data_final">Data Final:</label>
-            <input type="date" name="data_final" required>
-        
-            <button type="submit" id="btn-enviar">Exportar em PDF</button>
-          </form>
+          <h2><i class="fas fa-ticket-alt"></i> Total de Senhas Emitidas</h2>
+          <div class="relatorio-form-card">
+            <form method="POST" action="{{ url_for('relatorio_totalEmissao') }}" class="form-grid" style="grid-template-columns:1fr 1fr;">
+              <div class="form-group">
+                <label>Data Inicial</label>
+                <input type="date" name="data_inicial" required>
+              </div>
+              <div class="form-group">
+                <label>Data Final</label>
+                <input type="date" name="data_final" required>
+              </div>
+              <div class="form-actions" style="grid-column:span 2;">
+                <button type="submit" id="btn-enviar"><i class="fas fa-file-pdf"></i> Exportar em PDF</button>
+              </div>
+            </form>
+          </div>
         </div>
 
       {% elif modulo == 'relatorio_emissaoDiaria' %}
         <div class="relatorios-content">
-          <h2>Relação de Emissões Diárias</h2>
-          <form method="POST" action="{{ url_for('relatorio_emissaoDiaria') }}">
-            <label>Data: <input type="date" name="data_unica" required></label>
-            
-            <div style="display: flex; gap: 10px;">
-              <button type="submit" name="tipo_relatorio" value="pdf" id="btn-enviar">Exportar em PDF</button>
-              <button type="submit" name="tipo_relatorio" value="excel" id="btn-enviar">Exportar em Excel</button>
-            </div>
-          </form>
+          <h2><i class="fas fa-calendar-day"></i> Lista de Senhas Emitidas</h2>
+          <div class="relatorio-form-card">
+            <form method="POST" action="{{ url_for('relatorio_emissaoDiaria') }}" class="form-grid" style="grid-template-columns:1fr 1fr;">
+              <div class="form-group">
+                <label>Data Inicial</label>
+                <input type="date" name="data_inicio" required>
+              </div>
+              <div class="form-group">
+                <label>Data Final</label>
+                <input type="date" name="data_fim" required>
+              </div>
+              <div class="relatorio-actions" style="grid-column:span 2;">
+                <button type="submit" name="tipo_relatorio" value="pdf" id="btn-enviar"><i class="fas fa-file-pdf"></i> Exportar em PDF</button>
+                <button type="submit" name="tipo_relatorio" value="excel" class="btn-cancelar"><i class="fas fa-file-excel"></i> Exportar em Excel</button>
+              </div>
+            </form>
+          </div>
         </div>
+
       {% elif modulo == 'relatorio_totalVisitantes' %}
         <div class="relatorios-content">
-          <h2>Total por Tipo de Visitantes</h2>
-          <form method="POST" action="{{ url_for('relatorio_totalVisitantes') }}">
-            <label>Data Inicial: <input type="date" name="data_inicial" required></label>
-            <label>Data Final: <input type="date" name="data_final" required></label>
-            
-            <label for="departamento">Localização:</label>
-            <select name="departamento" required>
-              <option value="" disabled selected>Selecione</option>
-              {% for loc in localizacoes %}
-                <option value="{{ loc }}">{{ loc }}</option>
-              {% endfor %}
-            </select>
-
-            <div style="display: flex; gap: 10px;">
-              <button type="submit" name="tipo_relatorio" value="pdf" id="btn-enviar">Exportar em PDF</button>
-              <button type="submit" name="tipo_relatorio" value="excel" id="btn-enviar">Exportar em Excel</button>
-            </div>
-          </form>
-        </div>
-      {% elif modulo == 'relatorio_totalDepartamento' %}
-        <h2>Total por Departamentos</h2>
-          <form method="POST" action="{{ url_for('relatorio_totalDepartamento') }}">
-            <label>Data Inicial: <input type="date" name="data_inicial" required></label>
-            <label>Data Final: <input type="date" name="data_final" required></label>
-            
-            <label for="departamento">Departamento:</label>
-            <select name="departamento" required>
-              <option value="" disabled selected>Selecione</option>
-              {% for dep in departamentos %}
-                <option value="{{ dep }}">{{ dep }}</option>
-              {% endfor %}
-            </select>
-
-            <div style="display: flex; gap: 10px;">
-              <button type="submit" name="tipo_relatorio" value="pdf" id="btn-enviar">Exportar em PDF</button>
-              <button type="submit" name="tipo_relatorio" value="excel" id="btn-enviar">Exportar em Excel</button>
-            </div>
-          </form>
-        </div>
-      {% else %}
-        <div class="intro-content">
-          <h2>Bem-vindo ao Painel de Usuário!</h2>
-          <p>Escolha um módulo no menu à esquerda para começar.</p>
-
-          <div class="dashboard-indicadores">
-            <div class="card-indicador">
-              <h3>Senhas Emitidas Hoje</h3>
-              <p>{{ dashboard_data.total_hoje }}</p>
-            </div>
-            <div class="card-indicador">
-              <h3>Total de Senhas</h3>
-              <p>{{ dashboard_data.total_senhas }}</p>
-            </div>
-            <div class="card-indicador">
-              <h3>Total de Colaboradores</h3>
-              <p>{{ dashboard_data.total_colaboradores }}</p>
-            </div>
-            <div class="card-indicador">
-              <h3>Departamentos Ativos</h3>
-              <p>{{ dashboard_data.total_departamentos }}</p>
-            </div>
-            <div class="card-indicador">
-              <h3>Última Emissão</h3>
-              <p>{{ dashboard_data.ultima_emissao }}</p>
-            </div>
+          <h2><i class="fas fa-user-friends"></i> Total por Tipo de Visitantes</h2>
+          <div class="relatorio-form-card">
+            <form method="POST" action="{{ url_for('relatorio_totalVisitantes') }}" class="form-grid" style="grid-template-columns:1fr 1fr;">
+              <div class="form-group">
+                <label>Data Inicial</label>
+                <input type="date" name="data_inicial" required>
+              </div>
+              <div class="form-group">
+                <label>Data Final</label>
+                <input type="date" name="data_final" required>
+              </div>
+              <div class="form-group" style="grid-column:span 2;">
+                <label>Localização</label>
+                <select name="departamento" required>
+                  <option value="" disabled selected>Selecione a localização</option>
+                  {% for loc in localizacoes %}
+                    <option value="{{ loc }}">{{ loc }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="relatorio-actions" style="grid-column:span 2;">
+                <button type="submit" name="tipo_relatorio" value="pdf" id="btn-enviar"><i class="fas fa-file-pdf"></i> Exportar em PDF</button>
+                <button type="submit" name="tipo_relatorio" value="excel" class="btn-cancelar"><i class="fas fa-file-excel"></i> Exportar em Excel</button>
+              </div>
+            </form>
           </div>
+        </div>
+
+      {% elif modulo == 'relatorio_totalDepartamento' %}
+        <div class="relatorios-content">
+          <h2><i class="fas fa-sitemap"></i> Total por Departamentos</h2>
+          <div class="relatorio-form-card">
+            <form method="POST" action="{{ url_for('relatorio_totalDepartamento') }}" class="form-grid" style="grid-template-columns:1fr 1fr;">
+              <div class="form-group">
+                <label>Data Inicial</label>
+                <input type="date" name="data_inicial" required>
+              </div>
+              <div class="form-group">
+                <label>Data Final</label>
+                <input type="date" name="data_final" required>
+              </div>
+              <div class="form-group" style="grid-column:span 2;">
+                <label>Departamento</label>
+                <select name="departamento" required>
+                  <option value="" disabled selected>Selecione o departamento</option>
+                  <option value="TODOS">TODOS</option>
+                  {% for dep in departamentos %}
+                    <option value="{{ dep }}">{{ dep }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="relatorio-actions" style="grid-column:span 2;">
+                <button type="submit" name="tipo_relatorio" value="pdf" id="btn-enviar"><i class="fas fa-file-pdf"></i> Exportar em PDF</button>
+                <button type="submit" name="tipo_relatorio" value="excel" class="btn-cancelar"><i class="fas fa-file-excel"></i> Exportar em Excel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
       {% endif %}
     </main>
   </div>
-  
+
   <script src="{{ url_for('static', filename='js/form-validations.js') }}"></script>
   <script src="{{ url_for('static', filename='js/flash-message.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/submenu-hide.js') }}"></script>
+
+  <!-- Submenu toggle (igual ao admin) -->
+  <script>
+    document.querySelectorAll('.menu-group-toggle').forEach(function(toggle) {
+      toggle.addEventListener('click', function(e) {
+        e.preventDefault();
+        var submenuId = this.id.replace('menu-', 'submenu-');
+        var submenu = document.getElementById(submenuId);
+        var isOpen = submenu.classList.contains('open');
+        document.querySelectorAll('.submenu').forEach(function(sm){ sm.classList.remove('open'); });
+        document.querySelectorAll('.menu-group-toggle').forEach(function(t){ t.classList.remove('active'); });
+        if (!isOpen) { submenu.classList.add('open'); this.classList.add('active'); }
+      });
+    });
+  </script>
+
+  <!-- Chart.js (só inicializa se os canvas existirem) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script>
+    (function() {
+      const ctxBar = document.getElementById('chartBarras');
+      const ctxPie = document.getElementById('chartPizza');
+      if (!ctxBar || !ctxPie) return;
+
+      const palette = ['#217d9d','#41c8b0','#1a5f78','#7ab8cc','#a8e6da','#d4edf5'];
+
+      new Chart(ctxBar, {
+        type: 'bar',
+        data: {
+          labels: dashLabels7,
+          datasets: [{
+            label: 'Senhas emitidas',
+            data: dashValores7,
+            backgroundColor: 'rgba(33,125,157,0.75)',
+            borderColor: '#1a5f78',
+            borderWidth: 1.5,
+            borderRadius: 6,
+            borderSkipped: false,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#1a5f78',
+              titleFont: { family: 'Poppins', size: 12 },
+              bodyFont:  { family: 'Poppins', size: 13 },
+              callbacks: { label: ctx => ' ' + ctx.parsed.y + ' senhas' }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { font: { family: 'Poppins', size: 11 }, color: '#7a9baa' }
+            },
+            y: {
+              beginAtZero: true,
+              grid: { color: '#edf2f5' },
+              ticks: { font: { family: 'Poppins', size: 11 }, color: '#7a9baa', stepSize: 1 }
+            }
+          }
+        }
+      });
+
+      new Chart(ctxPie, {
+        type: 'doughnut',
+        data: {
+          labels: dashLabelsDeps,
+          datasets: [{
+            data: dashValoresDeps,
+            backgroundColor: palette,
+            borderColor: '#fff',
+            borderWidth: 3,
+            hoverOffset: 8,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '58%',
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                font: { family: 'Poppins', size: 11 },
+                color: '#4a6a78',
+                padding: 14,
+                usePointStyle: true,
+                pointStyleWidth: 10,
+              }
+            },
+            tooltip: {
+              backgroundColor: '#1a5f78',
+              titleFont: { family: 'Poppins', size: 12 },
+              bodyFont:  { family: 'Poppins', size: 13 },
+              callbacks: { label: ctx => ' ' + ctx.label + ': ' + ctx.parsed + ' senhas' }
+            }
+          }
+        }
+      });
+    })();
+  </script>
+
 </body>
 </html>

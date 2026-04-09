@@ -32,6 +32,7 @@
         table {
             width: 100%;
             border-collapse: collapse;
+            table-layout: fixed;
             font-size: 13px;
             margin-top: 20px;
         }
@@ -39,6 +40,9 @@
             border: 1px solid #999;
             padding: 8px;
             text-align: left;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            word-break: break-word;
         }
         th {
             background-color: #f2f2f2;
@@ -62,8 +66,8 @@
     </div>
 
     <div class="info">
-        <strong>Período:</strong> {{ data_geracao }}
-        <br><strong>Departamento:</strong> {{ departamento }}
+        <strong>Período:</strong> {{ periodo }}
+        <p><strong>Departamento:</strong> {{ "Todos" if departamento == "TODOS" else departamento }}</p>
     </div>
 
     <table>
@@ -77,6 +81,7 @@
             <tr><td>Café</td><td>{{ total_cafe }}</td></tr>
             <tr><td>Almoço</td><td>{{ total_almoco }}</td></tr>
             <tr><td>Janta</td><td>{{ total_janta }}</td></tr>
+            <tr><td><strong>Total</strong></td><td>{{ total_geral }}</td></tr>
         </tbody>
     </table>
     <table>
