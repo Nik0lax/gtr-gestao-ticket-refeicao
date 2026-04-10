@@ -1,11 +1,11 @@
 <p align="center">
   <a>
-    <img src="https://github.com/user-attachments/assets/de38cf9a-0904-474d-b001-91e705fe8510">
-
-
+	<img width="789" height="227" alt="image" src="https://github.com/user-attachments/assets/fee102a7-4c15-4f2e-bf01-7d0f3ce5f251" />
   </a>
 </p>
+
 <h1 align="center">GTR - Gestão de Ticket Refeição | Desenvolvido em Flask</h1>
+
 <p align="center">
   <img alt="Python" src="https://img.shields.io/badge/-Python-3776AB?style=flat-square&logo=python&logoColor=white" />
   <img alt="Flask" src="https://img.shields.io/badge/-Flask-000000?style=flat-square&logo=flask&logoColor=white" />
@@ -14,97 +14,220 @@
   <img alt="Javascript" src="https://img.shields.io/badge/Javascript-FF0000?style=flat-square&logo=javascript&logoColor=white" />
   <img alt="MySQL" src="https://img.shields.io/badge/MySQL-BD00FF?style=flat-square&logo=sqlite&logoColor=white" />
 </p>
-<br>
 
-### XXX:
-<br>XXX
+---
 
 ## Sobre o GTR
 
-<p align="center">
-  <p>Rota Admin</p>
-  <img src="https://github.com/user-attachments/assets/de377f0a-d788-46aa-bfa7-69ccd5589b40"/>
-  <p>Rota Totem</p>
-	<img src="https://github.com/user-attachments/assets/303e0dcd-f5c7-494a-a120-b6d36c8f9179"/>
-</p>
-<p align="center">
+GTR é uma aplicação web construída com Flask, visando facilitar o registro quantitativo de pessoas que almoçam no ambiente corporativo e fornecendo uma visão administrativa sobre esses dados. Além de fornecer insights valiosos em relatórios para tomada de decisões.
 
-GTR é uma aplicação web construída com Flask, visado facilitar o registro de quantitativo de pessoas que almoçam no ambiente corporativo e fornecendo uma visão administrativa sobre estes dados. Além de fornecer insights valiosos em relatórios para tomada de decisões.
+Pensado para melhorar o processo de faturamento, automatizar os processos e garantir a autenticidade dos dados no momento de tratar a contabilidade com terceirizados.
 
-<br>Pensado para melhorar o processo de faturamento, automatizar os processos e garantir a autenticidade dos dados no momento de tratar a contabilidade com terceirizados.
-</p>
+---
 
-### Funcionalidades
-#### Tela de Login
+## Índice
 
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/007aca78-619b-45ab-90a2-73f3b205dab9" width="600">
-</p>
+- [Tela de Login](#tela-de-login)
+- [Perfis de Acesso](#perfis-de-acesso)
+- [Dashboard](#dashboard)
+- [Módulo de Colaboradores](#módulo-de-colaboradores)
+- [Módulo de Usuários do Sistema](#módulo-de-usuários-do-sistema)
+- [Módulo de Departamentos](#módulo-de-departamentos)
+- [Cardápio](#cardápio)
+- [Emissão de Senhas](#emissão-de-senhas)
+- [Relatórios](#relatórios)
+- [Configurações](#configurações)
+- [Tecnologias Utilizadas](#tecnologias-utilizadas)
 
-A tela de login com validação via banco de dados e armazenamento de sessão no back end para direcionamento das rotas da aplicação.
+---
 
-### Rota Admin
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/c79f1ed8-8378-4050-94f7-73859e0e056c" width="600">
-</p>
+## Tela de Login
 
-A rota do Admin permite o Cadastro de novos colaboradores e a emissão de Relatórios com as senhas que foram emitidas. A rota de configuração ainda está em desenvolvimento.
-
-#### Cadastro de Colaboradores
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/c615f618-95f0-43ae-aa42-139f682fd21b" width="600">  
-</p>
-O módulo de Cadastro permite o registro deu um novo colaborador, onde é definido o departamento e o Tipo(Quantidade de emissões de senha refeição) pode emitir por dia.
-A validação do CPF é única, permitindo apenas um CPF por cadastro, evitando duplicidade e garantindo a eficiência do controle de emissões.
-
-#### Relatórios
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/d96f0185-f2ea-403d-a651-8d8849447973" alt="Relatório 1" width="45%" />
-  <img src="https://github.com/user-attachments/assets/d3a33b4c-149b-484f-aaf8-6a8aaf3d6b70" alt="Relatório 2" width="45%" />
-</p> 
-
-**Relatório Total de Senhas Emitidas**
-- Exibe uma listagem detalhada de todas as senhas geradas no período selecionado.
-- Informações incluídas:
-  - Número da senha
-  - CPF do colaborador/visitante
-  - Nome
-  - Cargo
-  - Departamento
-  - Data e hora da emissão
-- Indicado para auditoria e conferência individual das emissões.
-
-**Relatório Analítico com Gráficos**
-- Apresenta uma visão estatística das senhas emitidas em determinado período, com:
-  - Total de colaboradores cadastrados
-  - Resumo de senhas por período (diurno/noturno)
-  - Quantidade por tipo (visitante/colaborador)
-  - Quantidade por departamento
-- Inclui gráficos de:
-  - Barras: Top 5 departamentos com mais emissões
-  - Pizza: Proporção de senhas emitidas vs base de colaboradores cadastrados
-- Ideal para análise gerencial e planejamento.
+<img width="1586" height="726" alt="image" src="https://github.com/user-attachments/assets/99f5153e-580e-45f8-a4f0-10f872d3c49f" />
 
 
-### Rota Emissões de Senha
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/5c9d3118-30ec-4b4b-b35d-715d03bd3a3e" width="45%" />
-  <img src="https://github.com/user-attachments/assets/a31e4ad8-2fb9-41ab-994e-da09ad42e8d0" width="45%" />
-</p>
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/0db3abf7-3c0f-4dd3-ad24-40a938dd400a" width="45%" />
-  <img src="https://github.com/user-attachments/assets/beb3e6dc-9ff8-418f-8dd8-782ffb80a364" width="45%" />
-</p>
-A rota de Emissões de senha é o fluxo operacional usado pelos colaboradores/visitantes para emitir a senha e poder retirar a refeição.
-Foi definido duas rotas: Colaborador para os funcionários fixos e visitantes para usuários temporários ou exporádicos.
-Como parâmetros de controle, foi definido: validação de CPF, verificação se o CPF existe no banco para o colaborador, verificação de limite de emissão.
+Autenticação via banco de dados com armazenamento de sessão no back-end. Ao realizar o login, o sistema identifica o perfil do usuário e redireciona automaticamente para a rota correspondente.
+
+---
+
+## Perfis de Acesso
+
+O GTR conta com quatro perfis distintos, cada um com sua rota e conjunto de permissões:
+
+| Perfil | Rota | Descrição |
+|---|---|---|
+| `admin` | `/admin` | Acesso total ao sistema |
+| `usuario` | `/usuario` | Acesso a relatórios e dashboard |
+| `totem_desktop` | `/emissao_senha` | Interface de totem para desktop |
+| `totem_tablet` | `/emissao_senha_tablet` | Interface de totem adaptada para tablet |
+
+---
+
+## Dashboard
+
+<img width="1586" height="731" alt="image" src="https://github.com/user-attachments/assets/24c6a6e9-8003-43fc-98d9-83fbf56dd734" />
 
 
-## Tecnologias utilizadas
+O dashboard está disponível tanto para o perfil **Admin** quanto para o perfil **Usuário** e exibe os seguintes indicadores em tempo real:
 
-- <strong>Python, Flask</strong>
-  
-- <strong>HTML5, CSS3 e Javascript</strong>
-  
-- <strong>MySQL</strong>
-  
+- Total de senhas emitidas **hoje**
+- Total de senhas emitidas **no mês atual**
+- Total de **colaboradores cadastrados**
+- Total de **departamentos**
+- **Última emissão** registrada
+- **Gráfico de barras** com emissões dos últimos 7 dias
+- **Gráfico de pizza** com o Top 5 departamentos com mais emissões no mês
+
+---
+
+## Módulo de Colaboradores
+
+Gerenciamento completo (CRUD) da base de colaboradores.
+
+**Cadastro:** Registra nome, CPF, cargo, departamento e tipo (limite diário de emissões). A validação de CPF é feita tanto no formato quanto na unicidade, impedindo duplicidades.
+
+**Listagem:** Exibe todos os colaboradores com paginação (20 por página) e busca por nome ou CPF.
+
+**Edição e Exclusão:** Permite atualizar ou remover registros de colaboradores diretamente pela listagem.
+
+---
+
+## Módulo de Usuários do Sistema
+
+Permite ao administrador gerenciar os usuários que acessam o sistema.
+
+- Cadastro com nome, usuário, senha e perfil de acesso
+- Listagem de todos os usuários com status ativo/inativo
+- Exclusão de usuários (com proteção para não excluir o próprio usuário logado)
+
+---
+
+## Módulo de Departamentos
+
+Gerenciamento completo (CRUD) dos departamentos da organização.
+
+- Cadastro e listagem com busca
+- Exibe o **total de colaboradores vinculados** a cada departamento
+- Ao renomear um departamento, o sistema atualiza automaticamente os vínculos nos colaboradores
+- Impede exclusão de departamentos com colaboradores associados
+
+---
+
+## Cardápio
+
+<img width="1586" height="729" alt="image" src="https://github.com/user-attachments/assets/17bb8cb0-b790-48c7-8e80-ee6f1cda8a77" />
+
+
+Módulo para cadastro e gestão do cardápio diário, com suporte a foto.
+
+**Cadastro:** Permite registrar itens de cardápio com data, tipo de refeição (Café da Manhã, Almoço, Lanche, Jantar), descrição e foto (JPG/PNG/WEBP, até 5 MB).
+
+**Visualização pública:** Rota `/cardapio` exibe o cardápio do dia agrupado por tipo de refeição, acessível para consulta no totem.
+
+**Gerenciamento:** Listagem com filtro por período, ativação/desativação e exclusão de itens.
+
+<img width="1587" height="728" alt="image" src="https://github.com/user-attachments/assets/70358aba-409d-42f3-b52c-e5c0364ff2b4" />
+
+
+---
+
+## Emissão de Senhas
+
+<img width="1588" height="728" alt="image" src="https://github.com/user-attachments/assets/ad1ed6e1-6be3-4841-a3d5-78e120b48f71" />
+
+
+Rota operacional usada nos totens para que colaboradores e visitantes retirem a senha de refeição. Disponível em duas versões de layout: **desktop** e **tablet**.
+
+### Modo de Emissão
+
+O administrador pode alternar entre dois modos pelo painel de configurações:
+
+**Modo Padrão:** O colaborador informa apenas o CPF. O sistema valida, verifica o limite diário e emite a senha numerada.
+<img width="1591" height="728" alt="image" src="https://github.com/user-attachments/assets/4c34442f-02b9-4a62-9d59-5ffff1ee7365" />
+
+
+**Modo com Cardápio:** Além do CPF, o usuário seleciona a refeição desejada no cardápio do dia antes de emitir a senha. O item escolhido fica registrado na emissão.
+<img width="1581" height="719" alt="image" src="https://github.com/user-attachments/assets/feb758ce-45a9-4078-83a3-cfba6f38ecee" />
+
+### Emissão para Colaborador
+
+- Validação de CPF (formato e existência no banco)
+- Verificação do limite diário configurado no cadastro
+- Registro do nome, cargo, departamento e número sequencial da senha
+- Suporte ao modo com cardápio
+
+### Emissão para Visitante
+
+- Informação de nome, CPF e localização
+- Validação de CPF
+- Limite diário: **1 senha** (padrão) ou **3 senhas** para o tipo "Acompanhante"
+- Suporte ao modo com cardápio
+
+---
+
+## Relatórios
+
+Todos os relatórios podem ser exportados em **PDF** ou **Excel (.xlsx)**, conforme o tipo.
+
+<!-- Adicione prints dos relatórios aqui -->
+
+### Relatório Analítico de Emissões
+
+Visão estatística completa de um período selecionado:
+
+- Total de colaboradores cadastrados na base
+- Totais por período do dia: Café, Almoço e Janta — separados por colaborador e visitante
+- Totais por tipo de pessoa (colaborador / visitante)
+- Top 5 departamentos por volume de emissões (gráfico de barras)
+- Percentual de atingimento em relação à base cadastrada (gráfico de pizza)
+- Listagem por departamento
+- Exportação em **PDF**
+
+### Relatório de Emissões Diárias
+
+Listagem detalhada de todas as emissões em um período, contendo: número da senha, CPF, nome, cargo, departamento, data e hora. Exportação em **PDF** ou **Excel**.
+
+### Relatório por Departamento
+
+Emissões filtradas por departamento (ou todos), com totalizadores por período do dia (Café / Almoço / Janta). Exportação em **PDF** ou **Excel**.
+
+### Relatório de Visitantes por Localização
+
+Emissões de visitantes filtradas por localização/localização cadastrada, com totalizadores por período. Exportação em **PDF** ou **Excel**.
+
+### Relatório de Cardápio
+
+Relatório específico para emissões realizadas no modo com cardápio. Permite filtrar por período, departamento, tipo de refeição e tipo de pessoa (colaborador / visitante). Apresenta:
+
+- Resumo de emissões por tipo de refeição (colaborador / visitante / total)
+- Detalhamento por item de cardápio com subtotais por refeição
+- Listagem completa de registros
+- Exportação em **PDF** ou **Excel** (com duas abas: detalhamento geral e total por cardápio)
+
+---
+
+## Configurações
+
+Painel de configurações acessível apenas pelo perfil **Admin**.
+
+### Tipo de Emissão de Senha
+
+Alterna o modo de operação dos totens entre **Padrão** (só CPF) e **Com Cardápio** (CPF + seleção do cardápio do dia).
+<img width="1582" height="723" alt="image" src="https://github.com/user-attachments/assets/a1407507-6acb-4055-a4af-dae624bcfef1" />
+
+
+### Localizações
+
+Gerenciamento das localizações utilizadas no cadastro de visitantes. Permite cadastrar, editar, buscar e excluir localizações.
+
+---
+
+## Tecnologias Utilizadas
+
+- **Python & Flask** — back-end e roteamento da aplicação
+- **HTML5, CSS3 & Javascript** — front-end e interfaces dos totens
+- **MySQL** — banco de dados relacional
+- **pdfkit / wkhtmltopdf** — geração de relatórios em PDF
+- **matplotlib** — geração de gráficos nos relatórios analíticos
+- **pandas & xlsxwriter** — geração de relatórios em Excel
+- **Logging customizado** — rastreamento de ações dos usuários via `log_config.py`
