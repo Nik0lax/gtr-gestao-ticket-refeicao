@@ -12,8 +12,8 @@ services:
       MYSQL_HOST: db
       MYSQL_USER: gtr_user
       MYSQL_PASSWORD: gtr_pass
-      MYSQL_DB: gtr_hml
-      SECRET_KEY: gtr_hml
+      MYSQL_DB: gtr
+      SECRET_KEY: gtr
     volumes:
       - ./uploads:/app/uploads
 
