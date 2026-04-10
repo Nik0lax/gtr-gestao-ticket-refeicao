@@ -4,8 +4,8 @@ env/
 __pycache__/
 *.pyc
 
+#readme
+README.md
+
 # Log files
 *.log
-
-# arquivos
-README.md

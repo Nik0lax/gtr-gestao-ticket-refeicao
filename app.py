@@ -14,7 +14,7 @@ from log_config import get_logger
 logger = get_logger()
 
 app = Flask(__name__)
-app.secret_key = 'gtr_hml'
+app.secret_key = 'gtr'
 logger.info("🚀 Aplicação iniciada.")
 
 @app.after_request
@@ -108,9 +108,9 @@ def get_dashboard_data():
 config_pdf = pdfkit.configuration(wkhtmltopdf='/usr/bin/wkhtmltopdf')
 
 app.config['MYSQL_HOST'] = 'localhost'
-app.config['MYSQL_USER'] = 'gtruser_hml'
+app.config['MYSQL_USER'] = 'gtruser'
 app.config['MYSQL_PASSWORD'] = 'Psm@cqua'
-app.config['MYSQL_DB'] = 'gtr_hml'
+app.config['MYSQL_DB'] = 'gtr'
 mysql = MySQL(app)
 
 ##################################APP##################################
