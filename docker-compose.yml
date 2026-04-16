@@ -4,6 +4,7 @@ services:
   web:
     build: .
     container_name: gtr_app
+    restart: always
     ports:
       - "5000:5000"
     depends_on:
@@ -33,3 +34,4 @@ services:
       - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
 volumes:
   db_data:
+
