@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 import base64
 import io
 import os
+import time
+import MySQLdb
 import pandas as pd
 
 from log_config import get_logger
@@ -108,11 +110,24 @@ def get_dashboard_data():
 
 config_pdf = pdfkit.configuration(wkhtmltopdf='/usr/bin/wkhtmltopdf')
 
-app.config['MYSQL_HOST'] = os.getenv('MYSQL_HOST')
-app.config['MYSQL_USER'] = os.getenv('MYSQL_USER')
-app.config['MYSQL_PASSWORD'] = os.getenv('MYSQL_PASSWORD')
-app.config['MYSQL_DB'] = os.getenv('MYSQL_DB')
-mysql = MySQL(app)
+def wait_for_db():
+    for i in range(10):
+        try:
+            conn = MySQLdb.connect(
+                host=os.getenv('MYSQL_HOST'),
+                user=os.getenv('MYSQL_USER'),
+                passwd=os.getenv('MYSQL_PASSWORD'),
+                db=os.getenv('MYSQL_DB')
+            )
+            conn.close()
+            print("✅ DB conectado")
+            return
+        except Exception as e:
+            print(f"⏳ Aguardando DB... tentativa {i+1}")
+            time.sleep(3)
+    raise Exception("❌ Não conseguiu conectar no DB")
+
+wait_for_db()
 
 ##################################APP##################################
 
