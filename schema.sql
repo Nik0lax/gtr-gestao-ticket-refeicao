@@ -17,6 +17,26 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
+-- Table structure for table `cardapios`
+--
+
+DROP TABLE IF EXISTS `cardapios`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `cardapios` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `data_cardapio` date NOT NULL,
+  `tipo_refeicao` varchar(50) NOT NULL,
+  `descricao` text NOT NULL,
+  `foto` varchar(255) DEFAULT NULL,
+  `ativo` tinyint(1) NOT NULL DEFAULT 1,
+  `criado_em` timestamp NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_data_ativo` (`data_cardapio`,`ativo`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `colaboradores`
 --
 
@@ -32,7 +52,23 @@ CREATE TABLE `colaboradores` (
   `tipo` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `cpf` (`cpf`)
-) ENGINE=InnoDB AUTO_INCREMENT=4703 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4704 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `configuracoes_sistema`
+--
+
+DROP TABLE IF EXISTS `configuracoes_sistema`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `configuracoes_sistema` (
+  `chave` varchar(100) NOT NULL,
+  `valor` varchar(255) NOT NULL,
+  `descricao` varchar(255) DEFAULT NULL,
+  `atualizado_em` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`chave`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -65,8 +101,12 @@ CREATE TABLE `emissoes_senha` (
   `departamento` varchar(255) NOT NULL,
   `data_hora` datetime NOT NULL,
   `numero_senha` int(11) DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=65705 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  `cardapio_id` int(11) DEFAULT NULL COMMENT 'FK → cardapios.id',
+  `tipo_refeicao` varchar(50) DEFAULT NULL COMMENT 'Snapshot do tipo_refeicao',
+  `descricao_cardapio` text DEFAULT NULL COMMENT 'Snapshot da descrição',
+  PRIMARY KEY (`id`),
+  KEY `idx_cardapio_id` (`cardapio_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=66372 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -100,10 +140,7 @@ CREATE TABLE `usuarios` (
   `criado_em` timestamp NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
   UNIQUE KEY `usuario` (`usuario`)
-) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
-INSERT INTO `usuarios` VALUES
-(1,'Administrador','admin','admin','admin',1,'2025-04-25 12:26:06');
+) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -115,19 +152,4 @@ INSERT INTO `usuarios` VALUES
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-04-08 14:28:56
-
--- ─── CARDÁPIO ────────────────────────────────────────────────────────────────
--- Execute este bloco no banco de dados para ativar o módulo de cardápio.
-
-CREATE TABLE IF NOT EXISTS `cardapios` (
-  `id`            int(11)      NOT NULL AUTO_INCREMENT,
-  `data_cardapio` date         NOT NULL,
-  `tipo_refeicao` varchar(50)  NOT NULL,          -- 'Café da Manhã' | 'Almoço' | 'Jantar' | 'Lanche'
-  `descricao`     text         NOT NULL,
-  `foto`          varchar(255) DEFAULT NULL,       -- nome do arquivo em static/uploads/cardapio/
-  `ativo`         tinyint(1)   NOT NULL DEFAULT 1,
-  `criado_em`     timestamp    NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`),
-  KEY `idx_data_ativo` (`data_cardapio`, `ativo`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+-- Dump completed on 2026-04-14 10:40:21
