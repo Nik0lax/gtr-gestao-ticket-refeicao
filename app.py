@@ -110,10 +110,10 @@ def get_dashboard_data():
 
 config_pdf = pdfkit.configuration(wkhtmltopdf='/usr/bin/wkhtmltopdf')
 
-app.config['MYSQL_HOST'] = 'localhost'
-app.config['MYSQL_USER'] = 'gtruser'
-app.config['MYSQL_PASSWORD'] = 'Psm@cqua'
-app.config['MYSQL_DB'] = 'gtr'
+app.config['MYSQL_HOST'] = os.getenv('MYSQL_HOST') or 'localhost'
+app.config['MYSQL_USER'] = os.getenv('MYSQL_USER') or 'gtruser'
+app.config['MYSQL_PASSWORD'] = os.getenv('MYSQL_PASSWORD') or 'Psm@cqua'
+app.config['MYSQL_DB'] = os.getenv('MYSQL_DB') or 'gtr'
 mysql = MySQL(app)
 
 ##################################APP##################################
