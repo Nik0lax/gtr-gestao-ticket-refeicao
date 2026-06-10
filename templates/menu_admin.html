@@ -32,11 +32,11 @@
       <nav class="menu">
 
         <!-- CADASTRO -->
-        <a href="#" class="menu-group-toggle {% if module in ['cadastro','cadastro_usuario','departamentos'] %}active{% endif %}" id="menu-cadastro">
+        <a href="#" class="menu-group-toggle {% if module in ['cadastro','cadastro_usuario','departamentos','grupos'] %}active{% endif %}" id="menu-cadastro">
           <i class="fas fa-folder-open"></i> Cadastro
           <i class="fas fa-chevron-down arrow"></i>
         </a>
-        <ul class="submenu {% if module in ['cadastro','cadastro_usuario','departamentos'] %}open{% endif %}" id="submenu-cadastro">
+        <ul class="submenu {% if module in ['cadastro','cadastro_usuario','departamentos','grupos'] %}open{% endif %}" id="submenu-cadastro">
           <li>
             <a href="{{ url_for('cadastro') }}" class="{% if module == 'cadastro' %}active-item{% endif %}">
               <i class="fas fa-user-plus"></i> Colaboradores
@@ -50,6 +50,11 @@
           <li>
             <a href="{{ url_for('departamentos') }}" class="{% if module == 'departamentos' %}active-item{% endif %}">
               <i class="fas fa-building"></i> Departamentos
+            </a>
+          </li>
+          <li>
+            <a href="{{ url_for('admin_grupos') }}" class="{% if module == 'grupos' %}active-item{% endif %}">
+              <i class="fas fa-layer-group"></i> Grupos SND
             </a>
           </li>
         </ul>
@@ -78,7 +83,7 @@
         </ul>
 
         <!-- RELATÓRIOS -->
-        {% set rel_modules = ['relatorio_totalEmissao','relatorio_emissaoDiaria','relatorio_totalVisitantes','relatorio_totalDepartamento','relatorio_cardapio'] %}
+        {% set rel_modules = ['relatorio_totalEmissao','relatorio_emissaoDiaria','relatorio_totalVisitantes','relatorio_totalDepartamento','relatorio_cardapio','relatorio_snd'] %}
         <a href="#" class="menu-group-toggle {% if modulo in rel_modules %}active{% endif %}" id="menu-relatorios">
           <i class="fas fa-chart-bar"></i> Relatórios
           <i class="fas fa-chevron-down arrow"></i>
@@ -109,14 +114,19 @@
               <i class="fas fa-utensils"></i> Emissões com Cardápio
             </a>
           </li>
+          <li>
+            <a href="{{ url_for('relatorio_snd') }}" class="{% if modulo == 'relatorio_snd' %}active-item{% endif %}">
+              <i class="fas fa-hand-holding-usd"></i> Relatório Financeiro SND
+            </a>
+          </li>
         </ul>
 
         <!-- CONFIGURAÇÕES -->
-        <a href="#" class="menu-group-toggle {% if module in ['config_localizacoes', 'config_emissao_senha'] %}active{% endif %}" id="menu-config">
+        <a href="#" class="menu-group-toggle {% if module in ['config_localizacoes', 'config_emissao_senha', 'config_custos_refeicao', 'config_turnos', 'config_identidade'] %}active{% endif %}" id="menu-config">
           <i class="fas fa-cog"></i> Configurações
           <i class="fas fa-chevron-down arrow"></i>
         </a>
-        <ul class="submenu {% if module in ['config_localizacoes', 'config_emissao_senha'] %}open{% endif %}" id="submenu-config">
+        <ul class="submenu {% if module in ['config_localizacoes', 'config_emissao_senha', 'config_custos_refeicao', 'config_turnos', 'config_identidade'] %}open{% endif %}" id="submenu-config">
           <li>
             <a href="{{ url_for('config_localizacoes') }}" class="{% if module == 'config_localizacoes' %}active-item{% endif %}">
               <i class="fas fa-map-marker-alt"></i> Localizações
@@ -125,6 +135,21 @@
           <li>
             <a href="{{ url_for('config_emissao_senha') }}" class="{% if module == 'config_emissao_senha' %}active-item{% endif %}">
               <i class="fas fa-ticket-alt"></i> Emissão de Senha
+            </a>
+          </li>
+          <li>
+            <a href="{{ url_for('config_custos_refeicao') }}" class="{% if module == 'config_custos_refeicao' %}active-item{% endif %}">
+              <i class="fas fa-dollar-sign"></i> Custos de Refeição
+            </a>
+          </li>
+          <li>
+            <a href="{{ url_for('config_turnos') }}" class="{% if module == 'config_turnos' %}active-item{% endif %}">
+              <i class="fas fa-clock"></i> Horários de Turno
+            </a>
+          </li>
+          <li>
+            <a href="{{ url_for('config_identidade') }}" class="{% if module == 'config_identidade' %}active-item{% endif %}">
+              <i class="fas fa-hospital"></i> Identidade
             </a>
           </li>
         </ul>
@@ -159,7 +184,7 @@
               <div class="kpi-icon"><i class="fas fa-calendar-alt"></i></div>
               <div class="kpi-info">
                 <span class="kpi-label">Senhas no Mês</span>
-                <span class="kpi-value">{{ dashboard_data.total_senhas }}</span>
+                <span class="kpi-value">{{ dashboard_data.kpi_valor_periodo }}</span>
               </div>
             </div>
             <div class="kpi-card kpi-green">
@@ -205,8 +230,8 @@
 
         <!-- Chart.js data injection -->
         <script>
-          const dashLabels7 = {{ dashboard_data.labels_7dias | tojson }};
-          const dashValores7 = {{ dashboard_data.valores_7dias | tojson }};
+          const dashLabelsGrafico = {{ dashboard_data.labels_grafico | tojson }};
+          const dashValoresGrafico = {{ dashboard_data.valores_grafico | tojson }};
           const dashLabelsDeps = {{ dashboard_data.labels_deps | tojson }};
           const dashValoresDeps = {{ dashboard_data.valores_deps | tojson }};
         </script>
@@ -254,6 +279,73 @@
             </div>
           </form>
           </div><!-- /card-box -->
+
+          <!-- Importação em lote -->
+          <div class="card-box" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:14px 20px;">
+            <span style="color:#9ab5c0;font-size:13px;"><i class="fas fa-file-csv" style="margin-right:6px;color:#00b4d8;"></i>Importação em lote:</span>
+            <a href="{{ url_for('modelo_colaboradores_csv') }}" class="btn-cancelar" style="text-decoration:none;font-size:13px;">
+              <i class="fas fa-download"></i> Baixar modelo CSV
+            </a>
+            <button type="button" onclick="abrirModalImport()" id="btn-enviar" style="font-size:13px;">
+              <i class="fas fa-upload"></i> Importar CSV
+            </button>
+          </div>
+
+          <!-- Resultado da importação -->
+          {% if import_result %}
+          {% set erros_import = import_result.total - import_result.inseridos %}
+          {% set cls_import = 'import-ok' if erros_import == 0 else ('import-parcial' if import_result.inseridos > 0 else 'import-falhou') %}
+          <style>
+            .import-ok     { border-left: 4px solid #28a745 !important; }
+            .import-parcial{ border-left: 4px solid #f0a500 !important; }
+            .import-falhou { border-left: 4px solid #dc3545 !important; }
+            .import-ok .import-icon     { color: #28a745; }
+            .import-parcial .import-icon{ color: #f0a500; }
+            .import-falhou .import-icon { color: #dc3545; }
+          </style>
+          <div class="card-box {{ cls_import }}">
+            <h3 style="margin-bottom:12px;">
+              <i class="fas fa-check-circle import-icon" style="margin-right:8px;"></i>
+              Resultado da Importação
+            </h3>
+            <div style="display:flex;gap:24px;margin-bottom:16px;flex-wrap:wrap;">
+              <div style="text-align:center;">
+                <div style="font-size:28px;font-weight:700;color:#28a745;">{{ import_result.inseridos }}</div>
+                <div style="font-size:12px;color:#9ab5c0;">Importados</div>
+              </div>
+              <div style="text-align:center;">
+                <div style="font-size:28px;font-weight:700;color:#dc3545;">{{ import_result.total - import_result.inseridos }}</div>
+                <div style="font-size:12px;color:#9ab5c0;">Com erro</div>
+              </div>
+              <div style="text-align:center;">
+                <div style="font-size:28px;font-weight:700;color:#9ab5c0;">{{ import_result.total }}</div>
+                <div style="font-size:12px;color:#9ab5c0;">Total de linhas</div>
+              </div>
+            </div>
+            {% if import_result.linhas %}
+            <table style="font-size:13px;">
+              <thead><tr><th>Linha</th><th>Nome</th><th>Status</th><th>Detalhe</th></tr></thead>
+              <tbody>
+                {% for r in import_result.linhas %}
+                <tr>
+                  <td style="color:#9ab5c0;">{{ r.linha }}</td>
+                  <td>{{ r.nome }}</td>
+                  <td>
+                    {% if r.status == 'sucesso' %}
+                      <span style="color:#28a745;font-weight:600;"><i class="fas fa-check"></i> Sucesso</span>
+                    {% else %}
+                      <span style="color:#dc3545;font-weight:600;"><i class="fas fa-times"></i> Erro</span>
+                    {% endif %}
+                  </td>
+                  <td style="color:#9ab5c0;">{{ r.motivo }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+            {% endif %}
+          </div>
+          {% endif %}
+
           <div class="card-box"><h3><i class="fas fa-users"></i> Lista de Colaboradores</h3>
             <form method="GET" style="display:flex;gap:10px;align-items:flex-end;max-width:480px;" action="{{ url_for('cadastro') }}">
               <div class="form-group" style="flex:1;">
@@ -269,9 +361,13 @@
                   <tr>
                     <td>{{ c[0] }}</td><td>{{ c[1] }}</td><td>{{ c[2] }}</td>
                     <td>{{ c[3] }}</td><td>{{ c[4] }}</td><td>{{ c[5] }}</td>
-                    <td>
-                      <form method="POST" id="form_excluir" action="{{ url_for('excluir_colaborador', colaborador_id=c[0]) }}" onsubmit="return confirm('Excluir este colaborador?');">
-                        <button type="submit" id="btn-excluir">✖</button>
+                    <td style="display:flex;gap:6px;">
+                      <button type="button" id="btn-enviar" style="padding:4px 10px;"
+                              data-id="{{ c[0] }}" data-nome="{{ c[1]|e }}" data-cpf="{{ c[2] }}"
+                              data-cargo="{{ c[3]|e }}" data-departamento="{{ c[4]|e }}" data-tipo="{{ c[5] }}"
+                              onclick="abrirModalColab(this.dataset)">✎</button>
+                      <form method="POST" action="{{ url_for('excluir_colaborador', colaborador_id=c[0]) }}" onsubmit="return confirm('Excluir este colaborador?');">
+                        <button type="submit" id="btn-excluir" style="padding:4px 10px;">✖</button>
                       </form>
                     </td>
                   </tr>
@@ -321,8 +417,17 @@
                 {% if usuarios %}{% for u in usuarios %}
                   <tr>
                     <td>{{ u[0] }}</td><td>{{ u[1] }}</td><td>{{ u[2] }}</td><td>{{ u[3] }}</td>
-                    <td>
-                      <form method="POST" id="form_excluir" action="{{ url_for('excluir_usuario', usuario_id=u[0]) }}" onsubmit="return confirm('Excluir este usuário?');">
+                    <td style="display:flex;gap:6px;">
+                      <button type="button" class="btn-edit"
+                              data-id="{{ u[0] }}"
+                              data-nome="{{ u[1]|e }}"
+                              data-usuario="{{ u[2]|e }}"
+                              data-perfil="{{ u[3]|e }}"
+                              onclick="abrirModalUsuario(this.dataset)"
+                              title="Editar usuário">
+                        <i class="fas fa-edit"></i>
+                      </button>
+                      <form method="POST" action="{{ url_for('excluir_usuario', usuario_id=u[0]) }}" onsubmit="return confirm('Excluir este usuário?');" style="background:none;box-shadow:none;padding:0;margin:0;">
                         <button type="submit" id="btn-excluir">✖</button>
                       </form>
                     </td>
@@ -345,7 +450,17 @@
             </div>{% endif %}
           {% endwith %}
           <form method="POST" action="{{ url_for('departamentos') }}" class="form-grid">
-            <div class="form-group"><label>Nome do Departamento</label><input type="text" name="nome" required placeholder="Ex: Tecnologia da Informação"></div>
+            <div class="form-group">
+              <label>Nome do Departamento</label>
+              <input type="text" name="nome" required placeholder="Ex: Tecnologia da Informação">
+            </div>
+            <div class="form-group">
+              <label>Grupo SND</label>
+              <select name="grupo">
+                <option value="">— Sem grupo —</option>
+                {% for g in grupos %}<option value="{{ g[1] }}">{{ g[1] }}</option>{% endfor %}
+              </select>
+            </div>
             <div class="form-actions" style="grid-column:span 3;"><button type="submit" id="btn-enviar"><i class="fas fa-plus"></i> Adicionar</button></div>
           </form>
           </div><!-- /card-box -->
@@ -358,16 +473,17 @@
               <button type="submit" id="btn-enviar" style="flex-shrink:0;"><i class="fas fa-search"></i> Buscar</button>
             </form>
             <table>
-              <thead><tr><th>ID</th><th>Nome</th><th>Colaboradores</th><th>Ação</th></tr></thead>
+              <thead><tr><th>ID</th><th>Nome</th><th>Grupo</th><th>Quantidade de Colaboradores</th><th>Ação</th></tr></thead>
               <tbody>
                 {% if lista_departamentos %}{% for dep in lista_departamentos %}
                   <tr>
                     <td>{{ dep[0] }}</td>
                     <td>{{ dep[1] }}</td>
                     <td>{{ dep[2] }}</td>
+                    <td>{{ dep[3] }}</td>
                     <td style="display:flex;gap:6px;">
                       <button type="button" class="btn-edit"
-                              onclick="abrirModalDep({{ dep[0] }}, '{{ dep[1]|e }}')"
+                              onclick="abrirModalDep('{{ dep[0] }}', '{{ dep[1] }}', '{{ dep[2] }}')"
                               title="Editar departamento">
                         <i class="fas fa-edit"></i>
                       </button>
@@ -378,6 +494,74 @@
                   </tr>
                 {% endfor %}{% else %}
                   <tr><td colspan="4">Nenhum departamento encontrado.</td></tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      <!-- GRUPOS SND -->
+      {% elif module == 'grupos' %}
+        <div id="grupos-content">
+          <div class="card-box">
+            <h2><i class="fas fa-layer-group"></i> Grupos SND</h2>
+            <p style="color:#9ab5c0;font-size:13px;margin-bottom:20px;">
+              Grupos são usados no Relatório Financeiro SND para segregar departamentos por centro de custo.
+              A ordem de exibição no relatório segue a ordem de cadastro dos grupos.
+            </p>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}<div class="flash-container" id="flash-container">
+                {% for category, message in messages %}<div class="flash-message {{ category }}">{{ message }}</div>{% endfor %}
+              </div>{% endif %}
+            {% endwith %}
+            <form method="POST" action="{{ url_for('admin_grupos') }}" style="display:flex;gap:10px;align-items:flex-end;max-width:480px;">
+              <div class="form-group" style="flex:1;">
+                <label>Novo Grupo</label>
+                <input type="text" name="nome" required placeholder="Ex: Produtivos, Auxiliares...">
+              </div>
+              <button type="submit" id="btn-enviar" style="flex-shrink:0;"><i class="fas fa-plus"></i> Adicionar</button>
+            </form>
+          </div>
+
+          <div class="card-box">
+            <h3><i class="fas fa-list"></i> Grupos Cadastrados</h3>
+            <p style="color:#9ab5c0;font-size:12px;margin-bottom:12px;">
+              <i class="fas fa-info-circle"></i>
+              Grupos com departamentos vinculados não podem ser excluídos. Renomear um grupo atualiza todos os departamentos automaticamente.
+            </p>
+            <table>
+              <thead>
+                <tr><th>#</th><th>Nome do Grupo</th><th>Departamentos</th><th>Ação</th></tr>
+              </thead>
+              <tbody>
+                {% if lista_grupos %}{% for g in lista_grupos %}
+                  <tr>
+                    <td style="color:#9ab5c0;font-size:12px;">{{ loop.index }}</td>
+                    <td><strong>{{ g[1] }}</strong></td>
+                    <td>
+                      {% if g[2] > 0 %}
+                        <span style="color:#00b4d8;font-weight:600;">{{ g[2] }} dept.</span>
+                      {% else %}
+                        <span style="color:#9ab5c0;">Nenhum</span>
+                      {% endif %}
+                    </td>
+                    <td style="display:flex;gap:6px;">
+                      <button type="button" class="btn-edit"
+                              data-id="{{ g[0] }}" data-nome="{{ g[1]|e }}"
+                              onclick="abrirModalGrupo(this.dataset.id, this.dataset.nome)"
+                              title="Renomear grupo">
+                        <i class="fas fa-edit"></i>
+                      </button>
+                      <form method="POST" action="{{ url_for('excluir_grupo', grupo_id=g[0]) }}"
+                            onsubmit="return confirm('Excluir o grupo &quot;{{ g[1]|e }}&quot;?');"
+                            style="background:none;box-shadow:none;padding:0;margin:0;">
+                        <button type="submit" id="btn-excluir" title="Excluir"
+                                {% if g[2] > 0 %}disabled style="opacity:.4;cursor:not-allowed;"{% endif %}>✖</button>
+                      </form>
+                    </td>
+                  </tr>
+                {% endfor %}{% else %}
+                  <tr><td colspan="4" style="text-align:center;color:#9ab5c0;padding:24px;">Nenhum grupo cadastrado.</td></tr>
                 {% endif %}
               </tbody>
             </table>
@@ -635,6 +819,48 @@
           </div>
         </div>
 
+
+      {% elif modulo == 'relatorio_snd' %}
+        <div class="relatorios-content">
+          <h2><i class="fas fa-hand-holding-usd"></i> Relatório Financeiro SND</h2>
+          <div class="relatorio-form-card">
+            <form method="POST" action="{{ url_for('relatorio_snd') }}" class="form-grid" style="grid-template-columns:1fr 1fr;">
+              <div class="form-group">
+                <label>Data Inicial</label>
+                <input type="date" name="data_inicial" required>
+              </div>
+              <div class="form-group">
+                <label>Data Final</label>
+                <input type="date" name="data_final" required>
+              </div>
+              <div class="relatorio-actions" style="grid-column:span 2;">
+                <button type="submit" name="tipo_relatorio" value="pdf" id="btn-enviar">
+                  <i class="fas fa-file-pdf"></i> Exportar em PDF
+                </button>
+                <button type="submit" name="tipo_relatorio" value="excel" class="btn-cancelar">
+                  <i class="fas fa-file-excel"></i> Exportar em Excel
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <div class="card-box" style="margin-top:16px;border-left:3px solid #00b4d8;">
+            <h3 style="margin-bottom:10px;">
+              <i class="fas fa-info-circle" style="color:#00b4d8;margin-right:8px;"></i>
+              Sobre este relatório
+            </h3>
+            <p style="color:#9ab5c0;font-size:13px;line-height:1.7;margin:0;">
+              Gera o relatório no formato SND (Serviço de Nutrição e Dietética), com
+              <strong style="color:#e0e0e0;">custo por departamento</strong> agrupado por
+              <strong style="color:#e0e0e0;">centro de custo</strong> (Produtivos, Auxiliares,
+              Administrativos e Não Operacional).<br>
+              Os custos unitários utilizados são os cadastrados em
+              <strong style="color:#e0e0e0;">Configurações → Custos de Refeição</strong>.
+              Departamentos sem grupo definido aparecem como <em>Administrativos</em>.
+            </p>
+          </div>
+        </div>
+
       {% elif module == 'config_localizacoes' %}
         <div id="config-localizacoes-content">
           <div class="card-box">
@@ -761,6 +987,257 @@
             </p>
           </div>
 
+          <div class="card-box">
+            <h3 style="margin-bottom:6px;"><i class="fas fa-desktop" style="color:#00b4d8;margin-right:8px;"></i> Acesso Rápido ao Totem</h3>
+            <p style="color:#9ab5c0;font-size:13px;margin-bottom:18px;">
+              Abre a tela de emissão de senha diretamente no navegador, sem necessidade de login.
+              Use para testar ou para abrir manualmente em um totem.
+            </p>
+            <div style="display:flex;gap:14px;flex-wrap:wrap;">
+              <a href="{{ url_for('emissao_senha') }}" target="_blank"
+                 style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;
+                        background:#1e3a4a;border:1px solid #2a5060;border-radius:8px;
+                        color:#e0e0e0;text-decoration:none;font-size:13px;font-weight:600;
+                        transition:background .2s;"
+                 onmouseover="this.style.background='#2a5060'" onmouseout="this.style.background='#1e3a4a'">
+                <i class="fas fa-desktop" style="color:#00b4d8;"></i> Totem Desktop
+                <i class="fas fa-external-link-alt" style="font-size:10px;opacity:0.5;"></i>
+              </a>
+              <a href="{{ url_for('emissao_senha_tablet') }}" target="_blank"
+                 style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;
+                        background:#1e3a4a;border:1px solid #2a5060;border-radius:8px;
+                        color:#e0e0e0;text-decoration:none;font-size:13px;font-weight:600;
+                        transition:background .2s;"
+                 onmouseover="this.style.background='#2a5060'" onmouseout="this.style.background='#1e3a4a'">
+                <i class="fas fa-tablet-alt" style="color:#00b4d8;"></i> Totem Tablet
+                <i class="fas fa-external-link-alt" style="font-size:10px;opacity:0.5;"></i>
+              </a>
+            </div>
+          </div>
+
+        </div>
+
+      {% elif module == 'config_turnos' %}
+
+        <div id="config-turnos-content">
+          <div class="card-box">
+            <h2><i class="fas fa-clock"></i> Horários de Turno</h2>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}<div class="flash-container" id="flash-container">
+                {% for category, message in messages %}<div class="flash-message {{ category }}">{{ message }}</div>{% endfor %}
+              </div>{% endif %}
+            {% endwith %}
+
+            <p style="color:#9ab5c0;margin-bottom:24px;font-size:14px;">
+              Define o intervalo de horário de cada turno. Os relatórios usam esses limites
+              para classificar as emissões em Café da Manhã, Almoço e Jantar.
+            </p>
+
+            <form method="POST" action="{{ url_for('config_turnos') }}">
+              {% set turnos_def = [
+                ('cafe',   '☕', 'Café da Manhã', 'turno_cafe_ini',   'turno_cafe_fim'),
+                ('almoco', '🍽', 'Almoço',         'turno_almoco_ini', 'turno_almoco_fim'),
+                ('janta',  '🌙', 'Jantar',          'turno_janta_ini',  'turno_janta_fim'),
+              ] %}
+              {% for slug, icone, label, chave_ini, chave_fim in turnos_def %}
+              <div style="display:flex;align-items:center;gap:16px;margin-bottom:18px;flex-wrap:wrap;">
+                <div style="min-width:160px;font-size:14px;font-weight:600;color:#e0e0e0;">
+                  {{ icone }} {{ label }}
+                </div>
+                <div class="form-group" style="margin:0;flex:1;min-width:120px;">
+                  <label style="font-size:12px;color:#9ab5c0;">Início (HH:MM)</label>
+                  <input type="time" name="{{ chave_ini }}"
+                         value="{{ turnos_atuais[chave_ini] }}" required
+                         style="max-width:140px;">
+                </div>
+                <div style="color:#555;font-size:18px;">–</div>
+                <div class="form-group" style="margin:0;flex:1;min-width:120px;">
+                  <label style="font-size:12px;color:#9ab5c0;">Fim (HH:MM)</label>
+                  <input type="time" name="{{ chave_fim }}"
+                         value="{{ turnos_atuais[chave_fim] }}" required
+                         style="max-width:140px;">
+                </div>
+              </div>
+              {% endfor %}
+
+              <button type="submit" id="btn-enviar" style="margin-top:8px;">
+                <i class="fas fa-save"></i> Salvar Horários
+              </button>
+            </form>
+          </div>
+
+          <div class="card-box" style="border-left:3px solid #f0a500;">
+            <h3 style="margin-bottom:10px;">
+              <i class="fas fa-exclamation-triangle" style="color:#f0a500;margin-right:8px;"></i>
+              Atenção
+            </h3>
+            <p style="color:#9ab5c0;font-size:13px;margin:0;">
+              Alterar os horários afeta <strong style="color:#e0e0e0;">todos os relatórios</strong> gerados a partir
+              deste momento, inclusive para períodos históricos. Emissões fora do intervalo
+              de qualquer turno configurado serão classificadas como <strong style="color:#e0e0e0;">Jantar</strong>.
+            </p>
+          </div>
+        </div>
+
+      {% elif module == 'config_identidade' %}
+
+        <div id="config-identidade-content">
+          <div class="card-box">
+            <h2><i class="fas fa-hospital"></i> Identidade da Instituição</h2>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}<div class="flash-container" id="flash-container">
+                {% for category, message in messages %}<div class="flash-message {{ category }}">{{ message }}</div>{% endfor %}
+              </div>{% endif %}
+            {% endwith %}
+
+            <p style="color:#9ab5c0;margin-bottom:24px;font-size:14px;">
+              Define o nome da instituição exibido nos cabeçalhos e rodapés de todos os relatórios.
+            </p>
+
+            <form method="POST" action="{{ url_for('config_identidade') }}" style="display:flex;gap:10px;align-items:flex-end;max-width:520px;">
+              <div class="form-group" style="flex:1;">
+                <label>Nome da Instituição</label>
+                <input type="text" name="nome_instituicao" value="{{ nome_instituicao_atual }}"
+                       placeholder="Ex: Serviço de Nutrição e Dietética" maxlength="120" required>
+              </div>
+              <button type="submit" id="btn-enviar" style="flex-shrink:0;"><i class="fas fa-save"></i> Salvar</button>
+            </form>
+          </div>
+        </div>
+
+      {% elif module == 'config_custos_refeicao' %}
+
+        <div id="config-custos-refeicao-content">
+
+          <div class="card-box">
+            <h2><i class="fas fa-dollar-sign"></i> Custos de Refeição</h2>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}<div class="flash-container" id="flash-container">
+                {% for category, message in messages %}<div class="flash-message {{ category }}">{{ message }}</div>{% endfor %}
+              </div>{% endif %}
+            {% endwith %}
+
+            <p style="color:#9ab5c0;margin-bottom:24px;font-size:14px;">
+              Define o custo unitário (R$) de cada refeição. Esses valores são usados nos relatórios financeiros.
+            </p>
+
+            <form method="POST" action="{{ url_for('config_custos_refeicao') }}">
+
+              {% set icones   = {'cafe': 'fa-coffee', 'almoco': 'fa-utensils', 'janta': 'fa-moon'} %}
+              {% set cores    = {'cafe': '#f0a500',   'almoco': '#00b4d8',     'janta': '#7c5cbf'} %}
+              {% set defaults = {'cafe': 'Café da Manhã', 'almoco': 'Almoço', 'janta': 'Jantar'} %}
+
+              <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:28px;">
+
+                {% for tipo in ['cafe', 'almoco', 'janta'] %}
+                  {% set dados = custos.get(tipo, {}) %}
+                  {% set cor   = cores[tipo] %}
+                  <div style="flex:1;min-width:220px;border:2px solid {{ cor }};border-radius:10px;padding:20px;background:#fff;">
+
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+                      <i class="fas {{ icones[tipo] }}" style="color:{{ cor }};font-size:20px;"></i>
+                      <strong style="font-size:15px;color:#1e2d3a;">{{ dados.descricao if dados else defaults[tipo] }}</strong>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom:12px;">
+                      <label>Rótulo exibido</label>
+                      <input type="text" name="desc_{{ tipo }}"
+                             value="{{ dados.descricao if dados else defaults[tipo] }}"
+                             placeholder="{{ defaults[tipo] }}" maxlength="100" required>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom:12px;">
+                      <label>Custo unitário (R$)</label>
+                      <input type="number" name="custo_{{ tipo }}"
+                             value="{{ '%.2f'|format(dados.custo_unitario if dados else 0) }}"
+                             min="0" step="0.01" placeholder="0.00"
+                             style="font-size:16px;font-weight:600;color:{{ cor }};" required>
+                    </div>
+
+                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-top:4px;font-size:13px;color:#3a6a7a;">
+                      <input type="checkbox" name="ativo_{{ tipo }}"
+                             {% if not dados or dados.get('ativo', True) %}checked{% endif %}
+                             style="width:16px;height:16px;accent-color:{{ cor }};">
+                      Refeição ativa nos relatórios
+                    </label>
+                  </div>
+                {% endfor %}
+
+              </div>
+
+              <button type="submit" id="btn-enviar">
+                <i class="fas fa-save"></i> Salvar Custos
+              </button>
+
+            </form>
+          </div>
+
+          <div class="card-box" style="border-left:3px solid #00b4d8;">
+            <h3 style="margin-bottom:12px;">
+              <i class="fas fa-info-circle" style="color:#00b4d8;margin-right:8px;"></i>
+              Como os custos são usados
+            </h3>
+            <p style="color:#9ab5c0;font-size:13px;margin:0;line-height:1.7;">
+              Os valores cadastrados aqui serão multiplicados pela quantidade de senhas emitidas
+              em cada período — <strong style="color:#e0e0e0;">Café&nbsp;02h–10h59</strong>,
+              <strong style="color:#e0e0e0;">Almoço&nbsp;11h–17h59</strong>,
+              <strong style="color:#e0e0e0;">Jantar&nbsp;18h–23h59</strong> — nos relatórios financeiros.
+              Refeições marcadas como <strong style="color:#e0e0e0;">inativas</strong> são omitidas do cálculo.
+              O <strong style="color:#e0e0e0;">Relatório SND</strong> usa automaticamente o custo
+              vigente na <strong style="color:#e0e0e0;">data inicial</strong> do período selecionado,
+              garantindo precisão histórica na prestação de contas.
+            </p>
+          </div>
+
+          <div class="card-box">
+            <h3 style="margin-bottom:16px;">
+              <i class="fas fa-history" style="color:#00b4d8;margin-right:8px;"></i>
+              Histórico de Alterações
+            </h3>
+            {% if historico_custos %}
+            <style>
+              .hist-cafe   { color: #f0a500; }
+              .hist-almoco { color: #00b4d8; }
+              .hist-janta  { color: #7c5cbf; }
+            </style>
+            {% set icone_tipo = {'cafe': 'fa-coffee', 'almoco': 'fa-utensils', 'janta': 'fa-moon'} %}
+            {% set cls_tipo   = {'cafe': 'hist-cafe',  'almoco': 'hist-almoco', 'janta': 'hist-janta'} %}
+            <table style="font-size:13px;">
+              <thead>
+                <tr>
+                  <th>Data / Hora</th>
+                  <th>Refeição</th>
+                  <th style="text-align:right;">Custo (R$)</th>
+                  <th>Alterado por</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for h in historico_custos %}
+                <tr>
+                  <td style="color:#9ab5c0;white-space:nowrap;">
+                    {{ h[3].strftime('%d/%m/%Y %H:%M') if h[3] else '—' }}
+                  </td>
+                  <td>
+                    <i class="fas {{ icone_tipo.get(h[0], 'fa-utensils') }} {{ cls_tipo.get(h[0], '') }}"
+                       style="margin-right:6px;"></i>
+                    {{ h[1] or h[0] }}
+                  </td>
+                  <td style="text-align:right;font-weight:600;color:#e0e0e0;">
+                    R$ {{ '%.2f'|format(h[2]|float) }}
+                  </td>
+                  <td style="color:#9ab5c0;font-size:12px;">{{ h[4] or '—' }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+            {% else %}
+            <p style="color:#9ab5c0;font-size:13px;margin:0;">Nenhuma alteração registrada ainda.</p>
+            {% endif %}
+          </div>
+
         </div>
 
       {% endif %}
@@ -796,10 +1273,10 @@
       new Chart(ctxBar, {
         type: 'bar',
         data: {
-          labels: dashLabels7,
+          labels: dashLabelsGrafico,
           datasets: [{
             label: 'Senhas emitidas',
-            data: dashValores7,
+            data: dashValoresGrafico,
             backgroundColor: 'rgba(33,125,157,0.75)',
             borderColor: '#1a5f78',
             borderWidth: 1.5,
@@ -872,6 +1349,114 @@
     })();
   </script>
 
+  <!-- Modal Editar Usuário -->
+  <div id="modal-usuario" class="modal-overlay" style="display:none;">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span class="modal-title"><i class="fas fa-user-cog"></i> Editar Usuário</span>
+        <button class="modal-close" onclick="fecharModalUsuario()" title="Fechar">&times;</button>
+      </div>
+      <form id="modal-usuario-form" method="POST" action="">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Nome</label>
+            <input type="text" id="modal-usr-nome" name="nome" required>
+          </div>
+          <div class="form-group">
+            <label>Usuário (login)</label>
+            <input type="text" id="modal-usr-login" name="usuario_login" required>
+          </div>
+          <div class="form-group">
+            <label>Perfil</label>
+            <select id="modal-usr-perfil" name="perfil" required>
+              <option value="admin">Administrador</option>
+              <option value="usuario">Usuário</option>
+              <option value="totem_desktop">Totem Desktop</option>
+              <option value="totem_tablet">Totem Tablet</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Nova Senha <small style="color:#9ab5c0;">(deixe em branco para não alterar)</small></label>
+            <input type="text" id="modal-usr-senha" name="nova_senha" placeholder="Digite a nova senha...">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-cancelar" onclick="fecharModalUsuario()">
+            <i class="fas fa-times"></i> Cancelar
+          </button>
+          <button type="submit" id="btn-enviar">
+            <i class="fas fa-save"></i> Salvar Alterações
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function abrirModalUsuario(ds) {
+      document.getElementById('modal-usr-nome').value   = ds.nome;
+      document.getElementById('modal-usr-login').value  = ds.usuario;
+      document.getElementById('modal-usr-perfil').value = ds.perfil;
+      document.getElementById('modal-usr-senha').value  = '';
+      document.getElementById('modal-usuario-form').action = '/editar_usuario/' + ds.id;
+      document.getElementById('modal-usuario').style.display = 'flex';
+    }
+    function fecharModalUsuario() {
+      document.getElementById('modal-usuario').style.display = 'none';
+    }
+    document.getElementById('modal-usuario').addEventListener('click', function(e) {
+      if (e.target === this) fecharModalUsuario();
+    });
+  </script>
+
+  <!-- Modal Importar CSV -->
+  <div id="modal-import" class="modal-overlay" style="display:none;">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span class="modal-title"><i class="fas fa-upload"></i> Importar Colaboradores via CSV</span>
+        <button class="modal-close" onclick="fecharModalImport()" title="Fechar">&times;</button>
+      </div>
+      <form method="POST" action="{{ url_for('importar_colaboradores') }}" enctype="multipart/form-data">
+        <div class="modal-body">
+          <p style="color:#9ab5c0;font-size:13px;margin-bottom:16px;">
+            O arquivo CSV deve conter as colunas: <strong style="color:#e0e0e0;">nome, cpf, cargo, departamento, tipo</strong>.<br>
+            Departamentos inexistentes serão criados automaticamente.<br>
+            O campo <strong style="color:#e0e0e0;">tipo</strong> representa refeições por dia (1, 2, 3 ou 4).
+          </p>
+          <div class="form-group">
+            <label>Arquivo CSV</label>
+            <input type="file" name="arquivo_csv" accept=".csv" required style="padding:8px;">
+          </div>
+          <p style="font-size:12px;color:#9ab5c0;margin-top:8px;">
+            <i class="fas fa-info-circle"></i>
+            Não tem o modelo?
+            <a href="{{ url_for('modelo_colaboradores_csv') }}" style="color:#00b4d8;">Baixe aqui</a>.
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-cancelar" onclick="fecharModalImport()">
+            <i class="fas fa-times"></i> Cancelar
+          </button>
+          <button type="submit" id="btn-enviar">
+            <i class="fas fa-upload"></i> Importar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function abrirModalImport() {
+      document.getElementById('modal-import').style.display = 'flex';
+    }
+    function fecharModalImport() {
+      document.getElementById('modal-import').style.display = 'none';
+    }
+    document.getElementById('modal-import').addEventListener('click', function(e) {
+      if (e.target === this) fecharModalImport();
+    });
+  </script>
+
   <!-- Modal Editar Departamento -->
   <div id="modal-dep" class="modal-overlay" style="display:none;">
     <div class="modal-box">
@@ -885,6 +1470,13 @@
             <label>Nome do Departamento</label>
             <input type="text" id="modal-dep-nome" name="nome" required
                    placeholder="Ex: Tecnologia da Informação">
+          </div>
+          <div class="form-group">
+            <label>Grupo SND</label>
+            <select id="modal-dep-grupo" name="grupo">
+              <option value="">— Sem grupo —</option>
+              {% if grupos is defined %}{% for g in grupos %}<option value="{{ g[1] }}">{{ g[1] }}</option>{% endfor %}{% endif %}
+            </select>
           </div>
         </div>
         <div class="modal-footer">
@@ -900,11 +1492,14 @@
   </div>
 
   <script>
-    function abrirModalDep(id, nome) {
+    function abrirModalDep(id, nome, grupo) {
       document.getElementById('modal-dep-nome').value = nome;
-      document.getElementById('modal-dep-form').action = '/editar_departamento/' + id;
+      document.getElementById('modal-dep-grupo').value = grupo || '';
+
+      document.getElementById('modal-dep-form').action =
+          '/editar_departamento/' + id;
+
       document.getElementById('modal-dep').style.display = 'flex';
-      setTimeout(() => document.getElementById('modal-dep-nome').focus(), 50);
     }
     function fecharModalDep() {
       document.getElementById('modal-dep').style.display = 'none';
@@ -914,6 +1509,47 @@
     });
     document.addEventListener('keydown', function(e) {
       if (e.key === 'Escape') fecharModalDep();
+    });
+  </script>
+
+  <!-- Modal Renomear Grupo -->
+  <div id="modal-grupo" class="modal-overlay" style="display:none;">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span class="modal-title"><i class="fas fa-layer-group"></i> Renomear Grupo</span>
+        <button class="modal-close" onclick="fecharModalGrupo()" title="Fechar">&times;</button>
+      </div>
+      <form id="modal-grupo-form" method="POST" action="">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Nome do Grupo</label>
+            <input type="text" id="modal-grupo-nome" name="nome" required placeholder="Ex: Produtivos">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-cancelar" onclick="fecharModalGrupo()">
+            <i class="fas fa-times"></i> Cancelar
+          </button>
+          <button type="submit" id="btn-enviar">
+            <i class="fas fa-save"></i> Salvar Alterações
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function abrirModalGrupo(id, nome) {
+      document.getElementById('modal-grupo-nome').value = nome;
+      document.getElementById('modal-grupo-form').action = '/admin/grupos/editar/' + id;
+      document.getElementById('modal-grupo').style.display = 'flex';
+      setTimeout(function(){ document.getElementById('modal-grupo-nome').focus(); }, 50);
+    }
+    function fecharModalGrupo() {
+      document.getElementById('modal-grupo').style.display = 'none';
+    }
+    document.getElementById('modal-grupo').addEventListener('click', function(e) {
+      if (e.target === this) fecharModalGrupo();
     });
   </script>
 
@@ -958,7 +1594,70 @@
       if (e.target === this) fecharModalLoc();
     });
     document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape') { fecharModalLoc(); fecharModalDep(); }
+      if (e.key === 'Escape') { fecharModalLoc(); fecharModalDep(); fecharModalImport(); fecharModalGrupo(); fecharModalUsuario(); fecharModalColab(); }
+    });
+  </script>
+
+  <!-- MODAL EDITAR COLABORADOR -->
+  <div id="modal-colab" class="modal-overlay" style="display:none;">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span>Editar Colaborador</span>
+        <button class="modal-close" onclick="fecharModalColab()" title="Fechar">&times;</button>
+      </div>
+      <form id="modal-colab-form" method="POST" action="">
+        <div class="form-group">
+          <label>CPF (não editável)</label>
+          <input type="text" id="modal-colab-cpf-display" disabled style="opacity:0.5;">
+        </div>
+        <div class="form-group">
+          <label>Nome</label>
+          <input type="text" id="modal-colab-nome" name="nome" required>
+        </div>
+        <div class="form-group">
+          <label>Cargo</label>
+          <input type="text" id="modal-colab-cargo" name="cargo" required>
+        </div>
+        <div class="form-group">
+          <label>Departamento</label>
+          <select id="modal-colab-departamento" name="departamento" required>
+            {% for d in departamentos %}
+            <option value="{{ d }}">{{ d }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Refeições por dia</label>
+          <select id="modal-colab-tipo" name="tipo" required>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
+          <button type="button" class="btn-cancelar" onclick="fecharModalColab()">Cancelar</button>
+          <button type="submit" id="btn-enviar"><i class="fas fa-save"></i> Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <script>
+    function abrirModalColab(ds) {
+      document.getElementById('modal-colab-cpf-display').value = ds.cpf;
+      document.getElementById('modal-colab-nome').value        = ds.nome;
+      document.getElementById('modal-colab-cargo').value       = ds.cargo;
+      document.getElementById('modal-colab-departamento').value = ds.departamento;
+      document.getElementById('modal-colab-tipo').value        = ds.tipo;
+      document.getElementById('modal-colab-form').action = '/editar_colaborador/' + ds.id;
+      document.getElementById('modal-colab').style.display = 'flex';
+      setTimeout(() => document.getElementById('modal-colab-nome').focus(), 50);
+    }
+    function fecharModalColab() {
+      document.getElementById('modal-colab').style.display = 'none';
+    }
+    document.getElementById('modal-colab').addEventListener('click', function(e) {
+      if (e.target === this) fecharModalColab();
     });
   </script>
 </body>

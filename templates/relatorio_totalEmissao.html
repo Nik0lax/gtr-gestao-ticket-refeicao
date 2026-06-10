@@ -1,171 +1,183 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <title>Relatório Total de Senhas Emitidas</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&amp;display=swap" rel="stylesheet">
-    <style>
-        
-        
-        body {
-            font-family: Poppins;
-            font-size: 13px;
-            
-        }
-        .logo h1 {
-            font-weight: 900;
-            margin: 0;
-            font-size: 2em;
-        }
+  <meta charset="UTF-8">
+  <title>Total de Senhas Emitidas</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; font-size: 11px; color: #1a1a1a; margin: 20px 28px; }
 
-        .logo span {
-            font-size: 0.8em;
-            color: #4A90E2;
-        }
+    /* cabeçalho */
+    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+    .logo h1 { font-size: 22px; font-weight: 900; letter-spacing: 1px; }
+    .logo span { font-size: 9px; color: #4A90E2; text-transform: uppercase; letter-spacing: 1px; }
+    .titulo-rel { text-align: right; font-size: 10px; color: #444; line-height: 1.5; }
+    .titulo-rel strong { font-size: 12px; color: #1a1a1a; }
 
-        .title {
-            font-size: 20px;
-        }
-        .total-grafico {
-            display: flex;
-            justify-content: space-between;
-            width: 100%;
-            margin-bottom: 30px;
-        }
+    hr { border: none; border-top: 2px solid #1a1a1a; margin-bottom: 10px; }
 
-        .total, .grafico-barras, .circle-container {
-            width: 48%;
-            padding: 10px;
-            border-radius: 10px;
-            background: #f9f9f9;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            box-sizing: border-box;
-        }
+    .title { font-size: 14px; font-weight: bold; margin-bottom: 4px; }
+    .subtitle { font-size: 10px; color: #555; margin-bottom: 12px; }
 
-        .total p {
-            margin: 6px 0;
-            padding-top: 10px;
-            font-size: 1.1em;
-        }
+    .info-grid { display: flex; gap: 40px; margin-bottom: 14px; font-size: 10px; }
+    .info-grid div span { font-weight: bold; }
 
-        .grafico-barras {
-            text-align: center;
-        }
+    /* blocos de resumo */
+    .section-label { font-size: 10px; font-weight: bold; color: #1e2d3a;
+                     text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+    .cost-summary { display: flex; gap: 10px; margin-bottom: 14px; }
+    .cost-box { flex: 1; border: 1px solid #ccc; border-radius: 4px; padding: 8px 10px; text-align: center; }
+    .cost-box .lbl { font-size: 9px; color: #777; text-transform: uppercase; margin-bottom: 3px; }
+    .cost-box .val { font-size: 16px; font-weight: bold; }
+    .cost-box.cafe   .val { color: #c47a00; }
+    .cost-box.almoco .val { color: #007aa8; }
+    .cost-box.janta  .val { color: #5c3d9e; }
+    .cost-box.total  .val { color: #1a1a1a; }
+    .cost-box.total  { border: 2px solid #1a1a1a; }
 
-        .footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-top: 30px;
-            width: 100%;
-            gap: 4%;
-        }
+    /* tabela */
+    table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+    th { background-color: #1e2d3a; color: #fff; padding: 6px 5px; font-size: 9.5px; text-align: center; }
+    th.left { text-align: left; }
+    td { padding: 5px; font-size: 10px; border-bottom: 1px solid #e0e0e0; }
+    td.center { text-align: center; }
+    td.right  { text-align: right; }
+    tr:nth-child(even) td { background-color: #f9f9f9; }
+    tr.total-geral td { background-color: #1e2d3a; color: #fff; font-weight: bold; font-size: 11px; }
+    .zero { color: #bbb; }
+    .rank { color: #aaa; font-size: 9px; }
 
-        .footer table {
-            border-collapse: collapse;
-            width: 48%;
-            background: #fff;
-            font-size: 1em;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
+    /* rodapé */
+    .footer { margin-top: 20px; display: flex; justify-content: space-between; font-size: 9px; color: #777; }
+    .footer .assinatura { border-top: 1px solid #aaa; padding-top: 4px; min-width: 200px; text-align: center; }
 
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px 15px;
-            text-align: left;
-            font-size: 1em;
-        }
-
-        th {
-            background-color: #f2f2f2;
-            font-weight: bold;
-        }
-    </style>
+    /* critério */
+    .criterio { background: #f4f8fb; border-left: 3px solid #00b4d8; padding: 7px 10px;
+                font-size: 9.5px; color: #444; margin-bottom: 16px; line-height: 1.6; }
+    .criterio strong { color: #1e2d3a; }
+  </style>
 </head>
 <body>
 
-    <div class="header">
-        <div class="logo">
-            <h1>GTR</h1>
-            <span>GESTÃO DE TICKET REFEIÇÃO</span>
-        </div>
+  <div class="header">
+    <div class="logo">
+      <h1>GTR</h1>
+      <span>Gestão de Ticket Refeição</span>
     </div>
-
-    <div class="title">
-        <span><strong>Relatório</strong> Total de Senhas Emitidas</span>
+    <div class="titulo-rel">
+      <strong>TOTAL DE SENHAS EMITIDAS</strong><br>
+      Relatório de Emissões por Tipo e Departamento<br>
+      {{ nome_instituicao }}
     </div>
-    <p><strong>Data:</strong> {{ total.data_geracao }} 
-    <br><strong>Base Atual de Colaboradores: </strong> {{ total.base_colaboradores }}</p>
+  </div>
+  <hr>
 
-    <div class="total-grafico">
-        <div class="total">
-            <h3>Resumo</h3>
-            <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
-                <tr style="background-color: #f2f2f2;">
-                    <th style="padding: 10px; text-align: left;">Tipo</th>
-                    <th style="padding: 10px; text-align: right;">Café</th>
-                    <th style="padding: 10px; text-align: right;">Almoço</th>
-                    <th style="padding: 10px; text-align: right;">Janta</th>
-                    <th style="padding: 10px; text-align: right;">Total</th>
-                </tr>
-                <tr>
-                    <td style="padding: 10px;">Visitante</td>
-                    <td style="padding: 10px; text-align: right;">{{ total.senhas_cafe_visitante }}</td>
-                    <td style="padding: 10px; text-align: right;">{{ total.senhas_almoco_visitante }}</td>
-                    <td style="padding: 10px; text-align: right;">{{ total.senhas_janta_visitante }}</td>
-                    <td style="padding: 10px; text-align: right;">{{ total.total_visitantes }}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 10px;">Colaborador</td>
-                    <td style="padding: 10px; text-align: right;">{{ total.senhas_cafe_colaborador }}</td>
-                    <td style="padding: 10px; text-align: right;">{{ total.senhas_almoco_colaborador }}</td>
-                    <td style="padding: 10px; text-align: right;">{{ total.senhas_janta_colaborador }}</td>
-                    <td style="padding: 10px; text-align: right;">{{ total.total_colaborador }}</td>
-                    
-                </tr>
-                <tr>
-                    <td colspan="4" style="border: none;"></td>
-                    <td style="padding: 10px; text-align: right;">{{ total.total_senhas }}</td>
-                </tr>
-                    
-            </table>
-        </div>
-    
-        <div class="grafico-barras">
-            <img src="data:image/png;base64,{{ grafico_barras }}" alt="Gráfico de Barras" style="max-width: 100%; height: auto;">
-        </div>
+  <div class="title">Relatório – Total de Senhas Emitidas</div>
+  <div class="subtitle">Contagem de refeições por turno: café da manhã, almoço e jantar</div>
+
+  <div class="info-grid">
+    <div><span>Período: </span>{{ periodo }}</div>
+    <div><span>Gerado em: </span>{{ agora }}</div>
+    <div><span>Total de senhas: </span>{{ dados.total_senhas }}</div>
+  </div>
+
+  <div class="criterio">
+    <strong>Critério de turnos:</strong>
+    &nbsp; ☕ Café da Manhã: <strong>{{ turnos.cafe_ini }} – {{ turnos.cafe_fim }}</strong>
+    &nbsp;|&nbsp; 🍽 Almoço: <strong>{{ turnos.almoco_ini }} – {{ turnos.almoco_fim }}</strong>
+    &nbsp;|&nbsp; 🌙 Jantar: <strong>{{ turnos.janta_ini }} – {{ turnos.janta_fim }}</strong>
+  </div>
+
+  <!-- Resumo Colaboradores -->
+  <div class="section-label">Colaboradores — {{ dados.total_colaborador }} senhas</div>
+  <div class="cost-summary">
+    <div class="cost-box cafe">
+      <div class="lbl">☕ Café da Manhã</div>
+      <div class="val">{{ dados.cafe_colab }}</div>
     </div>
-    <!-- INÍCIO BLOCO TOPO COM total E GRÁFICO DE BARRAS -->
-    
-    <div class="clear"></div>
-    <!-- FIM BLOCO TOPO -->
-
-    <!-- INÍCIO BLOCO RODAPÉ COM TABELA E CÍRCULO -->
-    <div class="footer">
-        <div class="total">
-            <h3>Total de Departamentos emitidos no Periodo</h3>
-            <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
-                <thead>
-                    <tr style="background-color: #f2f2f2;">
-                        <th style="padding: 10px; text-align: left;">Nome</th>
-                        <th style="padding: 10px; text-align: right;">Quantidade</th></tr>
-                </thead>
-                <tbody>
-                    {% for depto in lista_departamentos %}
-                    <tr>
-                        <td style="padding: 10px;">{{ depto.nome }}</td>
-                        <td style="padding: 10px; text-align: right;">{{ depto.quantidade }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        
-
-        <div class="circle-container">
-            <img src="data:image/png;base64,{{ grafico_meta }}" alt="Gráfico de Meta" style="max-width: 100%; height: auto;">
-        </div>
+    <div class="cost-box almoco">
+      <div class="lbl">🍽 Almoço</div>
+      <div class="val">{{ dados.almoco_colab }}</div>
     </div>
+    <div class="cost-box janta">
+      <div class="lbl">🌙 Jantar</div>
+      <div class="val">{{ dados.janta_colab }}</div>
+    </div>
+    <div class="cost-box total">
+      <div class="lbl">Total Colaboradores</div>
+      <div class="val">{{ dados.total_colaborador }}</div>
+    </div>
+  </div>
+
+  <!-- Resumo Visitantes -->
+  <div class="section-label">Visitantes — {{ dados.total_visitantes }} senhas</div>
+  <div class="cost-summary">
+    <div class="cost-box cafe">
+      <div class="lbl">☕ Café da Manhã</div>
+      <div class="val">{{ dados.cafe_visit }}</div>
+    </div>
+    <div class="cost-box almoco">
+      <div class="lbl">🍽 Almoço</div>
+      <div class="val">{{ dados.almoco_visit }}</div>
+    </div>
+    <div class="cost-box janta">
+      <div class="lbl">🌙 Jantar</div>
+      <div class="val">{{ dados.janta_visit }}</div>
+    </div>
+    <div class="cost-box total">
+      <div class="lbl">Total Visitantes</div>
+      <div class="val">{{ dados.total_visitantes }}</div>
+    </div>
+  </div>
+
+  <!-- Tabela por departamento -->
+  <table>
+    <thead>
+      <tr>
+        <th style="width:4%;">#</th>
+        <th class="left" style="width:36%;">Departamento</th>
+        <th style="width:11%;">☕ Café</th>
+        <th style="width:11%;">🍽 Almoço</th>
+        <th style="width:11%;">🌙 Jantar</th>
+        <th style="width:10%;">Total</th>
+        <th style="width:9%;">%</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for depto in lista_departamentos %}
+      <tr>
+        <td class="center rank">{{ loop.index }}</td>
+        <td>{{ depto.nome }}</td>
+        <td class="center {% if depto.cafe == 0 %}zero{% endif %}">{{ depto.cafe }}</td>
+        <td class="center {% if depto.almoco == 0 %}zero{% endif %}">{{ depto.almoco }}</td>
+        <td class="center {% if depto.janta == 0 %}zero{% endif %}">{{ depto.janta }}</td>
+        <td class="center"><strong>{{ depto.quantidade }}</strong></td>
+        <td class="center">
+          {% if dados.total_senhas > 0 %}{{ '%.1f'|format(depto.quantidade / dados.total_senhas * 100) }}%{% else %}–{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+      <tr class="total-geral">
+        <td colspan="2">TOTAL GERAL</td>
+        <td class="center">{{ dados.cafe_total }}</td>
+        <td class="center">{{ dados.almoco_total }}</td>
+        <td class="center">{{ dados.janta_total }}</td>
+        <td class="center">{{ dados.total_senhas }}</td>
+        <td class="center">100%</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="footer">
+    <div>
+      Turnos: ☕ Café {{ turnos.cafe_ini }}–{{ turnos.cafe_fim }} | 🍽 Almoço {{ turnos.almoco_ini }}–{{ turnos.almoco_fim }} | 🌙 Jantar {{ turnos.janta_ini }}–{{ turnos.janta_fim }}<br>
+      Senhas de colaboradores excluem registros com cargo <em>VISITANTE</em>
+    </div>
+    <div class="assinatura">
+      Responsável: ___________________________<br>
+      {{ nome_instituicao }}
+    </div>
+  </div>
 
 </body>
 </html>

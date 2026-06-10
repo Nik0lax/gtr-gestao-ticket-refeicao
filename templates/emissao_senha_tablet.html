@@ -68,7 +68,7 @@
     <div class="menu-screen">
       <p class="menu-title">Como deseja emitir sua senha?</p>
 
-      <a href="{{ url_for('senha_colaborador') }}" class="btn-senha colaborador">
+      <a href="{{ url_for('senha_colaborador', modo='tablet') }}" class="btn-senha colaborador">
         <div class="btn-senha-icon"><i class="fas fa-id-badge"></i></div>
         <div class="btn-senha-text">
           <strong>Senha Colaborador</strong>
@@ -77,7 +77,7 @@
         <i class="fas fa-chevron-right" style="margin-left:auto;font-size:16px;opacity:0.4;"></i>
       </a>
 
-      <a href="{{ url_for('senha_visitante') }}" class="btn-senha visitante">
+      <a href="{{ url_for('senha_visitante', modo='tablet') }}" class="btn-senha visitante">
         <div class="btn-senha-icon"><i class="fas fa-user-clock"></i></div>
         <div class="btn-senha-text">
           <strong>Senha Visitante</strong>
@@ -100,7 +100,7 @@
         </div>
       </div>
 
-      <form action="{{ url_for('senha_colaborador') }}" method="post" id="form-colab" onsubmit="return validarFormulario()">
+      <form action="{{ url_for('senha_colaborador', modo='tablet') }}" method="post" id="form-colab" onsubmit="return validarFormulario()">
         <div class="field-group">
           <span class="field-label"><i class="fas fa-id-card" style="margin-right:5px;"></i>CPF</span>
           <input type="tel" inputmode="none" name="cpf" id="cpf" placeholder="000.000.000-00"
@@ -153,7 +153,7 @@
           <p style="color:#9ab5c0;font-size:14px;margin-top:8px;">Nenhum cardápio foi cadastrado para hoje. Por favor, contate o administrador.</p>
         </div>
       {% else %}
-        <form action="{{ url_for('senha_colaborador_cardapio') }}" method="post" id="form-colab-cardapio"
+        <form action="{{ url_for('senha_colaborador_cardapio', modo='tablet') }}" method="post" id="form-colab-cardapio"
               onsubmit="return validarFormularioCardapio()"
               style="display:flex;flex-direction:column;gap:14px;flex:1;min-height:0;">
 
@@ -236,7 +236,7 @@
         </div>
       </div>
 
-      <form action="{{ url_for('senha_visitante') }}" method="post" id="form-visit"
+      <form action="{{ url_for('senha_visitante', modo='tablet') }}" method="post" id="form-visit"
             class="fields-stack" onsubmit="return validarFormularioVisitante()"
             style="display:flex;flex-direction:column;gap:14px;flex:1;min-height:0;">
 

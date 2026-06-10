@@ -31,6 +31,25 @@
       </a>
 
       <nav class="menu">
+
+        <!-- CADASTRO (somente leitura) -->
+        <a href="#" class="menu-group-toggle {% if module in ['cadastro','departamentos'] %}active{% endif %}" id="menu-cadastro">
+          <i class="fas fa-folder-open"></i> Cadastro
+          <i class="fas fa-chevron-down arrow"></i>
+        </a>
+        <ul class="submenu {% if module in ['cadastro','departamentos'] %}open{% endif %}" id="submenu-cadastro">
+          <li>
+            <a href="{{ url_for('cadastro') }}" class="{% if module == 'cadastro' %}active-item{% endif %}">
+              <i class="fas fa-users"></i> Colaboradores
+            </a>
+          </li>
+          <li>
+            <a href="{{ url_for('departamentos') }}" class="{% if module == 'departamentos' %}active-item{% endif %}">
+              <i class="fas fa-building"></i> Departamentos
+            </a>
+          </li>
+        </ul>
+
         <!-- RELATÓRIOS -->
         {% set rel_modules = ['relatorio_totalEmissao','relatorio_emissaoDiaria','relatorio_totalVisitantes','relatorio_totalDepartamento'] %}
         <a href="#" class="menu-group-toggle {% if modulo in rel_modules %}active{% endif %}" id="menu-relatorios">
@@ -58,6 +77,16 @@
               <i class="fas fa-sitemap"></i> Por Departamento
             </a>
           </li>
+          <li>
+            <a href="{{ url_for('relatorio_cardapio') }}" class="{% if modulo == 'relatorio_cardapio' %}active-item{% endif %}">
+              <i class="fas fa-utensils"></i> Emissões com Cardápio
+            </a>
+          </li>
+          <li>
+            <a href="{{ url_for('relatorio_snd') }}" class="{% if modulo == 'relatorio_snd' %}active-item{% endif %}">
+              <i class="fas fa-hand-holding-usd"></i> Relatório Financeiro SND
+            </a>
+          </li>
         </ul>
       </nav>
     </aside>
@@ -65,7 +94,7 @@
     <main class="main-content">
 
       <!-- DASHBOARD -->
-      {% if not modulo %}
+      {% if not modulo and not module %}
         <div class="intro-content">
 
           <div class="dash-header">
@@ -88,7 +117,7 @@
               <div class="kpi-icon"><i class="fas fa-calendar-alt"></i></div>
               <div class="kpi-info">
                 <span class="kpi-label">Senhas no Mês</span>
-                <span class="kpi-value">{{ dashboard_data.total_senhas }}</span>
+                <span class="kpi-value">{{ dashboard_data.kpi_valor_periodo }}</span>
               </div>
             </div>
             <div class="kpi-card kpi-green">
@@ -133,11 +162,67 @@
         </div>
 
         <script>
-          const dashLabels7 = {{ dashboard_data.labels_7dias | tojson }};
-          const dashValores7 = {{ dashboard_data.valores_7dias | tojson }};
+          const dashLabelsGrafico = {{ dashboard_data.labels_grafico | tojson }};
+          const dashValoresGrafico = {{ dashboard_data.valores_grafico | tojson }};
           const dashLabelsDeps = {{ dashboard_data.labels_deps | tojson }};
           const dashValoresDeps = {{ dashboard_data.valores_deps | tojson }};
         </script>
+
+      <!-- COLABORADORES (somente leitura) -->
+      {% elif module == 'cadastro' %}
+        <div class="card-box">
+          <h2><i class="fas fa-users"></i> Colaboradores</h2>
+          {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}<div class="flash-container" id="flash-container">
+              {% for category, message in messages %}<div class="flash-message {{ category }}">{{ message }}</div>{% endfor %}
+            </div>{% endif %}
+          {% endwith %}
+          <form method="GET" style="display:flex;gap:10px;align-items:flex-end;max-width:480px;" action="{{ url_for('cadastro') }}">
+            <div class="form-group" style="flex:1;">
+              <label>Buscar</label>
+              <input type="text" name="search" placeholder="Nome ou CPF" value="{{ search or '' }}">
+            </div>
+            <button type="submit" id="btn-enviar" style="flex-shrink:0;"><i class="fas fa-search"></i> Buscar</button>
+          </form>
+          <table>
+            <thead><tr><th>ID</th><th>Nome</th><th>CPF</th><th>Cargo</th><th>Departamento</th><th>Ref./dia</th></tr></thead>
+            <tbody>
+              {% if colaboradores %}{% for c in colaboradores %}
+                <tr>
+                  <td>{{ c[0] }}</td><td>{{ c[1] }}</td><td>{{ c[2] }}</td>
+                  <td>{{ c[3] }}</td><td>{{ c[4] }}</td><td>{{ c[5] }}</td>
+                </tr>
+              {% endfor %}{% else %}
+                <tr><td colspan="6">Nenhum colaborador encontrado.</td></tr>
+              {% endif %}
+            </tbody>
+          </table>
+          <div class="pagination">
+            {% if page > 1 %}<a href="{{ url_for('cadastro', page=page-1, search=search) }}">&laquo; Anterior</a>{% endif %}
+            Página {{ page }} de {{ total_pages }}
+            {% if page < total_pages %}<a href="{{ url_for('cadastro', page=page+1, search=search) }}">Próxima &raquo;</a>{% endif %}
+          </div>
+        </div>
+
+      <!-- DEPARTAMENTOS (somente leitura) -->
+      {% elif module == 'departamentos' %}
+        <div class="card-box">
+          <h2><i class="fas fa-building"></i> Departamentos</h2>
+          <table>
+            <thead><tr><th>Nome</th><th>Grupo SND</th><th>Colaboradores</th></tr></thead>
+            <tbody>
+              {% if lista_departamentos %}{% for dep in lista_departamentos %}
+                <tr>
+                  <td><strong>{{ dep[1] }}</strong></td>
+                  <td>{{ dep[2] or '—' }}</td>
+                  <td>{{ dep[3] }}</td>
+                </tr>
+              {% endfor %}{% else %}
+                <tr><td colspan="3" style="text-align:center;color:#9ab5c0;padding:20px;">Nenhum departamento encontrado.</td></tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
 
       <!-- RELATÓRIOS -->
       {% elif modulo == 'relatorio_totalEmissao' %}
@@ -241,7 +326,92 @@
             </form>
           </div>
         </div>
+      
+      {% elif modulo == 'relatorio_cardapio' %}
+        <div class="relatorios-content">
+          <h2><i class="fas fa-utensils"></i> Emissões com Cardápio</h2>
+          <div class="relatorio-form-card">
+            <form method="POST" action="{{ url_for('relatorio_cardapio') }}" class="form-grid" style="grid-template-columns:1fr 1fr;">
+              <div class="form-group">
+                <label>Data Inicial</label>
+                <input type="date" name="data_inicial" required>
+              </div>
+              <div class="form-group">
+                <label>Data Final</label>
+                <input type="date" name="data_final" required>
+              </div>
+              <div class="form-group">
+                <label>Departamento</label>
+                <select name="departamento">
+                  <option value="TODOS">Todos</option>
+                  {% for dep in departamentos %}<option value="{{ dep }}">{{ dep }}</option>{% endfor %}
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Tipo de Refeição</label>
+                <select name="tipo_refeicao">
+                  <option value="TODOS">Todos</option>
+                  {% for tr in tipos_refeicao %}<option value="{{ tr }}">{{ tr }}</option>{% endfor %}
+                </select>
+              </div>
+              <div class="form-group" style="grid-column:span 2;">
+                <label>Tipo de Pessoa</label>
+                <select name="tipo_pessoa">
+                  <option value="TODOS">Todos</option>
+                  <option value="colaborador">Colaborador</option>
+                  <option value="visitante">Visitante</option>
+                </select>
+              </div>
+              <div class="relatorio-actions" style="grid-column:span 2;">
+                <button type="submit" name="tipo_relatorio" value="pdf" id="btn-enviar"><i class="fas fa-file-pdf"></i> Exportar em PDF</button>
+                <button type="submit" name="tipo_relatorio" value="excel" class="btn-cancelar"><i class="fas fa-file-excel"></i> Exportar em Excel</button>
+              </div>
+            </form>
+          </div>
+        </div>
 
+
+      {% elif modulo == 'relatorio_snd' %}
+        <div class="relatorios-content">
+          <h2><i class="fas fa-hand-holding-usd"></i> Relatório Financeiro SND</h2>
+          <div class="relatorio-form-card">
+            <form method="POST" action="{{ url_for('relatorio_snd') }}" class="form-grid" style="grid-template-columns:1fr 1fr;">
+              <div class="form-group">
+                <label>Data Inicial</label>
+                <input type="date" name="data_inicial" required>
+              </div>
+              <div class="form-group">
+                <label>Data Final</label>
+                <input type="date" name="data_final" required>
+              </div>
+              <div class="relatorio-actions" style="grid-column:span 2;">
+                <button type="submit" name="tipo_relatorio" value="pdf" id="btn-enviar">
+                  <i class="fas fa-file-pdf"></i> Exportar em PDF
+                </button>
+                <button type="submit" name="tipo_relatorio" value="excel" class="btn-cancelar">
+                  <i class="fas fa-file-excel"></i> Exportar em Excel
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <div class="card-box" style="margin-top:16px;border-left:3px solid #00b4d8;">
+            <h3 style="margin-bottom:10px;">
+              <i class="fas fa-info-circle" style="color:#00b4d8;margin-right:8px;"></i>
+              Sobre este relatório
+            </h3>
+            <p style="color:#9ab5c0;font-size:13px;line-height:1.7;margin:0;">
+              Gera o relatório no formato SND (Serviço de Nutrição e Dietética), com
+              <strong style="color:#e0e0e0;">custo por departamento</strong> agrupado por
+              <strong style="color:#e0e0e0;">centro de custo</strong> (Produtivos, Auxiliares,
+              Administrativos e Não Operacional).<br>
+              Os custos unitários utilizados são os cadastrados em
+              <strong style="color:#e0e0e0;">Configurações → Custos de Refeição</strong>.
+              Departamentos sem grupo definido aparecem como <em>Administrativos</em>.
+            </p>
+          </div>
+        </div>
+      
       {% endif %}
     </main>
   </div>
@@ -277,10 +447,10 @@
       new Chart(ctxBar, {
         type: 'bar',
         data: {
-          labels: dashLabels7,
+          labels: dashLabelsGrafico,
           datasets: [{
             label: 'Senhas emitidas',
-            data: dashValores7,
+            data: dashValoresGrafico,
             backgroundColor: 'rgba(33,125,157,0.75)',
             borderColor: '#1a5f78',
             borderWidth: 1.5,
