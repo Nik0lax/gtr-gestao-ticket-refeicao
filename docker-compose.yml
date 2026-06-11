@@ -15,6 +15,7 @@ services:
       MYSQL_PASSWORD: Psm@cqua
       MYSQL_DB: gtr
       SECRET_KEY: gtr
+      TZ: America/Belem
     volumes:
       - ./uploads:/app/uploads
 
@@ -27,6 +28,7 @@ services:
       MYSQL_DATABASE: gtr
       MYSQL_USER: gtruser
       MYSQL_PASSWORD: Psm@cqua
+      TZ: America/Belem
     ports:
       - "3307:3306"
     volumes:
