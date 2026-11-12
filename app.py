@@ -1154,7 +1154,7 @@ def escalas_lote():
 
 # ── Importação de escalas por CSV (RH) ──────────────────────────────────────
 ESCALAS_TMP_FOLDER = os.path.join(os.path.dirname(__file__), 'uploads', 'escalas_tmp')
-ESCALAS_CSV_MAX_BYTES = 2 * 1024 * 1024
+ESCALAS_CSV_MAX_BYTES = 10 * 1024 * 1024   # 10 MB
 
 
 def _so_digitos_cpf(v):
@@ -1275,7 +1275,7 @@ def escalas_importar():
         return redirect(url_for('escalas') + '#importar')
     conteudo = arq.read(ESCALAS_CSV_MAX_BYTES + 1)
     if len(conteudo) > ESCALAS_CSV_MAX_BYTES:
-        flash("Arquivo grande demais (máximo 2 MB).", "error")
+        flash(f"Arquivo grande demais (máximo {ESCALAS_CSV_MAX_BYTES // (1024 * 1024)} MB).", "error")
         return redirect(url_for('escalas') + '#importar')
     linhas, erro = _ler_csv_escalas(conteudo)
     if erro:
