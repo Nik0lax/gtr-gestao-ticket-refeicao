@@ -48,6 +48,7 @@ Tudo fica registrado e auditado, e os relatórios financeiros consolidam colabor
 - [Atualização de uma unidade existente](#atualização-de-uma-unidade-existente)
 - [Estrutura do projeto](#estrutura-do-projeto)
 - [Tecnologias](#tecnologias)
+- [Licença](#licença)
 
 ---
 
@@ -327,3 +328,13 @@ Não vão para o Git: `.env`, `instance/`, `certs/`, `backups/`, `logs/`, `uploa
 - **matplotlib**: gráficos dos relatórios
 - **qrcode**: etiquetas do leito; leitura no totem por BarcodeDetector/jsQR
 - **HTML, CSS e JavaScript** puros nos totens e no painel
+
+---
+
+## Licença
+
+**Copyright © 2025-2026 Gabriel Nicolas. Todos os direitos reservados.**
+
+O código está publicado apenas para consulta, e isso não concede permissão de uso. Usar, copiar, modificar, distribuir ou comercializar o GTR, no todo ou em parte, depende de autorização prévia e por escrito do autor. Veja o arquivo [LICENSE](LICENSE).
+
+Interessado em usar o GTR na sua instituição ou empresa, inclusive comercialmente? Entre em contato: [github.com/Nik0lax](https://github.com/Nik0lax).
