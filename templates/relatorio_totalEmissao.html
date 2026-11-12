@@ -1,3 +1,4 @@
+{% from '_relatorio_padrao.html' import estilo_pagina, cabecalho with context %}
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -21,6 +22,7 @@
 
     .info-grid { display: flex; gap: 40px; margin-bottom: 14px; font-size: 10px; }
     .info-grid div span { font-weight: bold; }
+    .info-grid div { margin-right: 40px; }  /* wkhtmltopdf não suporta gap */
 
     /* blocos de resumo */
     .section-label { font-size: 10px; font-weight: bold; color: #1e2d3a;
@@ -49,28 +51,17 @@
 
     /* rodapé */
     .footer { margin-top: 20px; display: flex; justify-content: space-between; font-size: 9px; color: #777; }
-    .footer .assinatura { border-top: 1px solid #aaa; padding-top: 4px; min-width: 200px; text-align: center; }
 
     /* critério */
     .criterio { background: #f4f8fb; border-left: 3px solid #00b4d8; padding: 7px 10px;
                 font-size: 9.5px; color: #444; margin-bottom: 16px; line-height: 1.6; }
     .criterio strong { color: #1e2d3a; }
   </style>
+  {{ estilo_pagina() }}
 </head>
 <body>
+  {{ cabecalho('Total de senhas emitidas', periodo, '') }}
 
-  <div class="header">
-    <div class="logo">
-      <h1>GTR</h1>
-      <span>Gestão de Ticket Refeição</span>
-    </div>
-    <div class="titulo-rel">
-      <strong>TOTAL DE SENHAS EMITIDAS</strong><br>
-      Relatório de Emissões por Tipo e Departamento<br>
-      {{ nome_instituicao }}
-    </div>
-  </div>
-  <hr>
 
   <div class="title">Relatório – Total de Senhas Emitidas</div>
   <div class="subtitle">Contagem de refeições por turno: café da manhã, almoço e jantar</div>
@@ -172,10 +163,6 @@
     <div>
       Turnos: ☕ Café {{ turnos.cafe_ini }}–{{ turnos.cafe_fim }} | 🍽 Almoço {{ turnos.almoco_ini }}–{{ turnos.almoco_fim }} | 🌙 Jantar {{ turnos.janta_ini }}–{{ turnos.janta_fim }}<br>
       Senhas de colaboradores excluem registros com cargo <em>VISITANTE</em>
-    </div>
-    <div class="assinatura">
-      Responsável: ___________________________<br>
-      {{ nome_instituicao }}
     </div>
   </div>
 

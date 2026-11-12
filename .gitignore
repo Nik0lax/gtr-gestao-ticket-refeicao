@@ -7,5 +7,31 @@ __pycache__/
 # Log files
 *.log
 
-# arquivos
-README.md
+backup_hml/
+
+# Prévias temporárias da importação de pacientes (dados sensíveis — nunca versionar)
+uploads/dispensa_tmp/
+
+# Certificados e chaves privadas (nunca versionar)
+certs/
+
+# Chave de sessão gerada pelo app (nunca versionar)
+instance/
+uploads/escalas_tmp/
+backups/
+
+# Scripts de subida do HML (específicos deste servidor)
+run_hml.sh
+run_hml_https.sh
+
+# CA interna deste servidor (cada unidade gera a sua)
+static/ca/
+
+# PIDs do gunicorn
+logs/*.pid
+
+# Fotos enviadas pelo sistema (dados da unidade; vão no backup, não no git)
+static/uploads/
+
+# Senhas e endereços desta unidade (modelo: .env.example)
+.env

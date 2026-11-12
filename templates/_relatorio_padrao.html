@@ -1,0 +1,74 @@
+{#
+  Cabeçalho, rodapé e regras de paginação PADRÃO de todos os relatórios em PDF do GTR (gerados com WeasyPrint).
+  Uso em cada relatório:
+    {% from '_relatorio_padrao.html' import estilo_pagina, cabecalho %}
+    <head> … {{ estilo_pagina() }} </head>            ← no FIM do <head> (sobrepõe margens antigas)
+    <body> {{ cabecalho('Título do relatório', periodo, 'Subtítulo opcional') }} …
+  O cabeçalho e o rodapé se repetem em todas as páginas; o rodapé traz "Página X de Y".
+#}
+{% macro estilo_pagina(orientacao='portrait') -%}
+  <!--GTR-PAGINA-INI {{ orientacao }}--><style>
+    @page {
+      size: A4 {{ orientacao }};
+      margin: 30mm 11mm 17mm 11mm;
+      @top-center { content: element(gtr-cab); width: 100%; vertical-align: bottom; padding-bottom: 3mm; }
+      @bottom-center { content: element(gtr-rod); width: 100%; vertical-align: top; padding-top: 2.5mm; }
+    }
+    /* cabeçalho repetido em todas as páginas */
+    .gtr-cab { position: running(gtr-cab); width: 100%; font-family: Arial, Helvetica, sans-serif; }
+    .gtr-cab table { width: 100%; border-collapse: collapse; margin: 0; }
+    .gtr-cab td { padding: 0; border: 0 !important; background: none !important; vertical-align: bottom; }
+    .gtr-cab .marca { font-size: 21px; font-weight: 900; letter-spacing: 1px; color: #13233a; line-height: 1; }
+    .gtr-cab .marca-sub { font-size: 7px; color: #4a7bd0; text-transform: uppercase; letter-spacing: 1.3px; margin-top: 2px; }
+    .gtr-cab .dir { text-align: right; }
+    .gtr-cab .t1 { font-size: 11.5px; font-weight: 800; color: #13233a; text-transform: uppercase; letter-spacing: .4px; }
+    .gtr-cab .t2 { font-size: 8.5px; color: #4b5563; margin-top: 2px; }
+    .gtr-cab .t3 { font-size: 8px; color: #6b7380; margin-top: 1px; }
+    .gtr-cab .faixa { height: 2.5px; background: #13233a; margin-top: 5px; }
+    .gtr-cab .faixa2 { height: 1.2px; background: #4a7bd0; margin-top: 1.5px; }
+
+    /* rodapé repetido em todas as páginas */
+    .gtr-rod { position: running(gtr-rod); width: 100%; font-family: Arial, Helvetica, sans-serif; font-size: 7.5px; color: #7a828e;
+               border-top: 1px solid #cfd7e2; padding-top: 4px; }
+    .gtr-rod table { width: 100%; border-collapse: collapse; margin: 0; }
+    .gtr-rod td { padding: 0; border: 0 !important; background: none !important; font-size: 7.5px; color: #7a828e; }
+    .gtr-rod .pag { text-align: right; font-weight: 700; color: #13233a; white-space: nowrap; }
+    .gtr-rod .pag::after { content: "Página " counter(page) " de " counter(pages); }
+  </style><!--GTR-PAGINA-FIM-->
+  <style>
+    html, body { margin: 0 !important; padding: 0 !important; }
+    /* paginação: nada de linha/caixa partida entre páginas */
+    thead { display: table-header-group; }          /* títulos das colunas repetem na página seguinte */
+    tfoot { display: table-footer-group; }
+    tr, td, th { break-inside: avoid; page-break-inside: avoid; }
+    li, .cost-box, .card, .alerta, .criterio, .fechado, .obs, .assin, .assinaturas, .resumo, .resumo-box,
+    .box, .kpi, .total-box, .origem-box, .cards, .destaque { break-inside: avoid; page-break-inside: avoid; }
+    h1, h2, h3, h4, .title, .subtitle, .section-label, .secao-tit, .section-title, .grupo-titulo, .dept-title {
+      break-after: avoid; page-break-after: avoid; }
+    p { orphans: 3; widows: 3; }
+  </style>
+{%- endmacro %}
+
+{% macro cabecalho(titulo, periodo='', subtitulo='') -%}
+  <!--GTR-CAB-INI--><div class="gtr-cab">
+    <table><tr>
+      <td>
+        <div class="marca">GTR</div>
+        <div class="marca-sub">Gestão de Ticket Refeição</div>
+      </td>
+      <td class="dir">
+        <div class="t1">{{ titulo }}</div>
+        <div class="t2">{{ nome_instituicao }}</div>
+        {% if periodo or subtitulo %}<div class="t3">{% if periodo %}Período: {{ periodo }}{% endif %}{% if periodo and subtitulo %} · {% endif %}{{ subtitulo }}</div>{% endif %}
+      </td>
+    </tr></table>
+    <div class="faixa"></div><div class="faixa2"></div>
+  </div>
+  <div class="gtr-rod">
+    <table><tr>
+      <td>GTR · {{ titulo }} · Emitido em {{ relatorio_emitido_em() }} por {{ usuario_relatorio() }}
+        <br>Documento gerado pelo sistema. Contém dados de uso restrito — não compartilhe fora da prestação de contas.</td>
+      <td class="pag"></td>
+    </tr></table>
+  </div><!--GTR-CAB-FIM-->
+{%- endmacro %}

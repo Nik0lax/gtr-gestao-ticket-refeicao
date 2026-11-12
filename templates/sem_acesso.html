@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sem acesso — GTR</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  {% include '_favicon.html' %}
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0} body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:#eceef2;color:#0f1115;
+    min-height:100vh;display:grid;place-items:center;padding:20px}
+    .c{background:#fff;border-radius:28px;padding:40px 36px;max-width:460px;text-align:center;box-shadow:0 10px 28px rgba(16,24,40,.08)}
+    .i{width:72px;height:72px;border-radius:22px;background:#fff0e6;color:#f26b1d;display:grid;place-items:center;font-size:28px;margin:0 auto 18px}
+    h1{font-size:22px;font-weight:800;letter-spacing:-.02em} p{color:#8a8f98;font-size:14px;margin-top:8px;line-height:1.55}
+    a{display:inline-flex;align-items:center;gap:8px;margin-top:22px;padding:12px 22px;border-radius:999px;background:#0f1115;color:#fff;text-decoration:none;font-weight:700}
+  </style>
+</head>
+<body>
+  <div class="c">
+    <div class="i"><i class="fas fa-user-lock"></i></div>
+    <h1>Nenhuma tela liberada</h1>
+    <p>Olá, {{ usuario }}. O perfil <b>{{ perfil_nome }}</b> ainda não tem permissão para nenhuma tela do sistema. Procure o administrador.</p>
+    <a href="{{ url_for('logout') }}"><i class="fas fa-arrow-right-from-bracket"></i> Sair</a>
+  </div>
+</body>
+</html>

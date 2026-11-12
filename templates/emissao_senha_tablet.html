@@ -4,9 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Emissão de Senha — GTR</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <link rel="stylesheet" href="/static/css/emissao_senha_tablet.css">
+  {% include '_favicon.html' %}
 </head>
 <body>
 
@@ -18,6 +19,10 @@
         <h1>GTR</h1>
         <p>Gestão de Ticket Refeição</p>
       </div>
+    </div>
+    <div class="top-clock" aria-hidden="true">
+      <span id="tt-data"></span>
+      <strong id="tt-hora"></strong>
     </div>
     <div class="logout">
       <a href="/logout"><i class="fas fa-sign-out-alt"></i> Sair</a>
@@ -47,11 +52,12 @@
         const ok  = document.querySelector('.flash-message.success');
         const err = document.querySelector('.flash-message.error');
         if (ok) {
-          new Audio('{{ url_for("static", filename="sounds/sucesso.mp3") }}').play().catch(()=>{});
+          const s = new Audio('{{ url_for("static", filename="sounds/sucesso_v2.wav") }}');
+          s.volume = 1.0; s.play().catch(()=>{});
           setTimeout(() => { window.location.href = "{{ url_for('emissao_senha_tablet') }}"; }, 4000);
         }
         if (err) {
-          const a = new Audio('{{ url_for("static", filename="sounds/falha.mp3") }}');
+          const a = new Audio('{{ url_for("static", filename="sounds/erro_v2.wav") }}');
           a.volume = 1.0; a.play().catch(()=>{});
           setTimeout(() => { window.location.href = "{{ url_for('emissao_senha_tablet') }}"; }, 4000);
         }
@@ -66,7 +72,12 @@
     {% if tipo_senha == 'menu' %}
     <!-- ── TELA INICIAL: ESCOLHA O TIPO ── -->
     <div class="menu-screen">
-      <p class="menu-title">Como deseja emitir sua senha?</p>
+      <div class="menu-head">
+        <span class="menu-eyebrow"><i class="fas fa-ticket"></i> Emissão de senha</span>
+        <p class="menu-title">Como deseja emitir sua senha?</p>
+        <p class="menu-sub">Toque em uma das opções abaixo</p>
+      </div>
+      <div class="menu-options">
 
       <a href="{{ url_for('senha_colaborador', modo='tablet') }}" class="btn-senha colaborador">
         <div class="btn-senha-icon"><i class="fas fa-id-badge"></i></div>
@@ -74,7 +85,7 @@
           <strong>Senha Colaborador</strong>
           <small>Funcionários cadastrados</small>
         </div>
-        <i class="fas fa-chevron-right" style="margin-left:auto;font-size:16px;opacity:0.4;"></i>
+        <i class="fas fa-chevron-right btn-senha-arrow"></i>
       </a>
 
       <a href="{{ url_for('senha_visitante', modo='tablet') }}" class="btn-senha visitante">
@@ -83,13 +94,14 @@
           <strong>Senha Visitante</strong>
           <small>Externos e acompanhantes</small>
         </div>
-        <i class="fas fa-chevron-right" style="margin-left:auto;font-size:16px;opacity:0.4;"></i>
+        <i class="fas fa-chevron-right btn-senha-arrow"></i>
       </a>
+      </div>
     </div>
 
     {% elif tipo_senha == 'colaborador' %}
     <!-- ── TELA COLABORADOR ── -->
-    <div class="form-screen">
+    <div class="form-screen form-numpad">
       <div class="form-screen-header">
         <a href="{{ url_for('emissao_senha_tablet') }}" class="btn-voltar" title="Voltar">
           <i class="fas fa-arrow-left"></i>
@@ -102,7 +114,7 @@
 
       <form action="{{ url_for('senha_colaborador', modo='tablet') }}" method="post" id="form-colab" onsubmit="return validarFormulario()">
         <div class="field-group">
-          <span class="field-label"><i class="fas fa-id-card" style="margin-right:5px;"></i>CPF</span>
+          <span class="field-label"><i class="fas fa-id-card"></i>CPF</span>
           <input type="tel" inputmode="none" name="cpf" id="cpf" placeholder="000.000.000-00"
                  required maxlength="14" autocomplete="off" readonly
                  class="field-input" oninput="formatarEValidarCPF(this)">
@@ -128,14 +140,14 @@
         </div>
 
         <button type="submit" class="btn-emitir">
-          <i class="fas fa-ticket-alt"></i> Emitir Senha
+          <i class="fas fa-ticket"></i> Emitir senha
         </button>
       </form>
     </div>
 
     {% elif tipo_senha == 'colaborador_cardapio' %}
     <!-- ── TELA COLABORADOR COM CARDÁPIO ── -->
-    <div class="form-screen" style="max-height:calc(100vh - 80px);display:flex;flex-direction:column;gap:14px;">
+    <div class="form-screen form-screen-tall">
       <div class="form-screen-header">
         <a href="{{ url_for('emissao_senha_tablet') }}" class="btn-voltar" title="Voltar">
           <i class="fas fa-arrow-left"></i>
@@ -147,24 +159,24 @@
       </div>
 
       {% if not cardapios_hoje %}
-        <div style="text-align:center;padding:30px 20px;background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.3);border-radius:10px;">
-          <i class="fas fa-exclamation-triangle" style="font-size:40px;color:#e74c3c;margin-bottom:12px;display:block;"></i>
-          <strong style="color:#e74c3c;font-size:18px;">Cardápio não disponível</strong>
-          <p style="color:#9ab5c0;font-size:14px;margin-top:8px;">Nenhum cardápio foi cadastrado para hoje. Por favor, contate o administrador.</p>
+        <div class="aviso-cardapio">
+          <i class="fas fa-triangle-exclamation"></i>
+          <strong>Cardápio não disponível</strong>
+          <p>Nenhum cardápio de <strong>{{ refeicao_agora() }}</strong> foi montado para hoje. Por favor, contate o administrador.</p>
         </div>
       {% else %}
         <form action="{{ url_for('senha_colaborador_cardapio', modo='tablet') }}" method="post" id="form-colab-cardapio"
               onsubmit="return validarFormularioCardapio()"
-              style="display:flex;flex-direction:column;gap:14px;flex:1;min-height:0;">
+              class="form-flex">
 
-          <div class="field-group" style="flex-shrink:0;">
-            <span class="field-label"><i class="fas fa-id-card" style="margin-right:5px;"></i>CPF</span>
+          <div class="field-group">
+            <span class="field-label"><i class="fas fa-id-card"></i>CPF</span>
             <input type="tel" name="cpf" id="cpf" placeholder="000.000.000-00"
                    required maxlength="14" autocomplete="off"
                    class="field-input" oninput="formatarEValidarCPF(this)">
             <div class="field-bar"></div>
           </div>
-          <div class="field-feedback" id="cpf-feedback" style="flex-shrink:0;margin-top:-8px;"></div>
+          <div class="field-feedback" id="cpf-feedback"></div>
 
           <!-- Teclado numérico 
           <div class="numpad" id="numpad-colab-cardapio" style="flex-shrink:0;">
@@ -183,41 +195,29 @@
             </button>
           </div>-->
 
-          <!-- Label do cardápio -->
-          <div style="flex-shrink:0;">
-            <span class="field-label" style="display:block;margin-bottom:6px;">
-              <i class="fas fa-utensils" style="margin-right:5px;"></i>Cardápio do Dia
-            </span>
-          </div>
+          <span class="field-label list-label"><i class="fas fa-utensils"></i> Cardápio do dia — escolha uma refeição</span>
 
-          <!-- Lista scrollável -->
-          <div style="overflow-y:auto;flex:1;min-height:0;display:flex;flex-direction:column;gap:12px;
-                      padding-right:4px;scrollbar-width:thin;scrollbar-color:#2a3f4a transparent;">
+          <div class="cardapio-lista">
             {% for c in cardapios_hoje %}
-            <label class="cardapio-opcao-tablet"
-                   style="display:flex;align-items:center;gap:14px;padding:16px 18px;
-                          border:2px solid #2a3f4a;border-radius:12px;cursor:pointer;
-                          transition:border-color .2s;flex-shrink:0;"
-                   onclick="selecionarCardapio(this)">
+            <label class="cardapio-opcao-tablet" onclick="selecionarCardapio(this)">
               <input type="radio" name="cardapio_id" value="{{ c.id }}" required
-                     style="width:22px;height:22px;accent-color:#00b4d8;flex-shrink:0;">
+                     class="cardapio-radio">
               {% if c.foto %}
-              <img src="{{ url_for('static', filename='uploads/cardapio/' ~ c.foto) }}"
-                   style="width:64px;height:64px;object-fit:cover;border-radius:10px;flex-shrink:0;">
+              <img src="{{ url_for('static', filename='uploads/cardapio/' ~ c.foto) }}" class="cardapio-foto" alt="">
               {% endif %}
-              <div style="flex:1;">
-                <strong style="font-size:18px;color:#e0e0e0;">{{ c.tipo_refeicao }}</strong>
+              <div class="cardapio-txt">
+                <strong>{{ c.tipo_refeicao }}</strong>
                 {% if c.descricao %}
-                <p style="color:#9ab5c0;font-size:14px;margin:5px 0 0;line-height:1.4;">{{ c.descricao }}</p>
+                <p>{{ c.descricao }}</p>
                 {% endif %}
               </div>
             </label>
             {% endfor %}
           </div>
-          <div class="field-feedback" id="cardapio-feedback" style="flex-shrink:0;margin-top:-6px;"></div>
+          <div class="field-feedback" id="cardapio-feedback"></div>
 
-          <button type="submit" class="btn-emitir" style="flex-shrink:0;">
-            <i class="fas fa-ticket-alt"></i> Emitir Senha
+          <button type="submit" class="btn-emitir">
+            <i class="fas fa-ticket"></i> Emitir senha
           </button>
         </form>
       {% endif %}
@@ -225,7 +225,7 @@
 
     {% elif tipo_senha == 'visitante' %}
     <!-- ── TELA VISITANTE ── -->
-    <div class="form-screen" style="max-height:calc(100vh - 80px);display:flex;flex-direction:column;gap:14px;">
+    <div class="form-screen form-screen-tall">
       <div class="form-screen-header">
         <a href="{{ url_for('emissao_senha_tablet') }}" class="btn-voltar" title="Voltar">
           <i class="fas fa-arrow-left"></i>
@@ -237,21 +237,21 @@
       </div>
 
       <form action="{{ url_for('senha_visitante', modo='tablet') }}" method="post" id="form-visit"
-            class="fields-stack" onsubmit="return validarFormularioVisitante()"
-            style="display:flex;flex-direction:column;gap:14px;flex:1;min-height:0;">
+            class="fields-stack form-flex" onsubmit="return validarFormularioVisitante()">
 
         <!-- Nome -->
-        <div class="field-group" style="flex-shrink:0;">
-          <span class="field-label"><i class="fas fa-user" style="margin-right:5px;"></i>Nome Completo</span>
+        <div class="field-group">
+          <span class="field-label"><i class="fas fa-user"></i>Nome Completo</span>
           <input type="text" name="nome" id="nome" placeholder="Digite seu nome"
                  required autocomplete="off" class="field-input"
-                 style="font-size:22px;" oninput="validarNome(this)">
+                 oninput="validarNome(this)">
           <div class="field-bar"></div>
         </div>
+        <div class="field-feedback field-hint" id="nome-feedback"></div>
 
         <!-- Localização -->
-        <div class="field-group" style="flex-shrink:0;">
-          <span class="field-label"><i class="fas fa-map-marker-alt" style="margin-right:5px;"></i>Origem / Localização</span>
+        <div class="field-group">
+          <span class="field-label"><i class="fas fa-location-dot"></i>Origem / Localização</span>
           <select name="localizacoes" id="localizacoes" required class="field-select">
             <option value="" disabled selected>Selecione a localização</option>
             {% for local in localizacoes %}
@@ -262,14 +262,14 @@
         </div>
 
         <!-- CPF -->
-        <div class="field-group" style="flex-shrink:0;">
-          <span class="field-label"><i class="fas fa-id-card" style="margin-right:5px;"></i>CPF</span>
+        <div class="field-group">
+          <span class="field-label"><i class="fas fa-id-card"></i>CPF</span>
           <input type="tel" name="cpf" id="cpf-visit" placeholder="000.000.000-00"
                  required maxlength="14" autocomplete="off"
                  class="field-input" oninput="formatarEValidarCPF(this)">
           <div class="field-bar"></div>
         </div>
-        <div class="field-feedback" id="cpf-feedback" style="flex-shrink:0;margin-top:-8px;"></div>
+        <div class="field-feedback" id="cpf-feedback"></div>
 
         <!-- Teclado numérico para CPF do visitante 
         <div class="numpad" id="numpad-visit" style="flex-shrink:0;">
@@ -289,50 +289,38 @@
         </div>-->
 
         {% if tipo_emissao == 'cardapio' %}
-        <!-- Label do cardápio -->
-        <div style="flex-shrink:0;">
-          <span class="field-label" style="display:block;margin-bottom:6px;">
-            <i class="fas fa-utensils" style="margin-right:5px;"></i>Cardápio do Dia
-          </span>
-        </div>
+        <span class="field-label list-label"><i class="fas fa-utensils"></i> Cardápio do dia — escolha uma refeição</span>
 
         {% if cardapios_hoje %}
-          <!-- Lista scrollável -->
-          <div style="overflow-y:auto;flex:1;min-height:0;display:flex;flex-direction:column;gap:12px;
-                      padding-right:4px;scrollbar-width:thin;scrollbar-color:#2a3f4a transparent;">
+          <div class="cardapio-lista">
             {% for c in cardapios_hoje %}
-            <label class="cardapio-opcao-tablet"
-                   style="display:flex;align-items:center;gap:14px;padding:16px 18px;
-                          border:2px solid #2a3f4a;border-radius:12px;cursor:pointer;
-                          transition:border-color .2s;flex-shrink:0;"
-                   onclick="selecionarCardapio(this)">
+            <label class="cardapio-opcao-tablet" onclick="selecionarCardapio(this)">
               <input type="radio" name="cardapio_id" value="{{ c.id }}" required
-                     style="width:22px;height:22px;accent-color:#00b4d8;flex-shrink:0;">
+                     class="cardapio-radio">
               {% if c.foto %}
-              <img src="{{ url_for('static', filename='uploads/cardapio/' ~ c.foto) }}"
-                   style="width:64px;height:64px;object-fit:cover;border-radius:10px;flex-shrink:0;">
+              <img src="{{ url_for('static', filename='uploads/cardapio/' ~ c.foto) }}" class="cardapio-foto" alt="">
               {% endif %}
-              <div style="flex:1;">
-                <strong style="font-size:18px;color:#e0e0e0;">{{ c.tipo_refeicao }}</strong>
+              <div class="cardapio-txt">
+                <strong>{{ c.tipo_refeicao }}</strong>
                 {% if c.descricao %}
-                <p style="color:#9ab5c0;font-size:14px;margin:5px 0 0;line-height:1.4;">{{ c.descricao }}</p>
+                <p>{{ c.descricao }}</p>
                 {% endif %}
               </div>
             </label>
             {% endfor %}
           </div>
         {% else %}
-          <div style="padding:20px;background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.3);border-radius:12px;flex-shrink:0;">
-            <i class="fas fa-exclamation-triangle" style="color:#e74c3c;margin-right:8px;"></i>
-            <span style="color:#e74c3c;font-size:15px;">Nenhum cardápio disponível hoje. Contate o administrador.</span>
+          <div class="aviso-cardapio aviso-inline">
+            <i class="fas fa-triangle-exclamation"></i>
+            <span>Nenhum cardápio de {{ refeicao_agora() }} disponível agora. Contate o administrador.</span>
           </div>
         {% endif %}
-        <div class="field-feedback" id="cardapio-visit-feedback" style="flex-shrink:0;margin-top:-6px;"></div>
+        <div class="field-feedback" id="cardapio-visit-feedback"></div>
         {% endif %}
 
-        <button type="submit" class="btn-emitir" style="flex-shrink:0;"
+        <button type="submit" class="btn-emitir"
                 {% if tipo_emissao == 'cardapio' and not cardapios_hoje %}disabled{% endif %}>
-          <i class="fas fa-ticket-alt"></i> Emitir Senha
+          <i class="fas fa-ticket"></i> Emitir senha
         </button>
       </form>
     </div>
@@ -341,6 +329,7 @@
   </main>
 
   <script src="{{ url_for('static', filename='js/form-validations.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/visitante-validacao.js') }}"></script>
 
   <!-- Teclado numérico virtual -->
   <script>
@@ -394,10 +383,22 @@
     }
     function selecionarCardapio(label) {
       document.querySelectorAll('.cardapio-opcao-tablet').forEach(function(l) {
-        l.style.borderColor = '#2a3f4a';
+        l.classList.remove('is-selected');
       });
-      label.style.borderColor = '#00b4d8';
+      label.classList.add('is-selected');
     }
+
+    // Relógio do topo
+    (function () {
+      var dias = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+      var elD = document.getElementById('tt-data'), elH = document.getElementById('tt-hora');
+      function tick() {
+        var d = new Date();
+        if (elD) elD.textContent = dias[d.getDay()] + ', ' + String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0');
+        if (elH) elH.textContent = String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+      }
+      tick(); setInterval(tick, 15000);
+    })();
   </script>
 
   <script>
@@ -418,5 +419,23 @@
     });
   </script>
 
+<script>
+  /* Clique duplo: depois do primeiro envio válido, o formulário não é enviado de novo */
+  document.addEventListener('submit', function (e) {
+    var f = e.target;
+    if (e.defaultPrevented) return;              // a validação recusou: deixa corrigir e enviar
+    if (f.dataset.enviando) { e.preventDefault(); return; }
+    f.dataset.enviando = '1';
+    f.querySelectorAll('button[type="submit"], .btn-emitir').forEach(function (b) {
+      b.disabled = true; b.classList.add('is-enviando');
+    });
+  });
+  window.addEventListener('pageshow', function () {   // voltar pelo navegador reabilita
+    document.querySelectorAll('form[data-enviando]').forEach(function (f) {
+      delete f.dataset.enviando;
+      f.querySelectorAll('.is-enviando').forEach(function (b) { b.disabled = false; b.classList.remove('is-enviando'); });
+    });
+  });
+</script>
 </body>
 </html>

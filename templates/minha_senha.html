@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minha senha — GTR</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+  {% include '_favicon.html' %}
+</head>
+<body>
+  <main class="ms-wrap">
+    <div class="login-card ms-card">
+      <div class="ms-top">
+        <div class="brand">
+          <span class="brand-icon"><i class="fas fa-utensils"></i></span>
+          <span class="brand-text"><strong>GTR</strong><small>Gestão de Ticket Refeição</small></span>
+        </div>
+        {% if obrigatoria %}
+          <a href="{{ url_for('logout') }}" class="ms-link"><i class="fas fa-arrow-right-from-bracket"></i> Sair</a>
+        {% else %}
+          <a href="{{ voltar }}" class="ms-link"><i class="fas fa-arrow-left"></i> Voltar</a>
+        {% endif %}
+      </div>
+
+      <div class="login-card-header">
+        <h2>{{ 'Crie uma nova senha' if obrigatoria else 'Minha senha' }}</h2>
+        <p>{{ usuario }} · usuário <b>{{ login }}</b></p>
+      </div>
+
+      {% if motivo %}
+        <div class="ms-aviso"><i class="fas fa-shield-halved"></i><p>{{ motivo }}</p></div>
+      {% endif %}
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="{{ 'ms-ok' if category == 'success' else 'mensagem-erro' }}" role="alert">
+              <i class="fas {{ 'fa-circle-check' if category == 'success' else 'fa-circle-exclamation' }}"></i><div><p>{{ message }}</p></div>
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <form method="POST" action="{{ url_for('minha_senha') }}" id="form-senha" autocomplete="off">
+        <div class="form-field">
+          <label for="senha_atual">Senha atual</label>
+          <div class="input-wrapper">
+            <i class="fas fa-lock input-icon"></i>
+            <input type="password" id="senha_atual" name="senha_atual" required autocomplete="current-password" autofocus>
+          </div>
+        </div>
+        <div class="form-field">
+          <label for="senha_nova">Nova senha</label>
+          <div class="input-wrapper">
+            <i class="fas fa-key input-icon"></i>
+            <input type="password" id="senha_nova" name="senha_nova" required autocomplete="new-password" minlength="{{ pol.seg_senha_min }}">
+            <button type="button" class="btn-olho" data-alvo="senha_nova" aria-label="Mostrar senha" title="Mostrar senha"><i class="fas fa-eye"></i></button>
+          </div>
+        </div>
+        <ul class="ms-regras" id="ms-regras" aria-live="polite">
+          {% for id, texto in regras %}<li data-regra="{{ id }}"><i class="fas fa-circle"></i> {{ texto }}</li>{% endfor %}
+          <li data-regra="atual"><i class="fas fa-circle"></i> Diferente da senha atual</li>
+        </ul>
+        <div class="form-field">
+          <label for="senha_confirma">Confirme a nova senha</label>
+          <div class="input-wrapper">
+            <i class="fas fa-key input-icon"></i>
+            <input type="password" id="senha_confirma" name="senha_confirma" required autocomplete="new-password">
+          </div>
+          <small class="ms-conf" id="ms-conf"></small>
+        </div>
+        <button type="submit" class="btn-login" id="btn-salvar">Salvar nova senha <i class="fas fa-check"></i></button>
+      </form>
+    </div>
+  </main>
+
+  <script>
+    (function () {
+      var pol = {{ pol | tojson }}, login = {{ login | lower | tojson }};
+      var obvias = {{ obvias | tojson }};
+      var nova = document.getElementById('senha_nova'), conf = document.getElementById('senha_confirma'),
+          atual = document.getElementById('senha_atual'), msgConf = document.getElementById('ms-conf');
+      function regra(id, okk) { var li = document.querySelector('[data-regra="' + id + '"]'); if (!li) return;
+        li.classList.toggle('is-ok', okk); li.classList.toggle('is-nao', !okk && nova.value.length > 0);
+        li.querySelector('i').className = 'fas ' + (okk ? 'fa-circle-check' : (nova.value ? 'fa-circle-xmark' : 'fa-circle')); }
+      function checar() {
+        var v = nova.value;
+        regra('min', v.length >= pol.seg_senha_min);
+        regra('caixa', /[A-ZÀ-Ý]/.test(v) && /[a-zß-ÿ]/.test(v));
+        regra('numero', /\d/.test(v));
+        regra('especial', /[^A-Za-z0-9À-ÿ]/.test(v));
+        regra('login', v.length > 0 && !(login.length >= 3 && v.toLowerCase().indexOf(login) >= 0));
+        regra('obvia', v.length > 0 && obvias.indexOf(v.toLowerCase()) < 0);
+        regra('atual', v.length > 0 && v !== atual.value);
+        if (!conf.value) { msgConf.textContent = ''; msgConf.className = 'ms-conf'; }
+        else if (conf.value === v) { msgConf.textContent = 'As senhas conferem.'; msgConf.className = 'ms-conf is-ok'; }
+        else { msgConf.textContent = 'A confirmação ainda não é igual à nova senha.'; msgConf.className = 'ms-conf is-nao'; }
+      }
+      [nova, conf, atual].forEach(function (c) { c.addEventListener('input', checar); });
+      document.querySelectorAll('.btn-olho').forEach(function (b) {
+        b.addEventListener('click', function () {
+          var c = document.getElementById(b.dataset.alvo), mostrar = c.type === 'password';
+          c.type = mostrar ? 'text' : 'password'; conf.type = c.type;
+          b.innerHTML = mostrar ? '<i class="fas fa-eye-slash"></i>' : '<i class="fas fa-eye"></i>';
+        });
+      });
+      checar();
+    })();
+  </script>
+</body>
+</html>

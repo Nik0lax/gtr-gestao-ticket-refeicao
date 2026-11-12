@@ -1,5 +1,7 @@
 version: '3.9'
 
+# Senhas e endereços vêm do arquivo .env (copie de .env.example). O .env não vai para o Git nem para a imagem.
+
 services:
   web:
     build: .
@@ -9,25 +11,26 @@ services:
       - "5000:5000"
     depends_on:
       - db
+    env_file: .env
     environment:
-      MYSQL_HOST: db
-      MYSQL_USER: gtruser
-      MYSQL_PASSWORD: Psm@cqua
-      MYSQL_DB: gtr
-      SECRET_KEY: gtr
+      MYSQL_HOST: db                    # no Docker o banco é o serviço "db" (prevalece sobre o .env)
+      MYSQL_PORT: 3306
       TZ: America/Belem
     volumes:
       - ./uploads:/app/uploads
+      - ./instance:/app/instance
+      - ./backups:/app/backups          # backups do GTR (Configurações › Backup) fora do container
+      - ./static/uploads:/app/static/uploads   # fotos do cardápio: não se perdem ao reconstruir a imagem
 
   db:
     image: mariadb:10.11
     container_name: gtr_db
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: gtr
-      MYSQL_USER: gtruser
-      MYSQL_PASSWORD: Psm@cqua
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?defina MYSQL_ROOT_PASSWORD no .env}
+      MYSQL_DATABASE: ${MYSQL_DB:-gtr}
+      MYSQL_USER: ${MYSQL_USER:-gtruser}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?defina MYSQL_PASSWORD no .env}
       TZ: America/Belem
     ports:
       - "3307:3306"
@@ -36,4 +39,3 @@ services:
       - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
 volumes:
   db_data:
-

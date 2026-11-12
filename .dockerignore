@@ -3,3 +3,9 @@ __pycache__/
 *.pyc
 logs/
 .git
+certs/
+instance/
+backup_hml/
+uploads/dispensa_tmp/
+backups
+.env

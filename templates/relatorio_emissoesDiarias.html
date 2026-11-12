@@ -1,97 +1,91 @@
+{% from '_relatorio_padrao.html' import estilo_pagina, cabecalho with context %}
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <title>Relatório de Emissões Diárias</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 30px;
-        }
+  <meta charset="UTF-8">
+  <title>Lista de Senhas Emitidas</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; font-size: 11px; color: #1a1a1a; margin: 20px 28px; }
 
-        .logo h1 {
-            font-weight: 900;
-            margin: 0;
-            font-size: 2em;
-        }
+    /* cabeçalho (mesmo padrão do relatório Total de Senhas Emitidas) */
+    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+    .logo h1 { font-size: 22px; font-weight: 900; letter-spacing: 1px; }
+    .logo span { font-size: 9px; color: #4A90E2; text-transform: uppercase; letter-spacing: 1px; }
+    .titulo-rel { text-align: right; font-size: 10px; color: #444; line-height: 1.5; }
+    .titulo-rel strong { font-size: 12px; color: #1a1a1a; }
 
-        .logo span {
-            font-size: 0.8em;
-            color: #4A90E2;
-        }
+    hr { border: none; border-top: 2px solid #1a1a1a; margin-bottom: 10px; }
 
-        .title {
-            margin-top: 20px;
-            font-size: 20px;
-        }
+    .title { font-size: 14px; font-weight: bold; margin-bottom: 4px; }
+    .subtitle { font-size: 10px; color: #555; margin-bottom: 12px; }
 
-        .info {
-            margin-bottom: 20px;
-            font-size: 14px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13px;
-        }
-        th, td {
-            border: 1px solid #999;
-            padding: 8px;
-            text-align: left;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
-        .footer {
-            margin-top: 40px;
-            font-size: 12px;
-            text-align: right;
-        }
-    </style>
+    .info-grid { display: flex; gap: 40px; margin-bottom: 14px; font-size: 10px; }
+    .info-grid div span { font-weight: bold; }
+    .info-grid div { margin-right: 40px; }  /* wkhtmltopdf não suporta gap */
+
+    /* tabela */
+    table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+    thead { display: table-header-group; }
+    tr { page-break-inside: avoid; }
+    th { background-color: #1e2d3a; color: #fff; padding: 6px 5px; font-size: 9.5px; text-align: center; }
+    th.left { text-align: left; }
+    td { padding: 5px; font-size: 10px; border-bottom: 1px solid #e0e0e0; }
+    td.center { text-align: center; }
+    tr:nth-child(even) td { background-color: #f9f9f9; }
+    .vazio { text-align: center; color: #999; padding: 16px; }
+
+    /* rodapé */
+    .footer { margin-top: 20px; display: flex; justify-content: space-between; font-size: 9px; color: #777; }
+  </style>
+  {{ estilo_pagina() }}
 </head>
 <body>
-    <div class="header">
-        <div class="logo">
-            <h1>GTR</h1>
-            <span>GESTÃO DE TICKET REFEIÇÃO</span>
-        </div>
-        <div class="title" style="text-align:right;font-size:10px;color:#444;line-height:1.5;">
-            <strong style="font-size:12px;color:#1a1a1a;">{{ nome_instituicao | upper }}</strong><br>
-            <span><strong>Relatório</strong> Total de Senhas Emitidas</span>
-        </div>
-    </div>
+  {{ cabecalho('Lista de senhas emitidas', periodo, '') }}
 
-    <div class="info">
-        <strong>Período:</strong> {{ data_geracao }}
-    </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Senha</th>
-                <th>CPF</th>
-                <th>Nome</th>
-                <th>Cargo</th>
-                <th>Departamento</th>
-                <th>Data/Hora</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in registros %}
-            <tr>
-                <td>{{ item.numero_senha }}</td>
-                <td>{{ item.cpf }}</td>
-                <td>{{ item.nome }}</td>
-                <td>{{ item.cargo }}</td>
-                <td>{{ item.departamento }}</td>
-                <td>{{ item.data_hora.strftime('%d/%m/%Y %H:%M') }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+  <div class="title">Relatório – Lista de Senhas Emitidas</div>
+  <div class="subtitle">Todas as senhas emitidas no período, em ordem de data e hora</div>
 
-    <div class="footer">
-        Relatório gerado em {{ agora }} &nbsp;|&nbsp; {{ nome_instituicao }}
+  <div class="info-grid">
+    <div><span>Período: </span>{{ periodo }}</div>
+    <div><span>Gerado em: </span>{{ agora }}</div>
+    <div><span>Total de senhas: </span>{{ registros | length }}</div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:7%;">Senha</th>
+        <th style="width:13%;">CPF</th>
+        <th class="left" style="width:28%;">Nome</th>
+        <th class="left" style="width:18%;">Cargo</th>
+        <th class="left" style="width:20%;">Departamento</th>
+        <th style="width:14%;">Data/Hora</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in registros %}
+      <tr>
+        <td class="center">{{ item.numero_senha }}</td>
+        <td class="center">{{ item.cpf }}</td>
+        <td>{{ item.nome }}</td>
+        <td>{{ item.cargo }}</td>
+        <td>{{ item.departamento }}</td>
+        <td class="center">{{ item.data_hora.strftime('%d/%m/%Y %H:%M') }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" class="vazio">Nenhuma senha emitida no período.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="footer">
+    <div>
+      Relatório gerado em {{ agora }}<br>
+      Inclui senhas de colaboradores e visitantes
     </div>
+  </div>
+
 </body>
 </html>

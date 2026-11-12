@@ -1,0 +1,238 @@
+{% from '_relatorio_padrao.html' import estilo_pagina, cabecalho with context %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Demonstrativo de Faturamento – {{ periodo }}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #1d2430; }
+    table { width: 100%; border-collapse: collapse; }
+    thead { display: table-header-group; }
+    tr { page-break-inside: avoid; }
+    .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .ctr { text-align: center; }
+    .muted { color: #6b7380; }
+
+    /* cabeçalho */
+    .topo td { vertical-align: bottom; padding-bottom: 10px; }
+    .marca { font-size: 26px; font-weight: 900; letter-spacing: 1px; color: #13233a; line-height: 1; }
+    .marca-sub { font-size: 8.5px; color: #4a7bd0; text-transform: uppercase; letter-spacing: 1.4px; margin-top: 3px; }
+    .doc-tit { text-align: right; }
+    .doc-tit .t1 { font-size: 15px; font-weight: 800; color: #13233a; letter-spacing: .3px; }
+    .doc-tit .t2 { font-size: 10px; color: #4b5563; margin-top: 3px; }
+    .doc-tit .t3 { font-size: 8.5px; color: #8a919c; margin-top: 2px; letter-spacing: .5px; }
+    .faixa { height: 4px; background: #13233a; margin-bottom: 0; }
+    .faixa2 { height: 2px; background: #4a7bd0; margin-bottom: 12px; }
+
+    .info td { border: 1px solid #dde3ea; padding: 6px 9px; background: #f7f9fb; width: 25%; }
+    .info .rot { display: block; font-size: 7.5px; text-transform: uppercase; letter-spacing: .8px; color: #7a828e; margin-bottom: 2px; }
+    .info b { font-size: 11px; color: #13233a; }
+
+    /* destaque do total */
+    .destaque { margin-top: 12px; }
+    .destaque td { vertical-align: top; }
+    .total-box { background: #13233a; color: #fff; padding: 14px 16px; }
+    .total-box .rot { font-size: 8.5px; text-transform: uppercase; letter-spacing: 1.2px; color: #a9b8cc; }
+    .total-box .val { font-size: 26px; font-weight: 800; margin: 4px 0 3px; letter-spacing: -.3px; }
+    .total-box .sub { font-size: 9.5px; color: #c9d4e3; }
+    .origem-box { border: 1px solid #dde3ea; border-left: 0; padding: 10px 14px; }
+    .origem-box table td { padding: 4px 0; font-size: 10.5px; }
+    .origem-box .rot { font-size: 8px; text-transform: uppercase; letter-spacing: 1px; color: #7a828e; padding-bottom: 4px; }
+
+    /* cards por grupo */
+    .cards { margin-top: 10px; }
+    .cards td.c { width: 25%; padding: 9px 11px; border: 1px solid #dde3ea; border-top-width: 4px; vertical-align: top; }
+    .cards td.esp { width: 8px; border: 0; padding: 0; }
+    .cards .nm { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .7px; }
+    .cards .or { font-size: 8px; color: #8a919c; }
+    .cards .vl { font-size: 15px; font-weight: 800; color: #13233a; margin: 5px 0 2px; }
+    .cards .qt { font-size: 9px; color: #6b7380; }
+    .g-colab { border-top-color: #2b59ff !important; } .g-colab .nm { color: #2b59ff; }
+    .g-visit { border-top-color: #0e9f9a !important; } .g-visit .nm { color: #0e9f9a; }
+    .g-pac   { border-top-color: #16a34a !important; } .g-pac .nm { color: #16a34a; }
+    .g-acp   { border-top-color: #b4236b !important; } .g-acp .nm { color: #b4236b; }
+
+    .barra { margin-top: 8px; height: 9px; }
+    .barra td { padding: 0; height: 9px; }
+    .b-colab { background: #2b59ff; } .b-visit { background: #0e9f9a; } .b-pac { background: #16a34a; } .b-acp { background: #b4236b; }
+    .legenda { font-size: 8.5px; color: #6b7380; margin-top: 4px; }
+    .legenda span { margin-right: 14px; }
+    .legenda i { display: inline-block; width: 8px; height: 8px; margin-right: 4px; vertical-align: -1px; }
+
+    /* seções */
+    .secao { margin-top: 18px; }
+    .secao-tit { font-size: 11px; font-weight: 800; color: #13233a; text-transform: uppercase; letter-spacing: .8px;
+                 padding-bottom: 5px; border-bottom: 2px solid #13233a; margin-bottom: 0; }
+    .secao-tit small { font-weight: 400; text-transform: none; letter-spacing: 0; color: #6b7380; font-size: 9.5px; margin-left: 6px; }
+    .tab th { background: #eef2f7; color: #3b4656; font-size: 8.5px; text-transform: uppercase; letter-spacing: .6px;
+              padding: 6px 8px; text-align: left; border-bottom: 1px solid #cfd7e2; }
+    .tab th.num, .tab th.ctr { text-align: right; }
+    .tab th.ctr { text-align: center; }
+    .tab td { padding: 5px 8px; border-bottom: 1px solid #edf0f4; }
+    .tab tr.grupo td { padding-top: 9px; font-weight: 800; font-size: 10px; border-bottom: 1px solid #cfd7e2; }
+    .tab tr.grupo td i { display: inline-block; width: 8px; height: 8px; margin-right: 6px; vertical-align: 0; }
+    .tab tr.sub td { background: #f4f6f9; font-weight: 700; }
+    .tab tr.tot td { background: #13233a; color: #fff; font-weight: 800; font-size: 11px; padding: 7px 8px; }
+    .vazio { color: #9aa1ab; font-style: italic; }
+
+    .obs { margin-top: 18px; border: 1px solid #dde3ea; background: #fafbfc; padding: 10px 12px; font-size: 9.2px; line-height: 1.6; color: #3b4656; }
+    .obs h4 { font-size: 9.5px; text-transform: uppercase; letter-spacing: .8px; color: #13233a; margin-bottom: 4px; }
+    .obs ul { margin: 0 0 6px 14px; }
+    .obs .alerta { color: #9a4a06; }
+    .obs .ok { color: #0f6a33; }
+
+    .assin { margin-top: 42px; page-break-inside: avoid; }
+    .assin td { width: 33.3%; padding: 0 14px; vertical-align: top; text-align: center; font-size: 9px; color: #3b4656; }
+    .assin .linha { border-top: 1px solid #1d2430; padding-top: 5px; }
+    .assin .cargo { color: #8a919c; font-size: 8px; margin-top: 2px; }
+    .assin .data { margin-top: 10px; color: #8a919c; font-size: 8.5px; }
+    .rodape { margin-top: 16px; font-size: 8px; color: #8a919c; text-align: center; }
+    .quebra { page-break-before: always; }
+  </style>
+  {{ estilo_pagina() }}
+</head>
+<body>
+  {% set cores = {'colab': 'colab', 'visit': 'visit', 'pac': 'pac', 'acp': 'acp'} %}
+
+
+  {{ cabecalho('Demonstrativo de faturamento', periodo, 'Nº FAT-' ~ data_ini.strftime('%Y%m%d') ~ '-' ~ data_fim.strftime('%Y%m%d')) }}
+
+
+  <table class="info"><tr>
+    <td><span class="rot">Período de referência</span><b>{{ periodo }}</b></td>
+    <td><span class="rot">Dias no período</span><b>{{ f.n_dias }}</b></td>
+    <td><span class="rot">Emitido em</span><b>{{ agora }}</b></td>
+    <td><span class="rot">Emitido por</span><b>{{ usuario }}</b></td>
+  </tr></table>
+
+  <!-- Resumo executivo -->
+  <table class="destaque"><tr>
+    <td style="width:46%;">
+      <div class="total-box">
+        <div class="rot">Total a faturar no período</div>
+        <div class="val">R$ {{ f.total | moeda_br }}</div>
+        <div class="sub">{{ f.qtd | milhar_br }} refeição(ões) · média de R$ {{ f.media_dia | moeda_br }} por dia</div>
+      </div>
+    </td>
+    <td style="width:54%;">
+      <div class="origem-box">
+        <table>
+          <tr><td class="rot" colspan="3">Composição por origem</td></tr>
+          <tr><td><b>Refeitório</b> <span class="muted">— colaboradores e visitantes</span></td>
+              <td class="num" style="width:26%;"><b>R$ {{ f.refeitorio | moeda_br }}</b></td>
+              <td class="num muted" style="width:14%;">{{ ('%.1f'|format(f.refeitorio * 100 / f.total if f.total else 0))|replace('.', ',') }}%</td></tr>
+          <tr><td><b>Dispensa no leito</b> <span class="muted">— pacientes e acompanhantes</span></td>
+              <td class="num"><b>R$ {{ f.dispensa | moeda_br }}</b></td>
+              <td class="num muted">{{ ('%.1f'|format(f.dispensa * 100 / f.total if f.total else 0))|replace('.', ',') }}%</td></tr>
+        </table>
+      </div>
+    </td>
+  </tr></table>
+
+  <table class="cards"><tr>
+    {% for gr in f.grupos %}
+      <td class="c g-{{ gr.chave }}">
+        <div class="nm">{{ gr.nome }}</div>
+        <div class="or">{{ gr.origem }}</div>
+        <div class="vl">R$ {{ gr.valor | moeda_br }}</div>
+        <div class="qt">{{ gr.qtd | milhar_br }} refeição(ões) · {{ ('%.1f'|format(gr.pct))|replace('.', ',') }}%</div>
+      </td>
+      {% if not loop.last %}<td class="esp"></td>{% endif %}
+    {% endfor %}
+  </tr></table>
+
+  {% if f.total > 0 %}
+    <table class="barra"><tr>
+      {% for gr in f.grupos if gr.valor > 0 %}<td class="b-{{ gr.chave }}" style="width:{{ '%.2f'|format(gr.pct) }}%;"></td>{% endfor %}
+    </tr></table>
+    <div class="legenda">{% for gr in f.grupos %}<span><i class="b-{{ gr.chave }}"></i>{{ gr.nome }} {{ ('%.1f'|format(gr.pct))|replace('.', ',') }}%</span>{% endfor %}</div>
+  {% endif %}
+
+  <!-- Detalhamento -->
+  {% macro tabela_grupos(chaves, titulo, sub) -%}
+    <div class="secao">
+      <div class="secao-tit">{{ titulo }}<small>{{ sub }}</small></div>
+      <table class="tab">
+        <thead><tr><th style="width:46%;">Refeição</th><th class="ctr" style="width:14%;">Quantidade</th>
+          <th class="num" style="width:18%;">Valor unitário</th><th class="num" style="width:22%;">Subtotal</th></tr></thead>
+        <tbody>
+          {% set ns = namespace(q=0, v=0) %}
+          {% for gr in f.grupos if gr.chave in chaves %}
+            {% set ns.q = ns.q + gr.qtd %}{% set ns.v = ns.v + gr.valor %}
+            <tr class="grupo"><td colspan="4"><i class="b-{{ gr.chave }}"></i>{{ gr.nome }}</td></tr>
+            {% for it in gr.itens %}
+              <tr><td>{{ it.refeicao }}</td><td class="ctr">{{ it.qtd | milhar_br }}</td>
+                <td class="num">R$ {{ it.unit | moeda_br }}</td><td class="num">R$ {{ it.subtotal | moeda_br }}</td></tr>
+            {% else %}
+              <tr><td colspan="4" class="vazio">Sem refeições no período.</td></tr>
+            {% endfor %}
+            <tr class="sub"><td>Subtotal {{ gr.nome | lower }}</td><td class="ctr">{{ gr.qtd | milhar_br }}</td><td></td>
+              <td class="num">R$ {{ gr.valor | moeda_br }}</td></tr>
+          {% endfor %}
+          <tr class="tot"><td>Total {{ titulo | lower }}</td><td class="ctr">{{ ns.q | milhar_br }}</td><td></td>
+            <td class="num">R$ {{ ns.v | moeda_br }}</td></tr>
+        </tbody>
+      </table>
+    </div>
+  {%- endmacro %}
+
+  {{ tabela_grupos(['colab', 'visit'], 'Refeitório', 'senhas emitidas × custo unitário vigente no dia da emissão') }}
+  {{ tabela_grupos(['pac', 'acp'], 'Dispensa no leito', 'refeições entregues × valor unitário vigente na entrega') }}
+
+  <!-- Consolidado por dia -->
+  <div class="secao {% if f.dias | length > 12 %}quebra{% endif %}">
+    <div class="secao-tit">Consolidado por dia<small>valores em R$</small></div>
+    <table class="tab">
+      <thead><tr><th style="width:13%;">Data</th>
+        {% for gr in f.grupos %}<th class="num">{{ gr.nome }}</th>{% endfor %}
+        <th class="ctr" style="width:10%;">Refeições</th><th class="num" style="width:15%;">Total do dia</th></tr></thead>
+      <tbody>
+        {% for d in f.dias %}
+          <tr><td>{{ d.data.strftime('%d/%m/%Y') }}</td>
+            {% for gr in f.grupos %}<td class="num {% if not d[gr.chave] %}muted{% endif %}">{{ d[gr.chave] | moeda_br }}</td>{% endfor %}
+            <td class="ctr">{{ d.qtd | milhar_br }}</td><td class="num"><b>{{ d.total | moeda_br }}</b></td></tr>
+        {% else %}
+          <tr><td colspan="7" class="vazio">Nenhuma refeição no período.</td></tr>
+        {% endfor %}
+        <tr class="tot"><td>Total</td>
+          {% for gr in f.grupos %}<td class="num">{{ gr.valor | moeda_br }}</td>{% endfor %}
+          <td class="ctr">{{ f.qtd | milhar_br }}</td><td class="num">{{ f.total | moeda_br }}</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Observações -->
+  <div class="obs">
+    <h4>Critérios de apuração</h4>
+    <ul>
+      <li><b>Refeitório:</b> cada senha emitida no totem é classificada como café da manhã, almoço ou jantar pelos horários de turno
+        (Parâmetros › Horários de turno) e valorizada pelo custo unitário vigente no dia da emissão (Parâmetros › Custos de refeição).</li>
+      <li><b>Dispensa no leito:</b> somente refeições <b>entregues e confirmadas</b> no totem de dispensa, pelo valor unitário vigente
+        no momento da entrega. O acompanhante usa os mesmos tipos e valores do paciente. Refeições não entregues ({{ f.nao_entregues }})
+        ou sem registro não são faturadas.</li>
+      <li>Pacientes atendidos: {{ f.pacientes }} · com acompanhante: {{ f.acompanhantes }}.</li>
+    </ul>
+    {% if f.fechamentos %}
+      <h4>Fechamento da dispensa</h4>
+      <ul>{% for fc in f.fechamentos %}
+        <li class="ok">Período {{ fc.txt }} fechado (nº {{ fc.id }}) por {{ fc.por }}{% if fc.em %} em {{ fc.em.strftime('%d/%m/%Y %H:%M') }}{% endif %}
+          — R$ {{ fc.valor | moeda_br }}.</li>{% endfor %}</ul>
+    {% endif %}
+    {% if f.avisos %}
+      <h4>Pontos de atenção</h4>
+      <ul>{% for a in f.avisos %}<li class="alerta">{{ a }}</li>{% endfor %}</ul>
+    {% else %}
+      <p class="ok" style="margin-top:2px;">Nenhuma pendência de auditoria no período.</p>
+    {% endif %}
+  </div>
+
+  <table class="assin"><tr>
+    <td><div class="linha">Conferido por</div><div class="cargo">Serviço de Nutrição</div><div class="data">Data: ____/____/________</div></td>
+    <td><div class="linha">Aprovado por</div><div class="cargo">Administração</div><div class="data">Data: ____/____/________</div></td>
+    <td><div class="linha">De acordo</div><div class="cargo">Empresa responsável pela alimentação</div><div class="data">Data: ____/____/________</div></td>
+  </tr></table>
+
+  <div class="rodape">Documento gerado pelo GTR em {{ agora }}. Valores apurados a partir dos registros do sistema; dados sigilosos, de uso restrito à prestação de contas.</div>
+</body>
+</html>
