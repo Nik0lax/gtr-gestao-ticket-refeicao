@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="16" fill="#2b59ff"/>
+  <g fill="#ffffff">
+    <!-- garfo -->
+    <rect x="16.5" y="13" width="3" height="15" rx="1.5"/>
+    <rect x="21.25" y="13" width="3" height="15" rx="1.5"/>
+    <rect x="26" y="13" width="3" height="15" rx="1.5"/>
+    <path d="M16.5 25h12.5v2.5a6.25 6.25 0 0 1-6.25 6.25a6.25 6.25 0 0 1-6.25-6.25z"/>
+    <rect x="20.75" y="30" width="4" height="21" rx="2"/>
+    <!-- faca -->
+    <path d="M38.5 13c6.5 1.8 9.5 8.5 9.5 17.5v3.5h-9.5z"/>
+    <rect x="38.5" y="31" width="4.5" height="20" rx="2.25"/>
+  </g>
+</svg>

@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Dispensa de Refeição — GTR</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/dispensa_totem.css') }}">
+  {% include '_favicon.html' %}
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+</head>
+<body>
+
+  <header class="dt-top">
+    <div class="dt-brand">
+      <span class="dt-brand-mark"><i class="fas fa-hospital-user"></i></span>
+      <span class="dt-brand-text"><strong>Dispensa de refeição</strong><small>{{ hoje_fmt }}</small></span>
+    </div>
+    <div class="dt-top-right">
+      <span class="dt-user"><i class="fas fa-user"></i> {{ usuario }}</span>
+      {% if pode('dispensa_pacientes') %}<a href="{{ url_for('dispensa_pacientes') }}" class="dt-icon-btn" title="Voltar ao painel"><i class="fas fa-house"></i></a>{% endif %}
+      <a href="{{ url_for('logout') }}" class="dt-icon-btn is-danger" title="Sair"><i class="fas fa-arrow-right-from-bracket"></i></a>
+    </div>
+  </header>
+
+  <main class="dt-main">
+
+  {% if tela == 'inicio' %}
+    <section class="dt-inicio">
+      <div class="dt-head-center">
+        <span class="dt-eyebrow"><i class="fas fa-utensils"></i> Entrega no leito</span>
+        <h1>Qual refeição você vai entregar?</h1>
+        <p>Toque na refeição para ver os leitos</p>
+      </div>
+      {% if refeicoes %}
+        <div class="dt-ref-grid">
+          {% for r in refeicoes %}
+            <a href="{{ url_for('dispensa_totem_lista', tipo_id=r.id) }}" class="dt-ref {% if r.pendentes == 0 %}is-done{% endif %}">
+              <div class="dt-ref-top">
+                <strong>{{ r.nome }}{% if r.de_ontem %} <span class="dt-chip is-ontem">de ontem · {{ r.data_fmt }}</span>{% endif %}</strong>
+                {% if r.pendentes == 0 %}<span class="dt-chip is-ok"><i class="fas fa-check"></i> Concluída</span>
+                {% else %}<span class="dt-chip">{{ r.pendentes }} pendente{{ 's' if r.pendentes > 1 }}</span>{% endif %}
+              </div>
+              <div class="dt-bar"><i style="width: {{ r.pct }}%"></i></div>
+              <small>{{ r.entregues }} entregue{{ 's' if r.entregues != 1 }}{% if r.nao_entregues %} · {{ r.nao_entregues }} não entregue{{ 's' if r.nao_entregues != 1 }}{% endif %} · {{ r.total }} no total</small>
+              <i class="fas fa-chevron-right dt-ref-arrow"></i>
+            </a>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="dt-vazio">
+          <span><i class="fas fa-clipboard-list"></i></span>
+          <strong>Nenhuma refeição definida para hoje</strong>
+          <p>A cozinha ainda não definiu as refeições dos pacientes.</p>
+        </div>
+      {% endif %}
+    </section>
+
+  {% else %}
+    <section class="dt-lista" data-tipo="{{ tipo_id }}">
+      <div class="dt-lista-head">
+        <a href="{{ url_for('dispensa_totem') }}" class="dt-voltar" title="Voltar"><i class="fas fa-arrow-left"></i></a>
+        <div class="dt-lista-titulo">
+          <h1>{{ tipo_nome }}<span class="dt-setor-tit" id="dt-setor-tit" hidden></span></h1>
+          {% if de_ontem %}<small class="dt-res-ontem"><i class="fas fa-moon"></i> Prescrição de ontem ({{ hoje_fmt }}) · registro até as {{ '%02d' % virada_hora }}:00</small>{% endif %}
+          {% if resumo.acomp %}<small class="dt-res-ac"><i class="fas fa-user-group"></i> {{ resumo.acomp }} acompanhante(s) com {{ tipo_nome | lower }}</small>{% endif %}
+          <small id="dt-res-txt">{{ resumo.entregues }} entregue{{ 's' if resumo.entregues != 1 }} · {{ resumo.nao }} não entregue{{ 's' if resumo.nao != 1 }} · <b>{{ resumo.pendentes }} pendente{{ 's' if resumo.pendentes != 1 }}</b></small>
+        </div>
+        <div class="dt-progress" title="{{ resumo.entregues + resumo.nao }} de {{ resumo.total }}">
+          <div class="dt-bar"><i id="dt-prog-bar" style="width: {{ ((resumo.entregues + resumo.nao) * 100 / resumo.total) if resumo.total else 0 }}%"></i></div>
+          <span id="dt-prog-txt">{{ resumo.entregues + resumo.nao }}/{{ resumo.total }}</span>
+        </div>
+      </div>
+
+      {% set multi = unidades | length > 1 %}
+      <!-- 1º passo: escolher o setor (unidade de internação) -->
+      <div class="dt-unids" id="dt-unids" {% if not multi %}hidden{% endif %} data-multi="{{ 1 if multi else 0 }}">
+        <p class="dt-unids-tit"><i class="fas fa-hospital"></i> Em qual setor você vai entregar?</p>
+        <div class="dt-ref-grid dt-unid-grid">
+          {% for u in unidades %}
+            <button type="button" class="dt-ref dt-unid {% if u.pendentes == 0 %}is-done{% endif %}" data-unid="{{ u.nome }}">
+              <span class="dt-ref-top"><strong>{{ u.nome }}</strong>
+                <span class="dt-chip {{ 'is-ok' if u.pendentes == 0 }}" data-cnt>{% if u.pendentes == 0 %}<i class="fas fa-check"></i> Concluído{% else %}{{ u.pendentes }} pendente{{ 's' if u.pendentes > 1 }}{% endif %}</span></span>
+              <span class="dt-bar"><i data-bar style="width: {{ ((u.total - u.pendentes) * 100 / u.total) | round(0) }}%"></i></span>
+              <small data-sub>{{ u.total - u.pendentes }} de {{ u.total }} leito{{ 's' if u.total != 1 }} registrado{{ 's' if u.total != 1 }}</small>
+              <i class="fas fa-chevron-right dt-ref-arrow"></i>
+            </button>
+          {% endfor %}
+        </div>
+        <button type="button" class="dt-todos-setores" data-unid=""><i class="fas fa-layer-group"></i> Ver todos os setores juntos</button>
+      </div>
+
+      <div id="dt-pacs" {% if multi %}hidden{% endif %}>
+      {% if multi %}<div class="dt-setor-bar"><span><i class="fas fa-hospital"></i> <b id="dt-setor-nome"></b></span>
+        <button type="button" class="dt-trocar" id="dt-trocar"><i class="fas fa-arrow-right-arrow-left"></i> Trocar setor</button></div>{% endif %}
+      <div class="dt-filtros">
+        <div class="dt-busca"><i class="fas fa-magnifying-glass"></i><input type="search" id="dt-busca" placeholder="Buscar leito ou paciente" autocomplete="off"></div>
+        <div class="dt-tabs" role="tablist">
+          <button type="button" class="dt-tab is-active" data-filtro="pendente">Pendentes <em id="dt-cnt-pendente">{{ resumo.pendentes }}</em></button>
+          <button type="button" class="dt-tab" data-filtro="registrado">Registrados <em id="dt-cnt-registrado">{{ resumo.entregues + resumo.nao }}</em></button>
+          <button type="button" class="dt-tab" data-filtro="todos">Todos <em>{{ resumo.total }}</em></button>
+        </div>
+      </div>
+
+      <div class="dt-cards" id="dt-cards">
+        {% for i in itens %}
+          <button type="button" class="dt-card is-{{ i.card_status }}" data-status="{{ i.card_status }}" data-id="{{ i.id }}"
+                  {% if i.acomp and not i.so_acomp %}data-acomp-id="{{ i.acomp.id }}"{% endif %}
+                  data-busca="{{ (i.leito ~ ' ' ~ i.nome) | lower }}" data-unid="{{ i.unidade }}"
+                  data-item='{{ i | tojson }}'>
+            <span class="dt-leito">{{ i.leito }}</span>
+            <span class="dt-card-txt">
+              <strong>{{ i.nome }}</strong>
+              <small>{% if i.dieta %}{{ i.dieta }}{% else %}Dieta não informada{% endif %}{% if i.data_nascimento %} · Nasc. {{ i.data_nascimento }}{% endif %}</small>
+              {% if i.acomp %}<span class="dt-ac-chip is-{{ i.acomp.status }}"><i class="fas fa-user-group"></i>
+                {% if i.so_acomp %}Só acompanhante{% else %}+ acompanhante{% endif %}{% if i.acomp.lactante %} · lactante{% endif %}</span>{% endif %}
+            </span>
+            {% if i.falta_acomp %}
+              <span class="dt-st is-falta"><i class="fas fa-user-group"></i> Falta acompanhante</span>
+            {% elif i.status == 'entregue' %}
+              <span class="dt-st is-ok"><i class="fas fa-circle-check"></i> {{ i.hora }}{% if i.validacao == 'manual' %} · sem QR{% endif %}</span>
+            {% elif i.status == 'nao_entregue' %}
+              <span class="dt-st is-no"><i class="fas fa-circle-xmark"></i> Não entregue</span>
+            {% else %}
+              <span class="dt-st"><i class="fas fa-chevron-right"></i></span>
+            {% endif %}
+          </button>
+        {% endfor %}
+      </div>
+      <p class="dt-sem" id="dt-sem" hidden>Nenhum leito nesta lista.</p>
+      </div>
+    </section>
+
+    <!-- Painel do paciente -->
+    <div class="dt-sheet-bg" id="dt-sheet" hidden>
+      <div class="dt-sheet" role="dialog" aria-modal="true" aria-labelledby="dt-s-nome">
+        <div class="dt-sheet-head">
+          <span class="dt-leito dt-leito-lg" id="dt-s-leito"></span>
+          <span class="dt-sheet-ref">{{ tipo_nome }}</span>
+          <button type="button" class="dt-icon-btn" id="dt-fechar" title="Fechar"><i class="fas fa-xmark"></i></button>
+        </div>
+
+        <div class="dt-ident">
+          <span class="dt-ident-rot"><i class="fas fa-id-card"></i> Confira a identificação do paciente</span>
+          <strong id="dt-s-nome"></strong>
+          <div class="dt-ident-grid">
+            <div><small>Nascimento</small><b id="dt-s-dn"></b></div>
+            <div><small>Nome da mãe</small><b id="dt-s-mae"></b></div>
+            <div><small>Dieta</small><b id="dt-s-dieta"></b></div>
+          </div>
+        </div>
+
+        <!-- Acompanhante -->
+        <div class="dt-acomp" id="dt-acomp" hidden>
+          <div class="dt-acomp-head"><i class="fas fa-user-group"></i> <strong>Acompanhante</strong>
+            <span class="dt-chip dt-chip-lact" id="dt-ac-lact" hidden><i class="fas fa-person-breastfeeding"></i> lactante</span></div>
+          <p class="dt-acomp-txt" id="dt-ac-txt"></p>
+          <label class="dt-ac-junto" id="dt-ac-junto-box" hidden>
+            <input type="checkbox" id="dt-ac-junto" checked>
+            <span>Entregar também a refeição do acompanhante</span>
+          </label>
+          <div class="dt-acoes-sec" id="dt-ac-acoes" hidden>
+            <button type="button" class="dt-btn dt-btn-primary dt-btn-sm" id="dt-ac-ler"><i class="fas fa-qrcode"></i> Ler pulseira e entregar ao acompanhante</button>
+            <button type="button" class="dt-btn dt-btn-ghost dt-btn-sm" id="dt-ac-semqr"><i class="fas fa-hand"></i> Sem QR</button>
+            <button type="button" class="dt-btn dt-btn-ghost dt-btn-sm is-danger" id="dt-ac-nao"><i class="fas fa-ban"></i> Não recebeu</button>
+          </div>
+        </div>
+
+        <div class="dt-cam" id="dt-cam" hidden>
+          <video id="dt-video" playsinline muted></video>
+          <div class="dt-cam-mira"></div>
+          <span class="dt-cam-msg" id="dt-cam-msg">Aponte a câmera para o QR (etiqueta do leito ou pulseira)</span>
+        </div>
+        <div class="dt-aviso" id="dt-aviso" hidden></div>
+
+        <!-- Pendente: ler pulseira -->
+        <div class="dt-acoes" id="dt-acoes-pendente">
+          <button type="button" class="dt-btn dt-btn-primary" id="dt-ler"><i class="fas fa-qrcode"></i> Ler QR e entregar</button>
+          <div class="dt-acoes-sec">
+            <button type="button" class="dt-btn dt-btn-ghost" id="dt-sem-qr"><i class="fas fa-hand"></i> Entregar sem QR</button>
+            <button type="button" class="dt-btn dt-btn-ghost is-danger" id="dt-nao"><i class="fas fa-ban"></i> Não entregue</button>
+          </div>
+          <details class="dt-digitar">
+            <summary>Leitor externo / digitar código</summary>
+            <div class="dt-digitar-row">
+              <input type="text" id="dt-qr-manual" placeholder="Leia com o leitor ou cole o conteúdo do QR" autocomplete="off">
+              <button type="button" class="dt-btn dt-btn-primary dt-btn-sm" id="dt-qr-enviar">Conferir</button>
+            </div>
+          </details>
+        </div>
+
+        <!-- Motivos -->
+        <div class="dt-motivos" id="dt-motivos" hidden>
+          <span class="dt-ident-rot" id="dt-motivos-titulo"></span>
+          <div class="dt-motivos-grid" id="dt-motivos-grid"></div>
+          <input type="text" id="dt-obs" placeholder="Descreva o motivo" maxlength="240" hidden>
+          <div class="dt-ident-check" id="dt-ident-check" hidden>
+            <span class="dt-ident-rot"><i class="fas fa-user-shield"></i> Segunda checagem — digite os dados do paciente</span>
+            <p>Confira na pulseira, no prontuário ou com a enfermagem. A entrega só é aceita se os dados conferirem.</p>
+            <div class="dt-ident-inputs">
+              <label id="dt-lbl-pront"><small>Prontuário</small><input type="text" id="dt-dig-pront" inputmode="numeric" autocomplete="off" placeholder="Nº do prontuário"></label>
+              <label><small>Atendimento</small><input type="text" id="dt-dig-atend" inputmode="numeric" autocomplete="off" placeholder="Nº do atendimento"></label>
+            </div>
+          </div>
+          <div class="dt-acoes-sec">
+            <button type="button" class="dt-btn dt-btn-ghost" id="dt-motivos-voltar"><i class="fas fa-arrow-left"></i> Voltar</button>
+            <button type="button" class="dt-btn dt-btn-primary" id="dt-motivos-ok" disabled><i class="fas fa-check"></i> Confirmar</button>
+          </div>
+        </div>
+
+        <!-- Já registrado -->
+        <div class="dt-acoes" id="dt-acoes-registrado" hidden>
+          <div class="dt-registro" id="dt-registro"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Aviso de atualização feita por outro tablet -->
+    <div class="dt-toast" id="dt-toast" hidden></div>
+
+    <!-- Resultado -->
+    <div class="dt-result" id="dt-result" hidden>
+      <div class="dt-result-box">
+        <span class="dt-result-ico" id="dt-result-ico"></span>
+        <strong id="dt-result-msg"></strong>
+        <small id="dt-result-sub"></small>
+        <button type="button" class="dt-btn dt-btn-ghost" id="dt-result-ok" hidden>Entendi</button>
+      </div>
+    </div>
+
+    <script>
+      window.DT = {
+        registrar: "{{ url_for('dispensa_registrar') }}",
+        status: "{{ url_for('dispensa_totem_status', tipo_id=tipo_id, data=data_iso) }}",
+        inicio: "{{ url_for('dispensa_totem') }}",
+        motivos: {{ motivos | tojson }},
+        motivosSemQr: {{ motivos_sem_qr | tojson }},
+        somOk: "{{ url_for('static', filename='sounds/sucesso_v2.wav') }}",
+        somErro: "{{ url_for('static', filename='sounds/erro_v2.wav') }}",
+        urlHttps: {{ ((gtr_url_https ~ request.path) if gtr_url_https else '') | tojson }}
+      };
+    </script>
+    <script src="{{ url_for('static', filename='js/dispensa-totem.js') }}"></script>
+  {% endif %}
+  </main>
+
+  {% if perfil_inicio == 'dispensa' %}
+    <!-- Logout automático por inatividade (10 min) -->
+    <div class="dt-result" id="dt-inativo" hidden>
+      <div class="dt-result-box">
+        <span class="dt-result-ico dt-ico-alerta"><i class="fas fa-hourglass-half"></i></span>
+        <strong>Você ainda está aí?</strong>
+        <small>Por segurança dos dados dos pacientes, a sessão será encerrada em <b id="dt-inativo-seg">60</b> segundos.</small>
+        <button type="button" class="dt-btn dt-btn-primary" id="dt-continuar"><i class="fas fa-hand-pointer"></i> Continuar</button>
+      </div>
+    </div>
+    <script>
+      (function () {
+        var LIMITE = 10 * 60 * 1000, AVISO = 60 * 1000, ult = Date.now(), timer = null;
+        var box = document.getElementById('dt-inativo'), seg = document.getElementById('dt-inativo-seg');
+        function uso() { if (box.hidden) ult = Date.now(); }
+        ['pointerdown', 'keydown', 'touchstart', 'input'].forEach(function (ev) { document.addEventListener(ev, uso, { passive: true }); });
+        function sair() { location.href = "{{ url_for('logout') }}"; }
+        setInterval(function () {
+          var parado = Date.now() - ult;
+          if (parado >= LIMITE) return sair();
+          if (parado >= LIMITE - AVISO) {
+            box.hidden = false;
+            seg.textContent = Math.max(0, Math.ceil((LIMITE - parado) / 1000));
+          }
+        }, 1000);
+        document.getElementById('dt-continuar').addEventListener('click', function () {
+          fetch("{{ url_for('dispensa_ping') }}", { method: 'POST', credentials: 'same-origin',
+                  headers: { 'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content } })
+            .then(function (r) { if (r.status === 401) sair(); })
+            .catch(function () {});
+          ult = Date.now(); box.hidden = true;
+        });
+      })();
+    </script>
+  {% endif %}
+</body>
+</html>

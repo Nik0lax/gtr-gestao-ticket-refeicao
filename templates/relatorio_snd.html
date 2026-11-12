@@ -1,3 +1,4 @@
+{% from '_relatorio_padrao.html' import estilo_pagina, cabecalho with context %}
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -21,10 +22,12 @@
 
     .info-grid { display: flex; gap: 40px; margin-bottom: 14px; font-size: 10px; }
     .info-grid div span { font-weight: bold; }
+    .info-grid div { margin-right: 40px; }  /* wkhtmltopdf não suporta gap */
 
     /* ── resumo de custos ── */
     .cost-summary { display: flex; gap: 10px; margin-bottom: 16px; }
-    .cost-box { flex: 1; border: 1px solid #ccc; border-radius: 4px; padding: 8px 10px; text-align: center; }
+    .cost-box { flex: 1; border: 1px solid #ccc; border-radius: 4px; padding: 8px 10px; text-align: center; margin-right: 10px; }
+    .cost-box:last-child { margin-right: 0; }
     .cost-box .label { font-size: 9px; color: #777; text-transform: uppercase; margin-bottom: 3px; }
     .cost-box .value { font-size: 14px; font-weight: bold; }
     .cost-box.cafe  .value { color: #c47a00; }
@@ -35,6 +38,8 @@
 
     /* ── tabela ── */
     table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+    thead { display: table-header-group; }
+    tr { page-break-inside: avoid; }
     th { background-color: #1e2d3a; color: #fff; padding: 6px 5px; font-size: 9.5px; text-align: center; }
     th.left { text-align: left; }
     td { padding: 5px; font-size: 10px; border-bottom: 1px solid #e0e0e0; }
@@ -57,29 +62,17 @@
 
     /* ── rodapé ── */
     .footer { margin-top: 20px; display: flex; justify-content: space-between; font-size: 9px; color: #777; }
-    .footer .assinatura { border-top: 1px solid #aaa; padding-top: 4px; min-width: 200px; text-align: center; }
 
     /* critério */
     .criterio { background: #f4f8fb; border-left: 3px solid #00b4d8; padding: 7px 10px;
                 font-size: 9.5px; color: #444; margin-bottom: 16px; line-height: 1.6; }
     .criterio strong { color: #1e2d3a; }
   </style>
+  {{ estilo_pagina() }}
 </head>
 <body>
+  {{ cabecalho('Financeiro SND · Custo por departamento', periodo, 'Entregar até o dia 10 do mês subsequente') }}
 
-  <!-- cabeçalho -->
-  <div class="header">
-    <div class="logo">
-      <h1>GTR</h1>
-      <span>Gestão de Ticket Refeição</span>
-    </div>
-    <div class="hospital">
-      <strong>{{ nome_instituicao | upper }}</strong><br>
-      Relatório de Custos por Departamento<br>
-      Entregar até o dia 10 do mês subsequente
-    </div>
-  </div>
-  <hr>
 
   <div class="title">Relatório Financeiro – Custo de Refeições por Departamento</div>
   <div class="subtitle">Critério de Rateio: Quantidade de Refeições × Custo Unitário por Tipo</div>
@@ -93,31 +86,31 @@
   <!-- custos unitários de referência -->
   <div class="criterio">
     <strong>Custos unitários utilizados:</strong>
-    &nbsp; ☕ Café da Manhã: <strong>R$ {{ '%.2f'|format(custo_cafe) }}</strong>
-    &nbsp;|&nbsp; 🍽 Almoço: <strong>R$ {{ '%.2f'|format(custo_almoco) }}</strong>
-    &nbsp;|&nbsp; 🌙 Jantar: <strong>R$ {{ '%.2f'|format(custo_janta) }}</strong>
+    &nbsp; Café da Manhã: <strong>R$ {{ custo_cafe|moeda_br }}</strong>
+    &nbsp;|&nbsp; Almoço: <strong>R$ {{ custo_almoco|moeda_br }}</strong>
+    &nbsp;|&nbsp; Jantar: <strong>R$ {{ custo_janta|moeda_br }}</strong>
   </div>
 
   <!-- resumo totais -->
   <div class="cost-summary">
     <div class="cost-box cafe">
-      <div class="label">☕ Café da Manhã</div>
+      <div class="label">Café da Manhã</div>
       <div class="value">{{ total_qtd_cafe }}</div>
-      <div style="font-size:9px;color:#777;">R$ {{ '%.2f'|format(total_custo_cafe) }}</div>
+      <div style="font-size:9px;color:#777;">R$ {{ total_custo_cafe|moeda_br }}</div>
     </div>
     <div class="cost-box almoco">
-      <div class="label">🍽 Almoço</div>
+      <div class="label">Almoço</div>
       <div class="value">{{ total_qtd_almoco }}</div>
-      <div style="font-size:9px;color:#777;">R$ {{ '%.2f'|format(total_custo_almoco) }}</div>
+      <div style="font-size:9px;color:#777;">R$ {{ total_custo_almoco|moeda_br }}</div>
     </div>
     <div class="cost-box janta">
-      <div class="label">🌙 Jantar</div>
+      <div class="label">Jantar</div>
       <div class="value">{{ total_qtd_janta }}</div>
-      <div style="font-size:9px;color:#777;">R$ {{ '%.2f'|format(total_custo_janta) }}</div>
+      <div style="font-size:9px;color:#777;">R$ {{ total_custo_janta|moeda_br }}</div>
     </div>
     <div class="cost-box total">
       <div class="label">CUSTO TOTAL GERAL</div>
-      <div class="value">R$ {{ '%.2f'|format(total_custo_geral) }}</div>
+      <div class="value">R$ {{ total_custo_geral|moeda_br }}</div>
       <div style="font-size:9px;color:#777;">{{ total_senhas }} refeições</div>
     </div>
   </div>
@@ -149,14 +142,14 @@
         <tr>
           <td>{{ dept.nome }}</td>
           <td class="center {% if dept.qtd_cafe == 0 %}zero{% endif %}">{{ dept.qtd_cafe }}</td>
-          <td class="right {% if dept.custo_cafe == 0 %}zero{% endif %}">{{ '%.2f'|format(dept.custo_cafe) }}</td>
+          <td class="right {% if dept.custo_cafe == 0 %}zero{% endif %}">{{ dept.custo_cafe|moeda_br }}</td>
           <td class="center {% if dept.qtd_almoco == 0 %}zero{% endif %}">{{ dept.qtd_almoco }}</td>
-          <td class="right {% if dept.custo_almoco == 0 %}zero{% endif %}">{{ '%.2f'|format(dept.custo_almoco) }}</td>
+          <td class="right {% if dept.custo_almoco == 0 %}zero{% endif %}">{{ dept.custo_almoco|moeda_br }}</td>
           <td class="center {% if dept.qtd_janta == 0 %}zero{% endif %}">{{ dept.qtd_janta }}</td>
-          <td class="right {% if dept.custo_janta == 0 %}zero{% endif %}">{{ '%.2f'|format(dept.custo_janta) }}</td>
+          <td class="right {% if dept.custo_janta == 0 %}zero{% endif %}">{{ dept.custo_janta|moeda_br }}</td>
           <td class="center"><strong>{{ dept.qtd_total }}</strong></td>
-          <td class="right"><strong>{{ '%.2f'|format(dept.custo_total) }}</strong></td>
-          <td class="center">{{ '%.1f'|format(dept.percentual) }}%</td>
+          <td class="right"><strong>{{ dept.custo_total|moeda_br }}</strong></td>
+          <td class="center">{{ ('%.1f'|format(dept.percentual))|replace('.', ',') }}%</td>
         </tr>
         {% endfor %}
 
@@ -164,14 +157,14 @@
         <tr class="subtotal">
           <td>Subtotal – {{ grupo.nome }}</td>
           <td class="center">{{ grupo.sub_qtd_cafe }}</td>
-          <td class="right">{{ '%.2f'|format(grupo.sub_custo_cafe) }}</td>
+          <td class="right">{{ grupo.sub_custo_cafe|moeda_br }}</td>
           <td class="center">{{ grupo.sub_qtd_almoco }}</td>
-          <td class="right">{{ '%.2f'|format(grupo.sub_custo_almoco) }}</td>
+          <td class="right">{{ grupo.sub_custo_almoco|moeda_br }}</td>
           <td class="center">{{ grupo.sub_qtd_janta }}</td>
-          <td class="right">{{ '%.2f'|format(grupo.sub_custo_janta) }}</td>
+          <td class="right">{{ grupo.sub_custo_janta|moeda_br }}</td>
           <td class="center">{{ grupo.sub_qtd_total }}</td>
-          <td class="right">{{ '%.2f'|format(grupo.sub_custo_total) }}</td>
-          <td class="center">{{ '%.1f'|format(grupo.sub_percentual) }}%</td>
+          <td class="right">{{ grupo.sub_custo_total|moeda_br }}</td>
+          <td class="center">{{ ('%.1f'|format(grupo.sub_percentual))|replace('.', ',') }}%</td>
         </tr>
       {% endfor %}
 
@@ -179,13 +172,13 @@
       <tr class="total-geral">
         <td>TOTAL GERAL</td>
         <td class="center">{{ total_qtd_cafe }}</td>
-        <td class="right">{{ '%.2f'|format(total_custo_cafe) }}</td>
+        <td class="right">{{ total_custo_cafe|moeda_br }}</td>
         <td class="center">{{ total_qtd_almoco }}</td>
-        <td class="right">{{ '%.2f'|format(total_custo_almoco) }}</td>
+        <td class="right">{{ total_custo_almoco|moeda_br }}</td>
         <td class="center">{{ total_qtd_janta }}</td>
-        <td class="right">{{ '%.2f'|format(total_custo_janta) }}</td>
+        <td class="right">{{ total_custo_janta|moeda_br }}</td>
         <td class="center">{{ total_senhas }}</td>
-        <td class="right">R$ {{ '%.2f'|format(total_custo_geral) }}</td>
+        <td class="right" style="white-space:nowrap;">R$ {{ total_custo_geral|moeda_br }}</td>
         <td class="center">100%</td>
       </tr>
     </tbody>
@@ -195,11 +188,7 @@
   <div class="footer">
     <div>
       Critério de rateio: <strong>Quantidade de Refeições × Custo Unitário</strong><br>
-      Custos cadastrados em: Configurações → Custos de Refeição
-    </div>
-    <div class="assinatura">
-      Responsável: ___________________________<br>
-      {{ nome_instituicao }}
+      Custos cadastrados em: Parâmetros → Custos de refeição
     </div>
   </div>
 

@@ -47,3 +47,4 @@ webencodings==0.5.1
 Werkzeug==2.2.3
 XlsxWriter==3.2.2
 zopfli==0.2.3.post1
+pypdf==5.1.0

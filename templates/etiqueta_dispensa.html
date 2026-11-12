@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Etiquetas QR · Dispensa</title>
+  <style>
+    /* Etiqueta térmica 100 × 40 mm, uma por página. Só preto: a térmica não imprime cinza bem. */
+    @page { size: 100mm 40mm; margin: 0; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, Helvetica, sans-serif; color: #000; }
+    .etq { width: 100mm; height: 40mm; padding: 2.2mm 3mm 2mm 2.2mm; page-break-after: always; overflow: hidden; }
+    .etq:last-child { page-break-after: auto; }
+    table { width: 100%; height: 35.8mm; border-collapse: collapse; }
+    td { vertical-align: top; padding: 0; }
+    td.qr { width: 36mm; vertical-align: middle; }
+    td.qr img { width: 34mm; height: 34mm; display: block; image-rendering: pixelated; }
+    td.txt { padding-left: 2.3mm; }
+    /* unidade + leito: o mesmo "LEITO (01)" existe em várias unidades */
+    .unid { font-size: 7.8pt; font-weight: 900; line-height: 1.05; letter-spacing: .2px; margin-bottom: 0.4mm; white-space: nowrap; overflow: hidden; }
+    .unid.m { font-size: 6.8pt; }
+    .leito { font-size: 11pt; font-weight: 900; line-height: 1.05; border-bottom: 0.45mm solid #000; padding-bottom: 0.8mm; margin-bottom: 1mm;
+             white-space: nowrap; overflow: hidden; }
+    /* identificação: nome (até 2 linhas), nascimento e mãe — os 3 marcadores obrigatórios */
+    /* nome e mãe NUNCA são cortados (são identificadores): a fonte diminui conforme o tamanho do texto */
+    .nome { font-size: 10.5pt; font-weight: 900; line-height: 1.08; }
+    .nome.m { font-size: 9.2pt; } .nome.p { font-size: 8.2pt; }
+    .id { font-size: 7.6pt; line-height: 1.18; margin-top: 0.9mm; }
+    .id b { font-weight: 800; }
+    .mae.m { font-size: 6.9pt; } .mae.p { font-size: 6.2pt; }
+    .rod { font-size: 5.8pt; margin-top: 0.8mm; }
+  </style>
+</head>
+<body>
+  {% for e in etiquetas %}
+    <div class="etq">
+      <table><tr>
+        <td class="qr"><img src="{{ e.qr }}" alt=""></td>
+        <td class="txt">
+          <div class="unid {{ 'm' if e.unidade | length > 30 else '' }}">{{ e.unidade or 'UNIDADE NÃO INFORMADA' }}</div>
+          <div class="leito">{{ e.leito }}</div>
+          <div class="nome {{ 'p' if e.nome | length > 44 else ('m' if e.nome | length > 30 else '') }}">{{ e.nome }}</div>
+          <div class="id">Nasc.: <b>{{ e.nasc or 'NÃO INFORMADO' }}</b></div>
+          <div class="id mae {{ 'p' if (e.mae or '') | length > 44 else ('m' if (e.mae or '') | length > 30 else '') }}">Mãe: <b>{{ e.mae or 'NÃO INFORMADO' }}</b></div>
+          <div class="rod">GTR · Dispensa · impressa {{ agora }}</div>
+        </td>
+      </tr></table>
+    </div>
+  {% endfor %}
+</body>
+</html>

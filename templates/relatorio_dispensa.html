@@ -1,0 +1,344 @@
+{% from '_relatorio_padrao.html' import estilo_pagina, cabecalho with context %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Relatório Financeiro – Dispensa de Refeições</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; font-size: 11px; color: #1a1a1a; margin: 20px 28px; }
+
+    /* cabeçalho (mesmo padrão dos demais relatórios) */
+    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+    .logo h1 { font-size: 22px; font-weight: 900; letter-spacing: 1px; }
+    .logo span { font-size: 9px; color: #4A90E2; text-transform: uppercase; letter-spacing: 1px; }
+    .titulo-rel { text-align: right; font-size: 10px; color: #444; line-height: 1.5; }
+    .titulo-rel strong { font-size: 12px; color: #1a1a1a; }
+    hr { border: none; border-top: 2px solid #1a1a1a; margin-bottom: 10px; }
+    .title { font-size: 14px; font-weight: bold; margin-bottom: 4px; }
+    .subtitle { font-size: 10px; color: #555; margin-bottom: 12px; }
+    .info-grid { display: flex; margin-bottom: 14px; font-size: 10px; }
+    .info-grid div { margin-right: 32px; }  /* wkhtmltopdf não suporta gap */
+    .info-grid div span { font-weight: bold; }
+
+    .criterio { background: #f4f8fb; border-left: 3px solid #00b4d8; padding: 7px 10px;
+                font-size: 9.5px; color: #444; margin-bottom: 12px; line-height: 1.6; }
+    .criterio strong { color: #1e2d3a; }
+    .fechado { background: #eef7f1; border-left: 3px solid #16a34a; padding: 7px 10px;
+               font-size: 9.5px; color: #0f5130; margin-bottom: 8px; line-height: 1.6; }
+    .alerta { background: #fff4e6; border-left: 3px solid #e8842e; padding: 7px 10px;
+              font-size: 9.5px; color: #7a3d0a; margin-bottom: 8px; line-height: 1.6; }
+
+    .section-label { font-size: 10px; font-weight: bold; color: #1e2d3a; text-transform: uppercase;
+                     letter-spacing: 0.5px; margin: 14px 0 6px; }
+    .cost-summary { display: flex; margin-bottom: 6px; }
+    .cost-box { flex: 1; border: 1px solid #ccc; border-radius: 4px; padding: 8px 10px; text-align: center; margin-right: 10px; }
+    .cost-box:last-child { margin-right: 0; }
+    .cost-box .lbl { font-size: 9px; color: #777; text-transform: uppercase; margin-bottom: 3px; }
+    .cost-box .val { font-size: 16px; font-weight: bold; white-space: nowrap; }
+    .cost-box .sub { font-size: 9px; color: #777; margin-top: 2px; }
+    .cost-box.total { border: 2px solid #1a1a1a; }
+
+    table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+    thead { display: table-header-group; }
+    tr { page-break-inside: avoid; }
+    th { background-color: #1e2d3a; color: #fff; padding: 6px 5px; font-size: 9.5px; text-align: center; }
+    th.left { text-align: left; }
+    td { padding: 5px; font-size: 10px; border-bottom: 1px solid #e0e0e0; }
+    td.center { text-align: center; }
+    td.right { text-align: right; white-space: nowrap; }
+    tr:nth-child(even) td { background-color: #f9f9f9; }
+    tr.total-geral td { background-color: #1e2d3a; color: #fff; font-weight: bold; font-size: 10.5px; }
+    .zero { color: #bbb; }
+    .tag-manual { color: #b45309; font-weight: bold; }
+    .duas { display: flex; }
+    .duas > div { flex: 1; margin-right: 14px; }
+    .duas > div:last-child { margin-right: 0; }
+    .vazio { text-align: center; color: #999; padding: 12px; }
+    .quebra { page-break-before: always; }
+    .footer { margin-top: 18px; font-size: 9px; color: #777; }
+    .cost-box.pac { border-color: #4A90E2; }
+    .cost-box.acp { border-color: #b4236b; }
+    .cost-box.acp .val { color: #b4236b; }
+    th.sub-pac { background-color: #2c4a66; }
+    th.sub-acp { background-color: #6b2348; }
+    tr.subtotal td { background-color: #eef2f6 !important; font-weight: bold; }
+    tr.grupo td { background-color: #fff !important; font-weight: bold; color: #1e2d3a; padding-top: 9px; border-bottom: 2px solid #1e2d3a; }
+    .fat-nota { font-size: 9.5px; color: #444; margin-bottom: 8px; line-height: 1.5; }
+    .assinaturas { display: flex; margin-top: 34px; }
+    .assinaturas div { flex: 1; margin-right: 30px; border-top: 1px solid #1a1a1a; padding-top: 4px; font-size: 9.5px; text-align: center; color: #444; }
+    .assinaturas div:last-child { margin-right: 0; }
+  </style>
+  {{ estilo_pagina() }}
+</head>
+<body>
+  {% set t = dados.tot %}
+  {{ cabecalho('Relatório financeiro · Dispensa', periodo, 'Pacientes e acompanhantes') }}
+
+
+  <div class="title">Relatório Financeiro – Dispensa de Refeições para Pacientes e Acompanhantes</div>
+  <div class="subtitle">Refeições entregues no leito a pacientes e acompanhantes, por tipo de refeição e por dia</div>
+
+  <div class="info-grid">
+    <div><span>Período: </span>{{ periodo }}</div>
+    <div><span>Refeição: </span>{{ tipo_nome }}</div>
+    <div><span>Gerado em: </span>{{ agora }}</div>
+    <div><span>Pacientes atendidos: </span>{{ t.pacientes }}{% if t.acompanhantes %} · <span>com acompanhante: </span>{{ t.acompanhantes }}{% endif %}</div>
+  </div>
+
+  <div class="criterio">
+    <strong>Critério de custo:</strong> somente refeições <strong>entregues</strong> (confirmadas no totem de dispensa),
+    multiplicadas pelo <strong>valor unitário vigente no momento da entrega</strong>, cadastrado em Dispensa Refeição → Tipos de refeição.
+    Refeições não entregues e pendentes não geram custo.
+  </div>
+
+  {% for f in fechamentos %}
+    <div class="fechado"><strong>PERÍODO FECHADO</strong> — {{ f.txt }} (nº {{ f.id }}), fechado por {{ f.por }} em {{ f.em.strftime('%d/%m/%Y %H:%M') if f.em }}.
+      Valor registrado no fechamento: <strong>R$ {{ f.valor | moeda_br }}</strong> ({{ f.entregues }} refeições).
+      {% if f.ini == periodo_ini and f.fim == periodo_fim %}
+        {% if (f.valor - t.valor)|abs < 0.005 %}Os valores deste relatório conferem com o fechamento.
+        {% else %}<strong>Atenção: o valor atual (R$ {{ t.valor | moeda_br }}) difere do fechamento.</strong>{% endif %}
+      {% else %}O relatório cobre um intervalo diferente do período fechado.{% endif %}
+    </div>
+  {% endfor %}
+  {% if t.zerados %}
+    <div class="alerta"><strong>Atenção:</strong> {{ t.zerados }} refeição(ões) entregue(s) com valor <strong>R$ 0,00</strong>
+      — o valor do tipo de refeição não estava cadastrado no momento da entrega.</div>
+  {% endif %}
+  {% if t.ajustados %}
+    <div class="alerta"><strong>Auditoria:</strong> {{ t.ajustados }} entrega(s) tiveram o valor <strong>reajustado depois da entrega</strong>
+      (estavam com R$ 0,00). Registro em Dispensa Refeição → Tipos de refeição → Reajustes de valor.</div>
+  {% endif %}
+  {% if t.pendentes %}
+    <div class="alerta"><strong>Atenção:</strong> {{ t.pendentes }} refeição(ões) definida(s) pela cozinha ficaram <strong>sem registro</strong>
+      no totem (nem entregues, nem justificadas).</div>
+  {% endif %}
+  {% if t.corrigidos %}
+    <div class="alerta"><strong>Auditoria:</strong> {{ t.corrigidos }} registro(s) do totem foram <strong>corrigidos manualmente</strong>
+      (Dispensa Refeição → Acompanhamento da entrega → Correções), com motivo registrado.</div>
+  {% endif %}
+  {% if t.manual %}
+    <div class="alerta"><strong>Auditoria:</strong> {{ t.manual }} de {{ t.entregues }} entrega(s) ({{ ('%.1f'|format(t.pct_manual))|replace('.', ',') }}%)
+      foram confirmadas <strong>sem leitura da pulseira</strong>.</div>
+  {% endif %}
+
+  <div class="section-label">Resumo do período</div>
+  <div class="cost-summary">
+    <div class="cost-box"><div class="lbl">Refeições previstas</div><div class="val">{{ t.previstas }}</div><div class="sub">definidas pela cozinha</div></div>
+    <div class="cost-box"><div class="lbl">Entregues</div><div class="val">{{ t.entregues }}</div><div class="sub">{{ t.qr }} com QR · {{ t.manual }} sem QR</div></div>
+    <div class="cost-box"><div class="lbl">Não entregues</div><div class="val">{{ t.nao }}</div><div class="sub">{{ t.pendentes }} sem registro</div></div>
+    <div class="cost-box total"><div class="lbl">Custo total</div><div class="val">R$ {{ t.valor | moeda_br }}</div><div class="sub">média de R$ {{ t.media_dia | moeda_br }}/dia</div></div>
+  </div>
+  <div class="cost-summary">
+    <div class="cost-box pac"><div class="lbl">Custo com pacientes</div><div class="val">R$ {{ t.valor_pac | moeda_br }}</div>
+      <div class="sub">{{ t.entregues_pac }} refeição(ões) entregue(s){% if t.valor > 0 %} · {{ ('%.1f'|format(t.valor_pac * 100 / t.valor))|replace('.', ',') }}%{% endif %}</div></div>
+    <div class="cost-box acp"><div class="lbl">Custo com acompanhantes</div><div class="val">R$ {{ t.valor_acomp | moeda_br }}</div>
+      <div class="sub">{{ t.acomp }} refeição(ões) entregue(s) · {{ t.acompanhantes }} acompanhante(s){% if t.valor > 0 %} · {{ ('%.1f'|format(t.valor_acomp * 100 / t.valor))|replace('.', ',') }}%{% endif %}</div></div>
+  </div>
+  <div class="criterio" style="margin-top:6px;">O acompanhante usa os mesmos tipos e valores de refeição do paciente
+    (padrão: até 3 refeições/dia; lactante: até 5), liberados pela nutrição.</div>
+
+  <div class="section-label">Custo por tipo de refeição</div>
+  <table>
+    <thead>
+      <tr>
+        <th class="left" rowspan="2" style="width:17%;">Tipo de refeição</th>
+        <th colspan="2" class="sub-pac">Pacientes</th>
+        <th colspan="2" class="sub-acp">Acompanhantes</th>
+        <th colspan="3">Total</th>
+        <th rowspan="2" style="width:7%;">Sem QR</th>
+        <th rowspan="2" style="width:7%;">Não entr.</th>
+      </tr>
+      <tr>
+        <th class="sub-pac" style="width:7%;">Qtd</th><th class="sub-pac" style="width:11%;">Custo</th>
+        <th class="sub-acp" style="width:7%;">Qtd</th><th class="sub-acp" style="width:11%;">Custo</th>
+        <th style="width:7%;">Qtd</th><th style="width:12%;">Valor unit.</th><th style="width:12%;">Custo total</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for tp in dados.tipos %}
+        <tr>
+          <td>{{ tp.nome }}</td>
+          <td class="center {% if not tp.pac %}zero{% endif %}">{{ tp.pac }}</td>
+          <td class="right {% if not tp.pac %}zero{% endif %}">R$ {{ tp.valor_pac | moeda_br }}</td>
+          <td class="center {% if not tp.acomp %}zero{% endif %}">{{ tp.acomp }}</td>
+          <td class="right {% if not tp.acomp %}zero{% endif %}">R$ {{ tp.valor_acomp | moeda_br }}</td>
+          <td class="center"><strong>{{ tp.entregues }}</strong></td>
+          <td class="right">{{ tp.unit_txt }}</td>
+          <td class="right"><strong>R$ {{ tp.valor | moeda_br }}</strong></td>
+          <td class="center {% if tp.manual %}tag-manual{% else %}zero{% endif %}">{{ tp.manual }}</td>
+          <td class="center {% if not tp.nao %}zero{% endif %}">{{ tp.nao }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="10" class="vazio">Nenhuma refeição definida no período.</td></tr>
+      {% endfor %}
+      <tr class="total-geral">
+        <td>TOTAL</td>
+        <td class="center">{{ t.entregues_pac }}</td><td class="right">R$ {{ t.valor_pac | moeda_br }}</td>
+        <td class="center">{{ t.acomp }}</td><td class="right">R$ {{ t.valor_acomp | moeda_br }}</td>
+        <td class="center">{{ t.entregues }}</td><td></td><td class="right">R$ {{ t.valor | moeda_br }}</td>
+        <td class="center">{{ t.manual }}</td><td class="center">{{ t.nao }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="section-label">Custo por dia</div>
+  <table>
+    <thead>
+      <tr>
+        <th class="left">Data</th>
+        {% for tp in dados.tipos %}<th>{{ tp.nome }}</th>{% endfor %}
+        <th>Entregues</th>
+        <th class="sub-acp">Acomp.</th>
+        <th class="sub-acp">Custo acomp.</th>
+        <th>Custo do dia</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for d in dados.dias %}
+        <tr>
+          <td>{{ d.data.strftime('%d/%m/%Y') }}</td>
+          {% for tp in dados.tipos %}
+            {% set q = d.por_tipo.get(tp.id, 0) %}
+            <td class="center {% if not q %}zero{% endif %}">{{ q }}</td>
+          {% endfor %}
+          <td class="center"><strong>{{ d.qtd }}</strong></td>
+          <td class="center {% if not d.acomp %}zero{% endif %}">{{ d.acomp }}</td>
+          <td class="right {% if not d.acomp %}zero{% endif %}">R$ {{ d.valor_acomp | moeda_br }}</td>
+          <td class="right"><strong>R$ {{ d.valor | moeda_br }}</strong></td>
+        </tr>
+      {% else %}
+        <tr><td colspan="{{ dados.tipos | length + 5 }}" class="vazio">Sem dados no período.</td></tr>
+      {% endfor %}
+      {% if dados.dias %}
+        <tr class="total-geral">
+          <td>TOTAL</td>
+          {% for tp in dados.tipos %}<td class="center">{{ tp.entregues }}</td>{% endfor %}
+          <td class="center">{{ t.entregues }}</td>
+          <td class="center">{{ t.acomp }}</td>
+          <td class="right">R$ {{ t.valor_acomp | moeda_br }}</td>
+          <td class="right">R$ {{ t.valor | moeda_br }}</td>
+        </tr>
+      {% endif %}
+    </tbody>
+  </table>
+
+  {% if dados.motivos_nao or dados.motivos_manual %}
+    <div class="duas">
+      <div>
+        <div class="section-label">Não entregues por motivo</div>
+        <table>
+          <thead><tr><th class="left">Motivo</th><th style="width:22%;">Qtd</th></tr></thead>
+          <tbody>
+            {% for m, n in dados.motivos_nao %}<tr><td>{{ m }}</td><td class="center">{{ n }}</td></tr>
+            {% else %}<tr><td colspan="2" class="vazio">Nenhuma.</td></tr>{% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <div class="section-label">Entregas sem QR por motivo</div>
+        <table>
+          <thead><tr><th class="left">Motivo</th><th style="width:22%;">Qtd</th></tr></thead>
+          <tbody>
+            {% for m, n in dados.motivos_manual %}<tr><td>{{ m }}</td><td class="center">{{ n }}</td></tr>
+            {% else %}<tr><td colspan="2" class="vazio">Nenhuma.</td></tr>{% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="quebra"></div>
+  <div class="section-label">Refeições para faturamento</div>
+  <p class="fat-nota">Período <strong>{{ periodo }}</strong> · Refeição: {{ tipo_nome }}. Base para a nota fiscal da empresa
+    responsável pela alimentação: somente refeições <strong>entregues e confirmadas no totem de dispensa</strong>, pelo valor unitário
+    vigente no momento da entrega. Refeições não entregues ou sem registro não são faturadas.</p>
+  <table>
+    <thead>
+      <tr>
+        <th class="left" style="width:40%;">Refeição</th>
+        <th style="width:16%;">Quantidade</th>
+        <th style="width:20%;">Valor unitário</th>
+        <th style="width:24%;">Subtotal</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for grp in dados.faturamento %}
+        <tr class="grupo"><td colspan="4">{{ 'Pacientes' if grp.para == 'Paciente' else 'Acompanhantes' }}</td></tr>
+        {% for l in grp.linhas %}
+          <tr>
+            <td>{{ l.refeicao }}</td>
+            <td class="center">{{ l.qtd }}</td>
+            <td class="right">R$ {{ l.unit | moeda_br }}</td>
+            <td class="right">R$ {{ l.subtotal | moeda_br }}</td>
+          </tr>
+        {% endfor %}
+        <tr class="subtotal">
+          <td>Subtotal {{ 'pacientes' if grp.para == 'Paciente' else 'acompanhantes' }}</td>
+          <td class="center">{{ grp.qtd }}</td><td></td>
+          <td class="right">R$ {{ grp.valor | moeda_br }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="4" class="vazio">Nenhuma refeição entregue no período.</td></tr>
+      {% endfor %}
+      <tr class="total-geral">
+        <td>TOTAL A FATURAR</td>
+        <td class="center">{{ t.entregues }}</td><td></td>
+        <td class="right">R$ {{ t.valor | moeda_br }}</td>
+      </tr>
+    </tbody>
+  </table>
+  {% if fechamentos %}<p class="fat-nota">Período fechado no sistema: {% for f in fechamentos %}nº {{ f.id }} ({{ f.txt }}, R$ {{ f.valor | moeda_br }}){{ ', ' if not loop.last }}{% endfor %}.</p>{% endif %}
+  <div class="assinaturas">
+    <div>Conferido por (Nutrição)</div>
+    <div>Aprovado por (Administração)</div>
+    <div>Empresa responsável pela alimentação</div>
+  </div>
+
+  {% if detalhado %}
+    <div class="quebra"></div>
+    <div class="section-label">Refeições entregues — detalhamento ({{ dados.detalhe | length }})</div>
+    <table>
+      <thead>
+        <tr>
+          <th style="width:9%;">Data</th>
+          <th style="width:6%;">Hora</th>
+          <th class="left" style="width:11%;">Leito</th>
+          <th class="left" style="width:24%;">Paciente</th>
+          <th style="width:8%;">Para</th>
+          <th style="width:10%;">Atendimento</th>
+          <th class="left" style="width:10%;">Refeição</th>
+          <th style="width:9%;">Valor</th>
+          <th style="width:7%;">Validação</th>
+          <th class="left" style="width:10%;">Entregue por</th>
+          <th class="left" style="width:13%;">Autorizado por</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in dados.detalhe %}
+          <tr>
+            <td class="center">{{ e.data.strftime('%d/%m/%Y') }}</td>
+            <td class="center">{{ e.hora }}</td>
+            <td>{{ e.leito }}</td>
+            <td>{{ e.nome | replace(' (acompanhante)', '') }}</td>
+            <td class="center">{{ e.para }}</td>
+            <td class="center">{{ e.atendimento }}</td>
+            <td>{{ e.tipo }}</td>
+            <td class="right">R$ {{ e.valor | moeda_br }}</td>
+            <td class="center {% if e.validacao != 'QR' %}tag-manual{% endif %}">{{ e.validacao }}</td>
+            <td>{{ e.por }}</td>
+            <td style="font-size:8.5px;">{{ e.autorizado }}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="11" class="vazio">Nenhuma entrega no período.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+
+  <div class="footer">
+    Relatório gerado em {{ agora }} &nbsp;|&nbsp; Fonte: totem de dispensa (entregas confirmadas no leito).
+    Dados de pacientes são sigilosos — uso restrito à prestação de contas.
+  </div>
+</body>
+</html>
