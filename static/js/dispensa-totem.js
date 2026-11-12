@@ -1,8 +1,10 @@
 /* GTR — Totem de dispensa de refeição (tablet)
    Lista de leitos, painel do paciente, leitura do QR da pulseira pela câmera
    (BarcodeDetector nativo ou jsQR como alternativa), entrega sem QR com segunda
-   checagem (prontuário + atendimento), não entrega com motivo e sincronização
-   entre tablets (a lista se atualiza sozinha a cada poucos segundos). */
+   checagem (prontuário + atendimento), não entrega com motivo, avaria (refeição entregue
+   que caiu/estragou → reposição, entregue com nova conferência), leitor de QR sem fio
+   (funciona como teclado: a leitura abre o leito ou entrega o que está aberto) e
+   sincronização entre tablets (a lista se atualiza sozinha a cada poucos segundos). */
 (function () {
   'use strict';
   var DT = window.DT || {};
@@ -18,10 +20,11 @@
   var unidsBox = $('dt-unids'), multiSetor = !!(unidsBox && unidsBox.dataset.multi === '1');
   var setorAtual = multiSetor ? null : '';
   var atual = null;          // item aberto no painel
-  var modoMotivo = null;     // 'nao_entregue' | 'manual'
+  var modoMotivo = null;     // 'nao_entregue' | 'manual' | 'avaria'
   var motivoEscolhido = null;
   var stream = null, scanTimer = null, detector = null, enviando = false;
   var alvoAcomp = false;     // true = a ação é sobre a refeição do acompanhante (paciente já registrado)
+  var leitorLido = null;     // código lido pelo leitor sem fio que abriu o leito (aguarda "Confirmar entrega")
   var POLL_MS = 8000;
 
   function esc(s) {
@@ -92,7 +95,7 @@
   function pintarCard(c, item, destacar) {
     var st = faltaAcomp(item) ? 'pendente' : item.status;
     c.dataset.status = st;
-    c.className = 'dt-card is-' + st + (destacar ? ' is-novo' : '');
+    c.className = 'dt-card is-' + st + (item.repo ? ' is-repo' : '') + (destacar ? ' is-novo' : '');
     var el = c.querySelector('.dt-st');
     if (faltaAcomp(item)) { el.className = 'dt-st is-falta'; el.innerHTML = '<i class="fas fa-user-group"></i> Falta acompanhante'; }
     else { el.className = 'dt-st' + (item.status === 'entregue' ? ' is-ok' : item.status === 'nao_entregue' ? ' is-no' : ''); el.innerHTML = htmlStatus(item); }
@@ -167,8 +170,12 @@
         if (j && j.tipo === 'virou_dia' && !enviando) { location.href = DT.inicio; return; }
         if (!j || !j.ok) return;
         var mudou = 0;
+        // reposição por avaria registrada em outro tablet: recarrega a lista (se ninguém estiver usando o painel)
+        var repoNova = Object.keys(j.itens).some(function (id) { return id.charAt(0) === 'r' && !porId[id]; });
+        if (repoNova && !atual && !enviando) { location.reload(); return; }
         Object.keys(j.itens).forEach(function (id) {
           var novo = j.itens[id];
+          if (!porId[id] && !porAcomp[id]) return;
           if (porAcomp[id]) {
             if (atualizarAcomp(porAcomp[id], novo)) {
               mudou++;
@@ -196,16 +203,27 @@
   }
 
   // ── Painel do paciente ──
-  function abrir(item) {
+  function abrir(item, lido) {
     atual = item;
+    leitorLido = lido || null;
     $('dt-s-leito').textContent = item.leito;
     $('dt-s-nome').textContent = item.nome;
     $('dt-s-dn').textContent = item.data_nascimento || '—';
     $('dt-s-mae').textContent = item.nome_mae || '—';
     $('dt-s-dieta').textContent = item.dieta || '—';
+    $('dt-s-obs').textContent = item.observacao || ''; mostrar('dt-s-obs-box', !!item.observacao);
     mostrar('dt-aviso', false); mostrar('dt-motivos', false); mostrar('dt-cam', false);
     alvoAcomp = false;
+    var ri = $('dt-repo-info');
+    if (item.repo) {
+      ri.innerHTML = '<i class="fas fa-rotate"></i> <b>Reposição nº ' + item.repo.seq + (item.repo.acompanhante ? ' do acompanhante' : '') +
+        '</b> · avaria: ' + esc(item.repo.avaria) + '<small>Refeição nova no lugar da que foi perdida. Confirme a entrega como de costume.</small>';
+      ri.hidden = false;
+    } else { ri.hidden = true; }
     montarAcomp(item);
+    mostrar('dt-avaria', item.status === 'entregue' && !item.repo_pend);
+    mostrar('dt-lido', !!leitorLido && (item.status === 'pendente' || acompPendente(item)));
+    mostrar('dt-ler', !leitorLido);   // aberto pelo leitor: a leitura já foi feita, só falta confirmar
     if (item.status === 'pendente') {
       mostrar('dt-acoes-pendente', true); mostrar('dt-acoes-registrado', false);
       $('dt-qr-manual').value = '';
@@ -232,6 +250,7 @@
     var txt = $('dt-ac-txt');
     txt.className = 'dt-acomp-txt';
     mostrar('dt-ac-junto-box', false); mostrar('dt-ac-acoes', false);
+    mostrar('dt-ac-avaria', !item.so_acomp && a.status === 'entregue' && !a.repo_pend);
     if (item.so_acomp) {
       // só o acompanhante tem esta refeição: as ações principais do painel são dele
       txt.innerHTML = 'Somente o <b>acompanhante</b> tem esta refeição liberada (o paciente não). Leia a pulseira do paciente para confirmar o leito.';
@@ -250,8 +269,10 @@
       txt.className = 'dt-acomp-txt ' + (a.status === 'entregue' ? 'is-ok' : 'is-no');
     }
   }
-  function fechar() { pararCamera(); $('dt-sheet').hidden = true; atual = null; alvoAcomp = false; }
-  cards.forEach(function (c) { c.addEventListener('click', function () { abrir(JSON.parse(c.dataset.item)); }); });
+  function acompPendente(item) { return !!item.acomp && !item.so_acomp && item.acomp.status === 'pendente'; }
+  function fechar() { pararCamera(); $('dt-sheet').hidden = true; atual = null; alvoAcomp = false; leitorLido = null; }
+  // o card perde o foco ao abrir: o Enter do leitor sem fio não pode "clicar" nele de novo
+  cards.forEach(function (c) { c.addEventListener('click', function () { c.blur(); abrir(JSON.parse(c.dataset.item)); }); });
   if ($('dt-fechar')) $('dt-fechar').addEventListener('click', fechar);
   if ($('dt-sheet')) $('dt-sheet').addEventListener('click', function (e) { if (e.target === this) fechar(); });
 
@@ -272,7 +293,7 @@
   function iniciarCamera() {
     if (!window.isSecureContext || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       aviso('<i class="fas fa-lock"></i> A câmera só funciona em conexão segura. Abra o totem ' +
-        (DT.urlHttps ? 'em <b>' + esc(DT.urlHttps) + '</b>' : 'pelo endereço HTTPS do GTR') + ' ou use o leitor externo abaixo.', 'is-warn');
+        (DT.urlHttps ? 'em <b>' + esc(DT.urlHttps) + '</b>' : 'pelo endereço HTTPS do GTR') + ' ou use o leitor sem fio (é só ler o QR).', 'is-warn');
       return;
     }
     mostrar('dt-cam', true);
@@ -327,6 +348,8 @@
   if ($('dt-ac-ler')) $('dt-ac-ler').addEventListener('click', function () { alvoAcomp = true; mostrar('dt-aviso', false); iniciarCamera(); });
   if ($('dt-ac-semqr')) $('dt-ac-semqr').addEventListener('click', function () { alvoAcomp = true; abrirMotivos('manual'); });
   if ($('dt-ac-nao')) $('dt-ac-nao').addEventListener('click', function () { alvoAcomp = true; abrirMotivos('nao_entregue'); });
+  if ($('dt-avaria')) $('dt-avaria').addEventListener('click', function () { alvoAcomp = false; abrirMotivos('avaria'); });
+  if ($('dt-ac-avaria')) $('dt-ac-avaria').addEventListener('click', function () { alvoAcomp = true; abrirMotivos('avaria'); });
   if ($('dt-qr-enviar')) $('dt-qr-enviar').addEventListener('click', function () {
     var t = $('dt-qr-manual').value.trim(); if (t) enviar('qr', { qr: t });
   });
@@ -341,8 +364,10 @@
     var quem = alvoAcomp ? ' ao acompanhante' : '';
     $('dt-motivos-titulo').innerHTML = modo === 'manual'
       ? '<i class="fas fa-hand"></i> Por que entregar' + quem + ' sem ler a pulseira?'
-      : '<i class="fas fa-ban"></i> Por que a refeição' + (alvoAcomp ? ' do acompanhante' : '') + ' não foi entregue?';
-    var lista = modo === 'manual' ? DT.motivosSemQr : DT.motivos;
+      : modo === 'avaria'
+        ? '<i class="fas fa-triangle-exclamation"></i> O que aconteceu com a refeição' + (alvoAcomp ? ' do acompanhante' : '') + ' entregue? Uma reposição será liberada e cobrada.'
+        : '<i class="fas fa-ban"></i> Por que a refeição' + (alvoAcomp ? ' do acompanhante' : '') + ' não foi entregue?';
+    var lista = modo === 'manual' ? DT.motivosSemQr : modo === 'avaria' ? DT.motivosAvaria : DT.motivos;
     $('dt-motivos-grid').innerHTML = lista.map(function (m) {
       return '<button type="button" class="dt-motivo" data-m="' + esc(m) + '">' + esc(m) + '</button>';
     }).join('');
@@ -382,7 +407,7 @@
   if ($('dt-motivos-ok')) $('dt-motivos-ok').addEventListener('click', function () {
     var extra = { motivo: motivoEscolhido, obs: $('dt-obs').value.trim() };
     if (modoMotivo === 'manual') { extra.prontuario = $('dt-dig-pront').value.trim(); extra.atendimento = $('dt-dig-atend').value.trim(); }
-    enviar(modoMotivo, extra);
+    if (modoMotivo === 'avaria') registrarAvaria(extra); else enviar(modoMotivo, extra);
   });
 
   // ── Envio ──
@@ -424,7 +449,7 @@
           if (j.acomp_junto) atualizarAcomp(porId[String(item.id)], novo);
           recontar(); aplicarFiltro(); fechar();
           resultado(true, j.msg, sub);
-          setTimeout(function () { $('dt-result').hidden = true; sincronizar(); }, 1400);
+          setTimeout(function () { $('dt-result').hidden = true; if (item.repo) location.reload(); else sincronizar(); }, 1400);
         } else if (j.tipo === 'ja_registrado') {
           // outro tablet chegou antes: mostra quem/quando e atualiza o card
           if (deAcomp) atualizarAcomp(porId[String(item.id)], { status: j.status, hora: j.hora, por: j.por, validacao: '', motivo: '' });
@@ -445,6 +470,117 @@
       })
       .catch(function () { enviando = false; resultado(false, 'Sem conexão com o servidor.', 'Verifique o Wi-Fi e tente de novo.', true); });
   }
+
+  // ── Leitor de QR sem fio (Bluetooth/USB): o leitor "digita" o conteúdo do QR rápido e termina com Enter ──
+  // Teclas com menos de LEITOR_MS entre si formam uma leitura; digitação humana é bem mais lenta.
+  var LEITOR_MS = 80, LEITOR_MIN = 6, lBuf = '', lUlt = 0, lBuscaAntes = null;
+  document.addEventListener('keydown', function (e) {
+    var el = e.target, campo = el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA');
+    // campos de digitação: só a busca de leitos é "protegida" (o campo "Digitar o código" já entrega com Enter)
+    if (campo && el.id !== 'dt-busca') return;
+    var agora = Date.now(), rapido = agora - lUlt < LEITOR_MS;
+    if (e.key === 'Enter') {
+      if (lBuf.length >= LEITOR_MIN && rapido) {
+        e.preventDefault();
+        var cod = lBuf;
+        if (lBuscaAntes !== null && $('dt-busca')) { $('dt-busca').value = lBuscaAntes; aplicarFiltro(); $('dt-busca').blur(); }
+        lBuf = ''; lBuscaAntes = null;
+        lidoLeitor(cod);
+      }
+      lBuf = '';
+      return;
+    }
+    if (e.key.length !== 1 || e.ctrlKey || e.altKey || e.metaKey) return;
+    if (!rapido) { lBuf = ''; lBuscaAntes = campo ? el.value : null; }
+    else if (!campo) e.preventDefault();   // no meio da leitura: espaço não "clica" no botão em foco
+    lBuf += e.key; lUlt = agora;
+  });
+  function lidoLeitor(cod) {
+    if (enviando) return;
+    $('dt-result').hidden = true;
+    if (atual) {
+      if (!$('dt-motivos').hidden && modoMotivo === 'avaria') return;   // escolhendo o motivo da avaria
+      pararCamera();
+      if (atual.status === 'pendente') { alvoAcomp = false; enviar('qr', { qr: cod }); return; }
+      if (acompPendente(atual)) { alvoAcomp = true; enviar('qr', { qr: cod }); return; }
+      aviso('<i class="fas fa-circle-info"></i> Este leito já está registrado. Feche o painel para ler outro leito.', 'is-warn');
+      som(DT.somErro);
+      return;
+    }
+    if (!DT.identificar) return;
+    enviando = true;
+    var fd = new FormData(); fd.append('codigo', cod);
+    fetch(DT.identificar, { method: 'POST', body: fd, credentials: 'same-origin',
+                            headers: { 'X-CSRF-Token': (document.querySelector('meta[name="csrf-token"]') || {}).content || '' } })
+      .then(function (r) { if (r.status === 401) { location.href = '/'; return null; } return r.json().catch(function () { return { ok: false, erro: 'Resposta inválida do servidor.' }; }); })
+      .then(function (j) {
+        enviando = false;
+        if (!j) return;
+        if (!j.ok) {
+          if (j.tipo === 'csrf') { location.reload(); return; }
+          resultado(false, j.erro || 'Código não reconhecido.', '', true); return;
+        }
+        var existe = j.cards.filter(function (id) { return porId[id]; });
+        var id = existe.filter(function (id) { return porId[id].dataset.status === 'pendente'; })[0] || existe[0];
+        if (!id) {   // leito novo (ex.: reposição registrada em outro tablet): atualiza a lista
+          resultado(false, 'Leito ' + (j.leito || '') + ' ainda não está nesta lista.', 'Atualizando a lista…', false);
+          setTimeout(function () { location.reload(); }, 1500); return;
+        }
+        var c = porId[id];
+        if (multiSetor && setorAtual !== '' && c.dataset.unid !== setorAtual) irSetor(c.dataset.unid, true);
+        if (navigator.vibrate) navigator.vibrate(60);
+        abrir(JSON.parse(c.dataset.item), cod);
+      })
+      .catch(function () { enviando = false; resultado(false, 'Sem conexão com o servidor.', 'Verifique o Wi-Fi e tente de novo.', true); });
+  }
+  if ($('dt-lido-ok')) $('dt-lido-ok').addEventListener('click', function () {
+    if (!atual || !leitorLido) return;
+    alvoAcomp = atual.status !== 'pendente' && acompPendente(atual);
+    enviar('qr', { qr: leitorLido });
+  });
+
+  // ── Avaria: a refeição entregue caiu/estragou → libera uma reposição (novo card, entregue com nova conferência) ──
+  function registrarAvaria(extra) {
+    if (!atual || enviando) return;
+    enviando = true;
+    var item = atual, deAcomp = alvoAcomp && item.acomp && !item.so_acomp;
+    var fd = new FormData();
+    fd.append('item_id', deAcomp ? item.acomp.id : item.id);
+    Object.keys(extra || {}).forEach(function (k) { fd.append(k, extra[k]); });
+    fetch(DT.avaria, { method: 'POST', body: fd, credentials: 'same-origin',
+                       headers: { 'X-CSRF-Token': (document.querySelector('meta[name="csrf-token"]') || {}).content || '' } })
+      .then(function (r) { return r.json().catch(function () { return { ok: false, erro: 'Resposta inválida do servidor.' }; }); })
+      .then(function (j) {
+        enviando = false;
+        var sub = item.leito + ' · ' + item.nome + (deAcomp ? ' (acompanhante)' : '');
+        if (j.ok) {
+          fechar();
+          resultado(true, j.msg, j.sub || sub);
+          // recarrega a lista já com o card da reposição aberto
+          setTimeout(function () {
+            var u = new URL(location.href); u.searchParams.set('abrir', j.repo_id); location.replace(u.toString());
+          }, 1800);
+        } else if (j.tipo === 'csrf') {
+          resultado(false, 'A tela estava desatualizada e foi recarregada.', 'Registre a avaria de novo.', true);
+          setTimeout(function () { location.reload(); }, 2000);
+        } else if (j.erro && j.erro.indexOf('Sessão') === 0) {
+          resultado(false, j.erro, '', true);
+          setTimeout(function () { location.href = '/'; }, 2000);
+        } else {
+          resultado(false, j.erro || 'Não foi possível registrar a avaria.', sub, true);
+          if (atual) abrir(atual);
+        }
+      })
+      .catch(function () { enviando = false; resultado(false, 'Sem conexão com o servidor.', 'Verifique o Wi-Fi e tente de novo.', true); });
+  }
+  (function () {
+    var u = new URL(location.href), id = u.searchParams.get('abrir');
+    if (!id) return;
+    u.searchParams.delete('abrir'); history.replaceState(history.state, '', u.toString());
+    var c = porId[id]; if (!c) return;
+    if (multiSetor && setorAtual === null) irSetor(c.dataset.unid, true);
+    abrir(JSON.parse(c.dataset.item));
+  })();
 
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && atual) fechar(); });
 })();

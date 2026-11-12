@@ -3,7 +3,8 @@
 Mesma lógica do cliente do Dashboard Salutem (/var/www/html/dashboards_salutem/app/salutem/client.py):
 login com usuário de serviço (POST /public/login), token Bearer renovado quando expira, espera de 15 min
 depois de um login recusado (para não bloquear o usuário na Salutem) e WHITELIST: só os campos listados
-saem daqui; o resto da resposta é descartado antes de qualquer uso.
+saem daqui; o resto da resposta é descartado antes de qualquer uso. Do detalhe da prescrição, só a observação
+do nutricionista e o "liberado para acompanhante" de cada dieta (pedido do usuário em 12/11/2026).
 
 Só biblioteca padrão (sem requests): funciona em qualquer instalação do GTR sem instalar nada.
 Conexão HTTPS sempre com verificação do certificado. Permite chamar o IP interno conferindo o certificado
@@ -26,6 +27,8 @@ INTERNADO = ('registroAtendimento', 'nomePacientePainel', 'paciente', 'nomeMae',
 PRESCRICAO_DETALHE = ('id', 'pacienteId', 'internacaoId', 'atendimentoId', 'dataHoraRegistro', 'tipoAtendimento',
                       'estado', 'possuiAltaAdmnistrativa', 'possuiAltaAClinica', 'dietas', 'dispensas')
 _DESCARTAR = {'observacao', 'profissional'}          # + qualquer chave que comece com "justificativa"
+# Dieta da prescrição (detalhe): a observação do nutricionista e a liberação para o acompanhante
+DIETA_ITEM = ('observacao', 'liberadoParaAcompanhante', 'dataHoraSuspensao', 'statusItemPrescricao')
 
 
 def filtrar(reg, campos):
@@ -169,6 +172,18 @@ class SalutemCliente:
     def prescricao(self, pid):
         return _limpar(filtrar(self.get(f'/prescricaoDieta/{int(pid)}'), PRESCRICAO_DETALHE))
 
+    def dieta_da_prescricao(self, pid):
+        """Observação do nutricionista e liberação para o acompanhante das dietas ativas da prescrição."""
+        dietas = [filtrar(d, DIETA_ITEM) for d in (self.get(f'/prescricaoDieta/{int(pid)}') or {}).get('dietas') or []]
+        ativas = [d for d in dietas if not d.get('dataHoraSuspensao')
+                  and str(d.get('statusItemPrescricao') or '').upper() not in ('SUSPENSO', 'CANCELADO', 'CANCELADA')]
+        obs = []
+        for d in ativas:
+            o = ' '.join(str(d.get('observacao') or '').split())
+            if o and o not in obs:
+                obs.append(o)
+        return {'observacao': ' | '.join(obs)[:1000], 'acomp': any(d.get('liberadoParaAcompanhante') is True for d in ativas)}
+
 
     def unidades_por_leito(self):
         """{leitoId: nome da unidade de internação} a partir do mapa de leitos. Só isso sai daqui
@@ -236,6 +251,20 @@ def prescricoes_para_dispensa(cliente, dia):
     por_atend = {}
     for p in pres:
         por_atend.setdefault(str(p.get('registroAtendimento') or ''), []).append(p)
+    # a prescrição ativa mais recente de cada atendimento; o detalhe dela traz a observação do nutricionista
+    escolhida = {}
+    for atend, lista in por_atend.items():
+        ativas = [p for p in lista if p.get('estado') not in ('SUSPENSO', 'CANCELADA')]
+        if atend and ativas:
+            escolhida[atend] = max(ativas, key=lambda x: x.get('dataHoraRegistro') or '')
+    def _detalhe(p):
+        try:
+            return p.get('id'), cliente.dieta_da_prescricao(p['id'])
+        except (SalutemErro, KeyError, TypeError, ValueError):
+            return p.get('id'), None
+    with ThreadPoolExecutor(max_workers=6) as ex:   # ~0,35 s cada; 6 em paralelo: ~20 s para 150 pacientes
+        detalhes = dict(ex.map(_detalhe, escolhida.values()))
+    sem_detalhe = sum(1 for v in detalhes.values() if v is None)
     linhas, erros, avisos, suspensos = [], [], [], []
     for n, (atend, lista) in enumerate(sorted(por_atend.items()), start=1):
         if not atend:
@@ -245,7 +274,8 @@ def prescricoes_para_dispensa(cliente, dia):
         if not ativas:
             suspensos.append(atend)
             continue
-        p = max(ativas, key=lambda x: x.get('dataHoraRegistro') or '')
+        p = escolhida[atend]
+        det = detalhes.get(p.get('id')) or {}
         i = intern.get(atend, {})
         nome = nome_limpo(i.get('nomePacientePainel') or i.get('paciente') or p.get('paciente')).upper()
         leito = _sem_codigo(p.get('leito')) or _sem_codigo(p.get('quarto'))
@@ -257,9 +287,14 @@ def prescricoes_para_dispensa(cliente, dia):
                        'data_nascimento': dn, 'prontuario': str(p.get('prontuario') or '')[:40], 'atendimento': atend[:40],
                        'data_prescricao': dia.isoformat(), 'leito': leito.upper()[:60],
                        'dieta': ' '.join(str(p.get('nomeDieta') or '').split()).upper()[:200],
-                       'unidade': unidade_de(p).upper()[:80]})
+                       'unidade': unidade_de(p).upper()[:80],
+                       'observacao': det.get('observacao', ''), 'acomp_liberado': bool(det.get('acomp')),
+                       'tem_obs': detalhes.get(p.get('id')) is not None})   # sem detalhe: mantém a observação anterior
         if not i:
             avisos.append(f"Atendimento {atend} ({leito}): não está na lista de internados — sem nome da mãe e nascimento.")
+    if sem_detalhe:
+        avisos.append(f"{sem_detalhe} prescrição(ões) sem resposta da Salutem no detalhe: a observação do nutricionista "
+                      "não foi carregada para elas (a observação anterior, se houver, é mantida).")
     if suspensos:
         avisos.append(f"{len(suspensos)} atendimento(s) só com prescrição SUSPENSA ou CANCELADA hoje — ficaram de fora: "
                       + ', '.join(suspensos[:15]) + (' …' if len(suspensos) > 15 else '') + '.')

@@ -15,7 +15,7 @@
   {% set cad_modules  = ['cadastro','cadastro_usuario','perfis','perfil_form','departamentos','grupos','escalas'] %}
   {% set card_modules = ['cardapio_semana','cardapio_montar','cardapio_pratos'] %}
   {% set disp_modules = ['dispensa_pacientes','dispensa_acompanhamento','dispensa_importar','dispensa_tipos','dispensa_fechamento','dispensa_etiquetas'] %}
-  {% set rel_modules  = ['relatorio_totalEmissao','relatorio_emissaoDiaria','relatorio_totalVisitantes','relatorio_totalDepartamento','relatorio_cardapio','relatorio_snd','dispensa_relatorio','relatorio_faturamento'] %}
+  {% set rel_modules  = ['relatorio_totalEmissao','relatorio_emissaoDiaria','relatorio_totalVisitantes','relatorio_totalDepartamento','relatorio_cardapio','relatorio_snd','dispensa_relatorio','dispensa_avarias_relatorio','relatorio_faturamento'] %}
   {% set cfg_modules  = ['config_localizacoes','config_emissao_senha','config_custos_refeicao','config_turnos','config_limite_visitantes'] %}
   {# itens do menu: (módulo de permissão, endpoint, ícone, rótulo, módulo da tela) #}
   {% set menu_cad = [('colaboradores','cadastro','fa-user-plus','Colaboradores','cadastro'),
@@ -40,6 +40,7 @@
                      ('rel_cardapio','relatorio_cardapio','fa-utensils','Emissões com cardápio'),
                      ('rel_snd','relatorio_snd','fa-hand-holding-dollar','Financeiro SND'),
                      ('rel_dispensa','dispensa_relatorio','fa-hospital-user','Financeiro Dispensa'),
+                     ('rel_avarias','dispensa_avarias_relatorio','fa-triangle-exclamation','Avarias da dispensa'),
                      ('rel_faturamento','relatorio_faturamento','fa-file-invoice-dollar','Faturamento')] %}
   {# Parâmetros: configurações do dia a dia, liberadas por perfil #}
   {% set menu_cfg = [('cfg_localizacoes','config_localizacoes','fa-location-dot','Localizações','config_localizacoes'),
@@ -188,7 +189,7 @@
         'cardapio_pratos': ('Cardápio', 'Catálogo de pratos'),
         'dispensa_pacientes': ('Dispensa Refeição', 'Pacientes do dia'), 'dispensa_acompanhamento': ('Dispensa Refeição', 'Acompanhamento da entrega'), 'dispensa_importar': ('Dispensa Refeição', 'Importar prescrições'),
         'dispensa_tipos': ('Dispensa Refeição', 'Tipos de refeição'), 'dispensa_etiquetas': ('Dispensa Refeição', 'Etiquetas QR do leito'),
-        'dispensa_relatorio': ('Relatórios', 'Financeiro Dispensa'), 'relatorio_faturamento': ('Relatórios', 'Faturamento'), 'dispensa_fechamento': ('Dispensa Refeição', 'Fechamento de período'),
+        'dispensa_relatorio': ('Relatórios', 'Financeiro Dispensa'), 'dispensa_avarias_relatorio': ('Relatórios', 'Avarias da dispensa'), 'relatorio_faturamento': ('Relatórios', 'Faturamento'), 'dispensa_fechamento': ('Dispensa Refeição', 'Fechamento de período'),
         'relatorio_totalEmissao': ('Relatórios', 'Total de senhas'), 'relatorio_emissaoDiaria': ('Relatórios', 'Lista de senhas emitidas'),
         'relatorio_totalVisitantes': ('Relatórios', 'Total de visitantes'), 'relatorio_totalDepartamento': ('Relatórios', 'Por departamento'),
         'relatorio_cardapio': ('Relatórios', 'Emissões com cardápio'), 'relatorio_snd': ('Relatórios', 'Financeiro SND'),
@@ -1782,7 +1783,8 @@
                                 data-itens='{{ p.itens | tojson }}'><i class="fas fa-sliders"></i> Ajustar</button>{% endif %}
                       </td>
                       <td class="dp-atend"><strong>{{ p.atendimento }}</strong>{% if p.prontuario %}<small>Pront. {{ p.prontuario }}</small>{% endif %}</td>
-                      <td>{% if p.dieta %}<span class="dp-dieta">{{ p.dieta }}</span>{% else %}<span class="dz-muted">—</span>{% endif %}</td>
+                      <td>{% if p.dieta %}<span class="dp-dieta">{{ p.dieta }}</span>{% else %}<span class="dz-muted">—</span>{% endif %}
+                        {% if p.observacao %}<small class="dp-obs" title="Observação do nutricionista na prescrição"><i class="fas fa-comment-medical"></i> {{ p.observacao }}</small>{% endif %}</td>
                       <td class="dp-acomp">
                         <div class="dp-ac-wrap">
                         {% if p.acomp.tem %}
@@ -2247,7 +2249,7 @@
                 '<td><strong>' + esc(i.nome) + '</strong>' + (i.dieta ? '<small>' + esc(i.dieta) + '</small>' : '') + '</td>' +
                 '<td>' + esc(i.tipo) + '</td><td>' + selo(i) + (i.corrigido ? ' <span class="cr-tag" title="Registro corrigido — veja o histórico abaixo">corrigido</span>' : '') +
                 '</td><td>' + (i.hora || '—') + '</td><td>' + (esc(i.por) || '—') + '</td>' +
-                (PODE_CORRIGIR ? '<td><button type="button" class="cr-btn" data-corrigir="' + i.id + '" title="Corrigir registro"><i class="fas fa-pen-to-square"></i> Corrigir</button></td>' : '') + '</tr>';
+                (PODE_CORRIGIR ? (i.repo ? '<td></td>' : '<td><button type="button" class="cr-btn" data-corrigir="' + i.id + '" title="Corrigir registro"><i class="fas fa-pen-to-square"></i> Corrigir</button></td>') : '') + '</tr>';
             }).join('');
             var vz = document.getElementById('ac-vazio');
             vz.hidden = lista.length > 0 || !dados.itens.length;
@@ -2625,7 +2627,7 @@
               <div class="table-scroll">
                 <table class="imp-tabela">
                   <thead><tr><th class="imp-sel"><input type="checkbox" id="imp-todos" checked title="Marcar/desmarcar todos os visíveis" aria-label="Marcar ou desmarcar todos os pacientes visíveis"></th>
-                    <th>Unidade / leito</th><th>Paciente</th><th>Atendimento</th><th>Dieta</th><th class="imp-col-ref">Refeições autorizadas</th><th class="imp-col-acp">Acompanhante
+                    <th>Unidade / leito</th><th>Paciente</th><th>Atendimento</th><th>Dieta</th><th class="imp-col-obs">Observação do nutricionista</th><th class="imp-col-ref">Refeições autorizadas</th><th class="imp-col-acp">Acompanhante
                       <span class="imp-info" tabindex="0" role="note" aria-label="Sobre o acompanhante"
                             data-dica="Marque se o acompanhante vai receber refeição, se é lactante e quais refeições. Limite por dia: até {{ acomp_max }} (padrão) ou {{ acomp_max_lact }} (lactante). Dá para ajustar depois em Pacientes do dia.">i</span></th></tr></thead>
                   <tbody>
@@ -2641,6 +2643,7 @@
                         <td class="imp-atend"><strong>{{ l.atendimento }}</strong>{% if l.prontuario %}<small>Pront. {{ l.prontuario }}</small>{% endif %}</td>
                         <td class="imp-dieta">{% if l.dieta %}<span class="dp-dieta">{{ l.dieta }}</span>{% else %}<span class="dz-muted">—</span>{% endif %}
                           {% if l.alerta_dieta %}<span class="imp-alerta-dieta" title="Dieta zero/jejum/suspensa: confira se deve receber">⚠ confira</span>{% endif %}</td>
+                        <td class="imp-col-obs">{% if l.observacao %}<span class="imp-obs">{{ l.observacao }}</span>{% else %}<span class="dz-muted">—</span>{% endif %}</td>
                         <td class="imp-col-ref"><div class="imp-refs">
                           {% for t in preview.tipos_periodo %}
                             {% set trav = t.id in l.refs_travadas %}
@@ -2656,7 +2659,10 @@
                             {% endif %}
                           {% endfor %}
                         </div></td>
-                        <td class="imp-col-acp">{{ campos_acomp(l.linha, tipos_acomp, l.acomp, l.acomp_lactante, l.acomp_tipos, l.acomp_travados, 'dp-form-confirmar', acomp_max, acomp_max_lact) }}</td>
+                        <td class="imp-col-acp">{{ campos_acomp(l.linha, tipos_acomp, l.acomp, l.acomp_lactante, l.acomp_tipos, l.acomp_travados, 'dp-form-confirmar', acomp_max, acomp_max_lact) }}
+                          {% if l.acomp_sugerido == 'observacao' %}<small class="dp-acp-sug"><i class="fas fa-comment-medical"></i> Marcado pela observação do nutricionista ("refeição para acompanhante"). Confira.</small>
+                          {% elif l.acomp_sugerido %}<small class="dp-acp-sug"><i class="fas fa-circle-info"></i> Liberado para acompanhante na prescrição (Salutem). Confira.</small>
+                          {% elif l.obs_acomp %}<small class="dp-acp-sug"><i class="fas fa-comment-medical"></i> A observação menciona acompanhante. Confira se deve marcar.</small>{% endif %}</td>
                       </tr>
                     {% endfor %}
                   </tbody>
@@ -3045,6 +3051,47 @@
         </script>
 
       <!-- DISPENSA — RELATÓRIO FINANCEIRO -->
+      {% elif module == 'dispensa_avarias_relatorio' %}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}<div class="flash-container" id="flash-container">
+            {% for category, message in messages %}<div class="flash-message {{ category }}">{{ message }}</div>{% endfor %}
+          </div>{% endif %}
+        {% endwith %}
+        <div class="relatorios-content">
+          <h2><i class="fas fa-triangle-exclamation"></i> Relatório de Avarias — Dispensa</h2>
+          <div class="relatorio-form-card">
+            <form method="POST" action="{{ url_for('dispensa_avarias_relatorio') }}" class="form-grid" style="grid-template-columns:1fr 1fr;">
+              <div class="form-group">
+                <label for="av-ini">Data inicial</label>
+                <input type="date" id="av-ini" name="data_inicial" value="{{ ini_padrao }}" required>
+              </div>
+              <div class="form-group">
+                <label for="av-fim">Data final</label>
+                <input type="date" id="av-fim" name="data_final" value="{{ fim_padrao }}" required>
+              </div>
+              <div class="form-group" style="grid-column:span 2;">
+                <label for="av-tipo">Refeição</label>
+                <select id="av-tipo" name="tipo_id">
+                  <option value="">Todas</option>
+                  {% for t in tipos_disp %}<option value="{{ t.id }}">{{ t.nome }}{% if not t.ativo %} (inativo){% endif %}</option>{% endfor %}
+                </select>
+              </div>
+              <div class="relatorio-actions" style="grid-column:span 2;">
+                <button type="submit" name="tipo_relatorio" value="pdf" id="btn-enviar"><i class="fas fa-file-pdf"></i> Exportar em PDF</button>
+                <button type="submit" name="tipo_relatorio" value="excel" class="btn-cancelar"><i class="fas fa-file-excel"></i> Exportar em Excel</button>
+              </div>
+            </form>
+          </div>
+          <div class="card-box note-box is-info">
+            <h3><i class="fas fa-circle-info"></i> Sobre este relatório</h3>
+            <p class="dz-muted" style="margin:0;line-height:1.7;">
+              Mostra as refeições entregues que <strong>caíram, derramaram ou estragaram</strong> e foram registradas como avaria no
+              totem de dispensa. Cada avaria gera uma reposição; só a reposição <strong>entregue</strong> é cobrada, pelo valor da
+              refeição original. Traz o custo total, o peso das avarias na dispensa, os motivos, as refeições, quem registrou,
+              as unidades e a lista de cada avaria com a descrição. O Excel traz os mesmos dados em abas.
+            </p>
+          </div>
+        </div>
       {% elif module == 'dispensa_relatorio' %}
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}<div class="flash-container" id="flash-container">

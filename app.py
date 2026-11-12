@@ -2971,12 +2971,14 @@ _DISPENSA_COLUNAS = {
     'leito':            ['leito', 'leito_atual', 'ds_leito'],
     'dieta':            ['dieta', 'tipo_dieta', 'tipo_de_dieta', 'ds_dieta'],
     'unidade':          ['unidade', 'unidade_internacao', 'unidade_de_internacao', 'setor', 'ala', 'ds_unidade'],
+    'observacao':       ['observacao', 'observacoes', 'obs', 'observacao_nutricionista', 'obs_nutricao', 'ds_observacao'],
 }
 _DISPENSA_OBRIGATORIAS = ['nome', 'atendimento', 'data_prescricao', 'leito']
 _DISPENSA_ROTULOS = {
     'nome': 'Nome completo', 'nome_mae': 'Nome da mãe', 'data_nascimento': 'Data de nascimento',
     'prontuario': 'Prontuário', 'atendimento': 'Atendimento', 'data_prescricao': 'Data da prescrição',
     'leito': 'Leito', 'dieta': 'Tipo de dieta', 'unidade': 'Unidade de internação',
+    'observacao': 'Observação do nutricionista',
 }
 
 
@@ -3084,6 +3086,8 @@ def _init_dispensa_acomp(cur):
     cur.execute("ALTER TABLE dispensa_pacientes ADD COLUMN IF NOT EXISTS acomp_em DATETIME DEFAULT NULL")
     cur.execute("ALTER TABLE dispensa_pacientes ADD COLUMN IF NOT EXISTS unidade VARCHAR(80) DEFAULT NULL "
                 "COMMENT 'Unidade de internação (Salutem ou CSV)' AFTER leito")
+    cur.execute("ALTER TABLE dispensa_pacientes ADD COLUMN IF NOT EXISTS observacao TEXT DEFAULT NULL "
+                "COMMENT 'Observação do nutricionista na prescrição (Salutem ou CSV)' AFTER dieta")
     cur.execute("ALTER TABLE dispensa_itens ADD COLUMN IF NOT EXISTS para VARCHAR(12) NOT NULL DEFAULT 'paciente' "
                 "COMMENT 'paciente | acompanhante' AFTER tipo_id")
     # Prescrição por período (06/11 → 10/11/2026, pedido da direção): a nutrição autoriza; a cozinha só produz
@@ -3174,6 +3178,19 @@ def dieta_sem_refeicao(dieta, termos=None):
     termos = dietas_sem_refeicao() if termos is None else termos
     partes = [_normalizar_txt(x) for x in (dieta or '').split(',') if _normalizar_txt(x)]
     return bool(partes and termos) and all(any(t in parte for t in termos) for parte in partes)
+
+
+_RE_OBS_ACOMP = _re.compile(r'\bPARA\s+(\d+\s+)?((O|A|OS|AS)\s+)?(PACIENTE\s+E\s+)?ACOMPANHANTES?\b')
+_RE_OBS_ACOMP_NAO = _re.compile(r'\b(SEM|NAO|NENHUMA|PROIBIDA?|SUSPENSAS?|SUSPENDER)\s+((LIBERAR|ENVIAR|MANDAR|OFERTAR)\s+)?'
+                                r'(REI?FEIC\w*\s+)?PARA\s+(\d+\s+)?((O|A|OS|AS)\s+)?ACOMPANHANTES?\b')
+
+
+def obs_libera_acompanhante(observacao):
+    """A observação do nutricionista libera refeição para o acompanhante? ("+ REFEIÇÃO PARA ACOMPANHANTE",
+    "REFEIÇÃO PARA 2 ACOMPANHANTE", "PARA PACIENTE E ACOMPANHANTE"...). Negação colada à frase não libera
+    ("SEM REFEIÇÃO PARA ACOMPANHANTE"); em "CEIA SEM MINGAU REFEIÇÃO PARA ACOMPANHANTE" o "sem" é do mingau."""
+    txt = _normalizar_txt(observacao)
+    return bool(_RE_OBS_ACOMP.search(txt)) and not _RE_OBS_ACOMP_NAO.search(txt)
 
 
 def periodo_sugerido():
@@ -3398,6 +3415,8 @@ def _ler_csv_dispensa(conteudo_bytes):
         reg['leito'] = reg['leito'].upper()[:60]
         reg['dieta'] = reg['dieta'].upper()[:200]
         reg['unidade'] = reg['unidade'].upper()[:80]
+        reg['observacao'] = reg['observacao'][:1000]
+        reg['tem_obs'] = 'observacao' in mapa   # arquivo sem a coluna não apaga a observação já gravada
         reg['atendimento'] = reg['atendimento'][:40]
         reg['prontuario'] = reg['prontuario'][:40]
         reg['data_prescricao'] = dp.isoformat()
@@ -3427,11 +3446,12 @@ def dispensa_pacientes():
     data_ref = _parse_data(request.args.get('data'), date.today())
     tipos = _dispensa_tipos(somente_ativos=True)
     cur = mysql.connection.cursor()
-    cur.execute("""SELECT id, atendimento, nome, nome_mae, data_nascimento, prontuario, leito, dieta, unidade
+    cur.execute("""SELECT id, atendimento, nome, nome_mae, data_nascimento, prontuario, leito, dieta, unidade, observacao
                    FROM dispensa_pacientes WHERE data_prescricao=%s""", (data_ref,))
     pacientes = [{'id': r[0], 'atendimento': r[1], 'nome': r[2], 'nome_mae': r[3] or '',
                   'data_nascimento': r[4].strftime('%d/%m/%Y') if r[4] else '', 'prontuario': r[5] or '',
-                  'leito': r[6], 'dieta': r[7] or '', 'unidade': (r[8] or '').strip()} for r in cur.fetchall()]
+                  'leito': r[6], 'dieta': r[7] or '', 'unidade': (r[8] or '').strip(),
+                  'observacao': r[9] or ''} for r in cur.fetchall()]
     # agrupa por unidade de internação (o mesmo "LEITO (01)" existe em várias unidades); sem unidade vai para o fim
     pacientes.sort(key=lambda p: (not p['unidade'], p['unidade'], _ordem_leito(p['leito'])))
     cur.execute("""SELECT i.paciente_id, i.tipo_id, i.status, i.valor_unitario, i.para FROM dispensa_itens i
@@ -3691,6 +3711,10 @@ def dispensa_importar():
                     if dia_seg:
                         pid_seg = _paciente_no_dia(cur, r, _dt_presc(r) + timedelta(days=1), imp_id)
                         sem_valor_total += _autorizar_refeicoes(cur, pid_seg, desej, dia_seg, tipos_all, usuario, origem)
+                # observação do nutricionista: a da prescrição mais recente vale (também no registro do dia seguinte)
+                if r.get('tem_obs'):
+                    cur.execute("UPDATE dispensa_pacientes SET observacao=%s WHERE id IN (%s, %s)",
+                                (r.get('observacao') or None, pid_imp, pid_seg or pid_imp))
                 # acompanhante marcado pela nutrição na prévia (só os tipos do período; dia seguinte idem)
                 if request.form.get(f"acomp_set_{r['linha']}") == '1':
                     tem, lact, refs = _ler_acomp_form(r['linha'], tipos_acomp)
@@ -3842,6 +3866,15 @@ def dispensa_importar():
             l['acomp_travados'] = sorted({t for t, st in (a['tipos'].items() if a else []) if st != 'pendente'} | ac_seg_trav)
             if ac_seg and not l['acomp']:
                 l['acomp'] = True
+            # acompanhante liberado na prescrição — pelo campo da Salutem ou, como a nutrição faz na prática, pela
+            # observação ("+ REFEIÇÃO PARA ACOMPANHANTE"): já vem marcado, nas refeições do paciente (a nutrição confere)
+            origem_acp = 'salutem' if l.get('acomp_liberado') else 'observacao' if obs_libera_acompanhante(l.get('observacao')) else None
+            if origem_acp and not l['acomp']:
+                l['acomp'] = True
+                l['acomp_tipos'] = sorted(l['refs'])[:acomp_limite(False)]
+                l['acomp_sugerido'] = origem_acp
+            # observação que só menciona o acompanhante, sem liberar a refeição: alerta para conferir
+            l['obs_acomp'] = not l['acomp'] and 'ACOMPANHANTE' in _normalizar_txt(l.get('observacao'))
         ausentes = _dispensa_ausentes(linhas)
 
         token = None
@@ -4176,6 +4209,25 @@ def init_dispensa_fase2():
             KEY idx_dav_tipo (tipo_id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
     """)
+    # Avaria: a refeição foi entregue mas caiu/estragou → reposição, entregue e cobrada à parte (sem limite)
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS dispensa_reposicoes (
+            id             INT AUTO_INCREMENT PRIMARY KEY,
+            item_id        INT NOT NULL COMMENT 'Refeição original (dispensa_itens) que sofreu a avaria',
+            seq            INT NOT NULL COMMENT '1ª, 2ª... reposição da mesma refeição',
+            avaria_motivo  VARCHAR(255) NOT NULL,
+            avaria_por     VARCHAR(120) DEFAULT NULL,
+            avaria_em      TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+            status         VARCHAR(20) NOT NULL DEFAULT 'pendente' COMMENT 'pendente | entregue | nao_entregue',
+            valor_unitario DECIMAL(10,2) NOT NULL DEFAULT 0.00 COMMENT 'Valor da refeição original (cobrado de novo)',
+            entregue_em    DATETIME DEFAULT NULL,
+            entregue_por   VARCHAR(120) DEFAULT NULL,
+            validacao      VARCHAR(20) DEFAULT NULL COMMENT 'qr | manual',
+            motivo         VARCHAR(255) DEFAULT NULL,
+            UNIQUE KEY uk_repo_item_seq (item_id, seq),
+            CONSTRAINT fk_repo_item FOREIGN KEY (item_id) REFERENCES dispensa_itens (id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+    """)
     cur.execute("SHOW COLUMNS FROM usuarios LIKE 'perfil'")
     tipo_col = (cur.fetchone() or [None, ''])[1] or ''
     if tipo_col.startswith('enum(') and "'dispensa'" not in tipo_col:
@@ -4253,9 +4305,42 @@ def _mesmo_identificador(digitado, esperado):
     return a == b or (a.isdigit() and b.isdigit() and a.lstrip('0') == b.lstrip('0'))
 
 
-def _resposta_ja_registrado(cur, item_id):
-    """Resposta padrão quando outro tablet (ou o mesmo) já registrou o item."""
-    cur.execute("SELECT status, entregue_por, entregue_em FROM dispensa_itens WHERE id=%s", (item_id,))
+DISPENSA_MOTIVOS_AVARIA = ['Caiu no chão', 'Derramou', 'Contaminada', 'Embalagem danificada',
+                           'Temperatura inadequada', 'Outro']
+
+
+def _dispensa_repo(cur, repo_id):
+    cur.execute("""SELECT id, item_id, seq, status, valor_unitario, avaria_motivo FROM dispensa_reposicoes
+                   WHERE id=%s""", (repo_id,))
+    r = cur.fetchone()
+    return {'id': r[0], 'item_id': r[1], 'seq': r[2], 'status': r[3], 'valor': float(r[4] or 0),
+            'avaria_motivo': r[5]} if r else None
+
+
+def _ref_dispensa(raw):
+    """'123' = refeição (dispensa_itens); 'r45' = reposição por avaria. Devolve (item_id, repo_id)."""
+    raw = (raw or '').strip()
+    try:
+        return (None, int(raw[1:])) if raw[:1] == 'r' else (int(raw), None)
+    except ValueError:
+        return (0, None)
+
+
+def _repos_resumo(cur, item_ids):
+    """item_id → {'n': reposições registradas, 'pend': há reposição pendente}."""
+    if not item_ids:
+        return {}
+    cur.execute(f"""SELECT item_id, COUNT(*), SUM(status='pendente') FROM dispensa_reposicoes
+                    WHERE item_id IN ({','.join(['%s'] * len(item_ids))}) GROUP BY item_id""", list(item_ids))
+    return {r[0]: {'n': int(r[1]), 'pend': bool(r[2])} for r in cur.fetchall()}
+
+
+def _resposta_ja_registrado(cur, item_id, repo_id=None):
+    """Resposta padrão quando outro tablet (ou o mesmo) já registrou o item (ou a reposição)."""
+    if repo_id:
+        cur.execute("SELECT status, entregue_por, entregue_em FROM dispensa_reposicoes WHERE id=%s", (repo_id,))
+    else:
+        cur.execute("SELECT status, entregue_por, entregue_em FROM dispensa_itens WHERE id=%s", (item_id,))
     r = cur.fetchone() or ('?', None, None)
     quando = r[2].strftime('%H:%M') if r[2] else ''
     acao = 'entregue' if r[0] == 'entregue' else 'registrada como não entregue'
@@ -4325,6 +4410,17 @@ def dispensa_totem():
     refeicoes = [{'id': r[0], 'nome': r[1], 'total': int(r[2]), 'entregues': int(r[3] or 0),
                   'nao_entregues': int(r[4] or 0), 'de_ontem': r[5] < hoje,
                   'data_fmt': r[5].strftime('%d/%m')} for r in cur.fetchall()]
+    # reposições por avaria contam como mais uma entrega a fazer na refeição
+    cur.execute(f"""SELECT i.tipo_id, COUNT(*), SUM(r.status='entregue'), SUM(r.status='nao_entregue')
+                    FROM dispensa_reposicoes r JOIN dispensa_itens i ON i.id = r.item_id
+                    JOIN dispensa_pacientes p ON p.id = i.paciente_id
+                    WHERE {filtro} GROUP BY i.tipo_id""", params)
+    por_tipo = {r['id']: r for r in refeicoes}
+    for tid, n, ent, nao in cur.fetchall():
+        if tid in por_tipo:
+            por_tipo[tid]['total'] += int(n)
+            por_tipo[tid]['entregues'] += int(ent or 0)
+            por_tipo[tid]['nao_entregues'] += int(nao or 0)
     cur.close()
     for r in refeicoes:
         r['pendentes'] = r['total'] - r['entregues'] - r['nao_entregues']
@@ -4347,19 +4443,24 @@ def dispensa_totem_lista(tipo_id):
     hoje = t[1]   # dia de prescrição atendido (ontem, para a ceia/jantar antes das 03:00)
     cur.execute("""SELECT i.id, i.status, i.motivo, i.validacao, i.entregue_em, i.entregue_por,
                           p.leito, p.nome, p.nome_mae, p.data_nascimento, p.atendimento, p.prontuario, p.dieta,
-                          i.para, p.id, p.acomp_lactante, p.unidade
+                          i.para, p.id, p.acomp_lactante, p.unidade, p.observacao
                    FROM dispensa_itens i JOIN dispensa_pacientes p ON p.id = i.paciente_id
                    WHERE p.data_prescricao = %s AND i.tipo_id = %s""", (hoje, tipo_id))
-    por_pac = {}
-    for r in cur.fetchall():
+    rows = cur.fetchall()
+    repos = _repos_resumo(cur, [r[0] for r in rows])
+    por_pac, pac_do_item = {}, {}
+    for r in rows:
+        rp = repos.get(r[0], {'n': 0, 'pend': False})
         reg = {'id': r[0], 'status': r[1], 'motivo': r[2] or '', 'validacao': r[3] or '',
-               'hora': r[4].strftime('%H:%M') if r[4] else '', 'entregue_por': r[5] or ''}
+               'hora': r[4].strftime('%H:%M') if r[4] else '', 'entregue_por': r[5] or '',
+               'n_repo': rp['n'], 'repo_pend': rp['pend']}
+        pac_do_item[r[0]] = (r[14], r[13])
         base = por_pac.setdefault(r[14], {
             'leito': r[6], 'nome': r[7], 'nome_mae': r[8] or '',
             'unidade': (r[16] or '').strip() or 'Unidade não informada',
             'data_nascimento': r[9].strftime('%d/%m/%Y') if r[9] else '',
             # atendimento/prontuário NÃO vão para a tela: são a segunda checagem da entrega sem QR
-            'prontuario': bool(r[11]), 'dieta': r[12] or '', 'pac': None, 'acomp': None})
+            'prontuario': bool(r[11]), 'dieta': r[12] or '', 'observacao': r[17] or '', 'pac': None, 'acomp': None})
         if r[13] == 'acompanhante':
             base['acomp'] = dict(reg, lactante=bool(r[15]))
         else:
@@ -4374,6 +4475,19 @@ def dispensa_totem_lista(tipo_id):
                                  and base['acomp']['status'] == 'pendente')
         it['card_status'] = 'pendente' if it['falta_acomp'] else it['status']
         itens.append(it)
+    # reposições por avaria: um card próprio por reposição (id "r<id>"), entregue com nova conferência no leito
+    if repos:
+        cur.execute(f"""SELECT id, item_id, seq, avaria_motivo, status, motivo, validacao, entregue_em, entregue_por
+                        FROM dispensa_reposicoes WHERE item_id IN ({','.join(['%s'] * len(repos))})
+                        ORDER BY item_id, seq""", list(repos))
+        for rid, item_id, seq, av_mot, st, mot, val, em, por in cur.fetchall():
+            pid, para = pac_do_item[item_id]
+            base = {k: v for k, v in por_pac[pid].items() if k not in ('pac', 'acomp')}
+            itens.append(dict(base, id=f"r{rid}", status=st, motivo=mot or '', validacao=val or '',
+                              hora=em.strftime('%H:%M') if em else '', entregue_por=por or '',
+                              acomp=None, so_acomp=False, falta_acomp=False, card_status=st,
+                              n_repo=0, repo_pend=repos[item_id]['pend'],
+                              repo={'seq': seq, 'avaria': av_mot, 'acompanhante': para == 'acompanhante'}))
     cur.close()
     itens.sort(key=lambda x: (x['card_status'] != 'pendente', x['unidade'] == 'Unidade não informada',
                               x['unidade'], _ordem_leito(x['leito'])))
@@ -4392,6 +4506,7 @@ def dispensa_totem_lista(tipo_id):
     return render_template('dispensa_totem.html', tela='lista', tipo_id=tipo_id, tipo_nome=t[0], itens=itens,
                            unidades=unidades,
                            resumo=resumo, motivos=_DISPENSA_MOTIVOS, motivos_sem_qr=_DISPENSA_MOTIVOS_SEM_QR,
+                           motivos_avaria=DISPENSA_MOTIVOS_AVARIA,
                            data_iso=hoje.isoformat(), de_ontem=hoje < date.today(), virada_hora=DISPENSA_VIRADA_HORA,
                            hoje_fmt=f"{_DIAS_SEMANA_PT[hoje.weekday()]}, {hoje.strftime('%d/%m/%Y')}",
                            usuario=get_usuario_logado(), perfil=session.get('usuario_perfil'))
@@ -4423,25 +4538,33 @@ def dispensa_totem_status(tipo_id):
                    WHERE p.data_prescricao = %s AND i.tipo_id = %s""", (t[1], tipo_id))
     itens = {str(r[0]): {'status': r[1], 'hora': r[2].strftime('%H:%M') if r[2] else '', 'por': r[3] or '',
                          'validacao': r[4] or '', 'motivo': r[5] or '', 'para': r[6]} for r in cur.fetchall()}
+    # reposições por avaria (chave "r<id>"): uma nova aparece aqui e o tablet recarrega a lista
+    cur.execute("""SELECT r.id, r.status, r.entregue_em, r.entregue_por, r.validacao, r.motivo, i.para
+                   FROM dispensa_reposicoes r JOIN dispensa_itens i ON i.id = r.item_id
+                   JOIN dispensa_pacientes p ON p.id = i.paciente_id
+                   WHERE p.data_prescricao = %s AND i.tipo_id = %s""", (t[1], tipo_id))
+    itens.update({f"r{r[0]}": {'status': r[1], 'hora': r[2].strftime('%H:%M') if r[2] else '', 'por': r[3] or '',
+                               'validacao': r[4] or '', 'motivo': r[5] or '', 'para': r[6]} for r in cur.fetchall()})
     cur.close()
     return {'ok': True, 'itens': itens}
 
 
 @app.route('/dispensa/registrar', methods=['POST'])
 def dispensa_registrar():
-    """Registra a entrega (QR ou manual) ou a não entrega de um item. Responde JSON para o totem."""
+    """Registra a entrega (QR ou manual) ou a não entrega de um item ou de uma reposição por avaria
+    (item_id "r<id>"). Responde JSON para o totem."""
     g = _guard_dispensa()
     if g:
         return {'ok': False, 'erro': 'Sessão expirada. Entre novamente.'}, 401
     init_dispensa_fase2()
-    try:
-        item_id = int(request.form.get('item_id', '0'))
-    except ValueError:
-        item_id = 0
+    item_id, repo_id = _ref_dispensa(request.form.get('item_id'))
     acao = request.form.get('acao', '')
     usuario = get_usuario_logado()
     cur = mysql.connection.cursor()
-    item = _dispensa_item(cur, item_id)
+    repo = _dispensa_repo(cur, repo_id) if repo_id else None
+    if repo:
+        item_id = repo['item_id']   # a conferência (QR, identificação, prazo) é a da refeição original
+    item = _dispensa_item(cur, item_id) if (repo or not repo_id) else None
     if not item:
         cur.close()
         return {'ok': False, 'erro': 'Item não encontrado para hoje.'}, 404
@@ -4458,14 +4581,16 @@ def dispensa_registrar():
     if acao in ('qr', 'manual', 'nao_entregue') and not pode('dispensa_totem', 'incluir'):
         cur.close()
         return {'ok': False, 'erro': 'Seu perfil não tem permissão para registrar entregas.'}, 403
-    if item['status'] != 'pendente':
-        resp = _resposta_ja_registrado(cur, item_id)
+    alvo = repo or item   # o que será gravado: a refeição ou a reposição
+    if alvo['status'] != 'pendente':
+        resp = _resposta_ja_registrado(cur, item_id, repo_id)
         cur.close()
         return resp
-    if acao in ('qr', 'manual') and item['valor'] <= 0:
+    if acao in ('qr', 'manual') and alvo['valor'] <= 0:
         cur.close()
         return {'ok': False, 'tipo': 'sem_valor',
                 'erro': f"O tipo {item['tipo']} está sem valor cadastrado. Avise a nutrição antes de entregar."}, 409
+    tabela, alvo_id = ('dispensa_reposicoes', repo['id']) if repo else ('dispensa_itens', item_id)
 
     try:
         if acao == 'qr':
@@ -4490,8 +4615,8 @@ def dispensa_registrar():
                 return {'ok': False, 'tipo': 'nao_confere',
                         'erro': ('A etiqueta' if cod else 'A pulseira') + ' não confere com este paciente ('
                                 + ', '.join(problemas) + '). Não entregue.'}
-            cur.execute("""UPDATE dispensa_itens SET status='entregue', entregue_em=NOW(), entregue_por=%s,
-                           validacao='qr', motivo=NULL WHERE id=%s AND status='pendente'""", (usuario, item_id))
+            cur.execute(f"""UPDATE {tabela} SET status='entregue', entregue_em=NOW(), entregue_por=%s,
+                            validacao='qr', motivo=NULL WHERE id=%s AND status='pendente'""", (usuario, alvo_id))
             _fonte = 'pela etiqueta do leito' if _etiqueta_lida(request.form.get('qr', '')) else 'pela pulseira'
             msg = (f'Entrega ao acompanhante confirmada {_fonte}.' if item['para'] == 'acompanhante'
                    else f'Entrega confirmada {_fonte}.')
@@ -4517,9 +4642,9 @@ def dispensa_registrar():
                                 'Confira na pulseira ou no prontuário. Não entregue.'}, 400
             if motivo == 'Outro':
                 motivo = 'Outro: ' + request.form.get('obs', '').strip()[:240]
-            cur.execute("""UPDATE dispensa_itens SET status='entregue', entregue_em=NOW(), entregue_por=%s,
-                           validacao='manual', motivo=%s WHERE id=%s AND status='pendente'""",
-                        (usuario, motivo, item_id))
+            cur.execute(f"""UPDATE {tabela} SET status='entregue', entregue_em=NOW(), entregue_por=%s,
+                            validacao='manual', motivo=%s WHERE id=%s AND status='pendente'""",
+                        (usuario, motivo, alvo_id))
             msg = ('Entrega ao acompanhante registrada sem leitura da pulseira.' if item['para'] == 'acompanhante'
                    else 'Entrega registrada sem leitura da pulseira.')
         elif acao == 'nao_entregue':
@@ -4529,8 +4654,8 @@ def dispensa_registrar():
                 return {'ok': False, 'erro': 'Informe o motivo da não entrega.'}, 400
             if motivo == 'Outro':
                 motivo = 'Outro: ' + request.form.get('obs', '').strip()[:240]
-            cur.execute("""UPDATE dispensa_itens SET status='nao_entregue', entregue_em=NOW(), entregue_por=%s,
-                           validacao=NULL, motivo=%s WHERE id=%s AND status='pendente'""", (usuario, motivo, item_id))
+            cur.execute(f"""UPDATE {tabela} SET status='nao_entregue', entregue_em=NOW(), entregue_por=%s,
+                            validacao=NULL, motivo=%s WHERE id=%s AND status='pendente'""", (usuario, motivo, alvo_id))
             msg = 'Registrado como não entregue.'
         else:
             cur.close()
@@ -4538,11 +4663,13 @@ def dispensa_registrar():
         if cur.rowcount == 0:
             # outro tablet registrou este item entre a leitura e a gravação
             mysql.connection.rollback()
-            resp = _resposta_ja_registrado(cur, item_id)
+            resp = _resposta_ja_registrado(cur, item_id, repo_id)
             cur.close()
             return resp
+        if repo:
+            msg = f"Reposição nº {repo['seq']}: " + msg[0].lower() + msg[1:]
         acomp_junto = None
-        if item['para'] == 'paciente' and acao in ('qr', 'manual') and request.form.get('acomp_junto') == '1':
+        if not repo and item['para'] == 'paciente' and acao in ('qr', 'manual') and request.form.get('acomp_junto') == '1':
             # mesma leitura da pulseira vale para a refeição do acompanhante (mesmo leito, mesma refeição)
             cur.execute("""UPDATE dispensa_itens SET status='entregue', entregue_em=NOW(), entregue_por=%s,
                            validacao=%s, motivo=%s
@@ -4553,7 +4680,8 @@ def dispensa_registrar():
             if acomp_junto:
                 msg += ' Acompanhante também recebeu.'
         mysql.connection.commit()
-        logger.info(f"{usuario}: dispensa item {item_id} ({item['para']}, leito {item['leito']}, {item['tipo']}) -> {acao}"
+        logger.info(f"{usuario}: dispensa item {item_id}" + (f" reposição nº {repo['seq']}" if repo else "")
+                    + f" ({item['para']}, leito {item['leito']}, {item['tipo']}) -> {acao}"
                     + (" + acompanhante" if acomp_junto else "") + ".")
         cur.close()
         return {'ok': True, 'msg': msg, 'acomp_junto': bool(acomp_junto)}
@@ -4562,6 +4690,121 @@ def dispensa_registrar():
         cur.close()
         logger.error(f"Erro ao registrar dispensa: {e}")
         return {'ok': False, 'erro': 'Erro ao registrar. Tente novamente.'}, 500
+
+
+@app.route('/dispensa/<int:tipo_id>/identificar', methods=['POST'])
+def dispensa_identificar(tipo_id):
+    """Leitor de QR sem fio (funciona como teclado): a dispenseira lê o QR com a lista aberta e o totem abre o leito.
+    Devolve os cards do paciente lido nesta refeição (reposição pendente primeiro). Não registra nada: a entrega
+    continua passando pela conferência de /dispensa/registrar. Por POST para o conteúdo da pulseira não ir para a URL."""
+    g = _guard_dispensa()
+    if g:
+        return {'ok': False, 'erro': 'Sessão expirada. Entre novamente.'}, 401
+    lido = (request.form.get('codigo') or '')[:2000]
+    cod = _etiqueta_lida(lido)
+    texto = ' ' + _normalizar_txt(lido) + ' '
+    cur = mysql.connection.cursor()
+    t = _dispensa_tipo_totem(cur, tipo_id)
+    if not t or len(texto.strip()) < 4:
+        cur.close()
+        return {'ok': False, 'erro': 'Código não reconhecido. Leia o QR da etiqueta do leito ou da pulseira.'}, 404
+    cur.execute("""SELECT p.id, p.atendimento, p.nome, p.leito, i.id, i.para, i.status
+                   FROM dispensa_itens i JOIN dispensa_pacientes p ON p.id = i.paciente_id
+                   WHERE p.data_prescricao = %s AND i.tipo_id = %s""", (t[1], tipo_id))
+    rows = cur.fetchall()
+    candidatos = {}
+    for pid, at, nome, leito, *_ in rows:
+        if (cod and _hmac.compare_digest(cod, etiqueta_codigo(at))) or \
+                (not cod and _normalizar_txt(at) and (' ' + _normalizar_txt(at) + ' ') in texto):
+            candidatos[pid] = (pid, nome, leito)
+    # pulseira: o prontuário de um paciente pode coincidir com o atendimento de outro → vence quem tem o nome no texto
+    pac = next((p for p in candidatos.values() if (' ' + _normalizar_txt(p[1]) + ' ') in texto),
+               next(iter(candidatos.values()), None))
+    if not pac:
+        cur.close()
+        return {'ok': False, 'erro': f"{'Etiqueta' if cod else 'Pulseira'} sem {t[0].lower()} nesta lista: o paciente "
+                                     "não tem esta refeição liberada, é de outro dia ou o código não é do GTR."}, 404
+    itens = [r for r in rows if r[0] == pac[0]]
+    principal = next((r for r in itens if r[5] == 'paciente'), itens[0])
+    cards = [f"r{rid}" for rid in _repos_pendentes(cur, [r[4] for r in itens])] + [str(principal[4])]
+    cur.close()
+    return {'ok': True, 'cards': cards, 'nome': pac[1], 'leito': pac[2]}
+
+
+def _repos_pendentes(cur, item_ids):
+    if not item_ids:
+        return []
+    cur.execute(f"""SELECT id FROM dispensa_reposicoes WHERE status='pendente'
+                    AND item_id IN ({','.join(['%s'] * len(item_ids))}) ORDER BY id""", list(item_ids))
+    return [r[0] for r in cur.fetchall()]
+
+
+@app.route('/dispensa/avaria', methods=['POST'])
+def dispensa_avaria():
+    """A refeição foi entregue mas caiu/estragou: registra a avaria e libera uma REPOSIÇÃO pendente, que é
+    entregue no totem com nova conferência e cobrada à parte. Vale também para uma reposição que sofreu avaria."""
+    g = _guard_dispensa()
+    if g:
+        return {'ok': False, 'erro': 'Sessão expirada. Entre novamente.'}, 401
+    init_dispensa_fase2()
+    if not pode('dispensa_totem', 'incluir'):
+        return {'ok': False, 'erro': 'Seu perfil não tem permissão para registrar avaria.'}, 403
+    motivo = (request.form.get('motivo') or '').strip()[:255]
+    obs = ' '.join((request.form.get('obs') or '').split())[:240]
+    if motivo not in DISPENSA_MOTIVOS_AVARIA or (motivo == 'Outro' and not obs):
+        return {'ok': False, 'erro': 'Informe o que aconteceu com a refeição.'}, 400
+    if motivo == 'Outro':
+        motivo = 'Outro: ' + obs
+    item_id, repo_id = _ref_dispensa(request.form.get('item_id'))
+    usuario = get_usuario_logado()
+    cur = mysql.connection.cursor()
+    repo = _dispensa_repo(cur, repo_id) if repo_id else None
+    if repo:
+        item_id = repo['item_id']
+    item = _dispensa_item(cur, item_id) if (repo or not repo_id) else None
+    erro = None
+    if not item:
+        erro = ('Refeição não encontrada.', 404)
+    elif item['data_prescricao'] != item['data_totem']:
+        erro = (f"Prazo encerrado: {item['tipo']} de {item['data_prescricao'].strftime('%d/%m')} não aceita mais registros.", 409)
+    elif _fechamentos_no_intervalo(item['data_prescricao']):
+        erro = ('Este dia pertence a um período fechado. Nada pode ser alterado.', 409)
+    elif (repo or item)['status'] != 'entregue':
+        erro = ('Só é possível registrar avaria de uma refeição já entregue.', 409)
+    else:
+        cur.execute("SELECT COUNT(*) FROM dispensa_reposicoes WHERE item_id=%s AND status='pendente'", (item_id,))
+        if cur.fetchone()[0]:
+            erro = ('Já existe uma reposição pendente desta refeição. Entregue-a antes de registrar outra avaria.', 409)
+    if erro:
+        cur.close()
+        return {'ok': False, 'erro': erro[0]}, erro[1]
+    try:
+        cur.execute("SELECT COALESCE(MAX(seq), 0) + 1 FROM dispensa_reposicoes WHERE item_id=%s", (item_id,))
+        seq = cur.fetchone()[0]
+        # cobra de novo o valor da refeição original (o congelado na entrega)
+        cur.execute("""INSERT INTO dispensa_reposicoes (item_id, seq, avaria_motivo, avaria_por, valor_unitario)
+                       VALUES (%s, %s, %s, %s, %s)""", (item_id, seq, motivo, usuario, item['valor']))
+        novo_id = cur.lastrowid
+        mysql.connection.commit()
+    except MySQLdb.IntegrityError:
+        # outro tablet registrou a avaria desta refeição no mesmo instante
+        mysql.connection.rollback()
+        cur.close()
+        return {'ok': False, 'erro': 'Outro tablet acabou de registrar uma avaria desta refeição. A lista será atualizada.'}, 409
+    except Exception as e:
+        mysql.connection.rollback()
+        cur.close()
+        logger.error(f"Erro ao registrar avaria na dispensa: {e}")
+        return {'ok': False, 'erro': 'Erro ao registrar. Tente novamente.'}, 500
+    cur.close()
+    quem = ' do acompanhante' if item['para'] == 'acompanhante' else ''
+    logger.info(f"{usuario}: avaria na dispensa item {item_id} ({item['para']}, leito {item['leito']}, {item['tipo']}): "
+                f"{motivo} -> reposição nº {seq}.")
+    auditar(alvo=f"{item['leito']} · {item['tipo']}{quem}",
+            detalhes={'motivo': motivo, 'reposicao': seq, 'valor': item['valor']})
+    return {'ok': True, 'repo_id': f"r{novo_id}",
+            'msg': f"Avaria registrada. Reposição nº {seq}{quem} liberada.",
+            'sub': 'Leve a nova refeição ao leito e confirme a entrega com a leitura do QR.'}
 
 
 # ─── RELATÓRIO DE FATURAMENTO (consolidado: refeitório + dispensa) ───────────
@@ -4649,6 +4892,9 @@ def _faturamento_dados(data_ini, data_fim):
         avisos.append(f"Dispensa: {dt['pendentes']} refeição(ões) liberada(s) ficaram sem registro no totem e não foram faturadas.")
     if dt['corrigidos']:
         avisos.append(f"Dispensa: {dt['corrigidos']} registro(s) do totem foram corrigidos manualmente, com motivo registrado.")
+    if dt['repos']:
+        avisos.append(f"Dispensa: {dt['repos']} reposição(ões) por avaria entregue(s) e cobrada(s) "
+                      f"(R$ {moeda_br(dt['valor_repos'])}), além da refeição original.")
     if dt['manual']:
         avisos.append(f"Dispensa: {dt['manual']} de {dt['entregues']} entrega(s) ({str(dt['pct_manual']).replace('.', ',')}%) "
                       "confirmadas sem leitura da pulseira.")
@@ -4773,23 +5019,36 @@ def _dispensa_dados_relatorio(data_ini, data_fim, tipo_id=None):
     from collections import OrderedDict
     sql = """SELECT p.data_prescricao, t.id, t.nome, t.ordem, i.status, i.valor_unitario, i.validacao, i.motivo,
                     i.entregue_em, i.entregue_por, p.leito, p.nome, p.atendimento, p.prontuario, i.ajuste_id, i.para,
-                    COALESCE(i.autorizado_por, i.definido_por), i.origem
+                    COALESCE(i.autorizado_por, i.definido_por), i.origem, 0, NULL
              FROM dispensa_itens i
              JOIN dispensa_pacientes p ON p.id = i.paciente_id
              JOIN dispensa_tipos t ON t.id = i.tipo_id
              WHERE p.data_prescricao BETWEEN %s AND %s"""
+    # reposições por avaria: entram como mais uma refeição a cobrar (valor da original), em linha própria
+    sql_repo = """SELECT p.data_prescricao, t.id, t.nome, t.ordem, r.status, r.valor_unitario, r.validacao, r.motivo,
+                         r.entregue_em, r.entregue_por, p.leito, p.nome, p.atendimento, p.prontuario, NULL, i.para,
+                         r.avaria_por, 'avaria', r.seq, r.avaria_motivo
+                  FROM dispensa_reposicoes r
+                  JOIN dispensa_itens i ON i.id = r.item_id
+                  JOIN dispensa_pacientes p ON p.id = i.paciente_id
+                  JOIN dispensa_tipos t ON t.id = i.tipo_id
+                  WHERE p.data_prescricao BETWEEN %s AND %s"""
     params = [data_ini, data_fim]
     if tipo_id:
         sql += " AND t.id = %s"
+        sql_repo += " AND t.id = %s"
         params.append(tipo_id)
     cur = mysql.connection.cursor()
     cur.execute(sql, params)
-    rows = cur.fetchall()
+    rows = list(cur.fetchall())
+    cur.execute(sql_repo, params)
+    rows += list(cur.fetchall())
     cur.close()
 
     tipos = OrderedDict()
     novo_tipo = lambda tid, nome: {'id': tid, 'nome': nome, 'entregues': 0, 'valor': 0.0, 'qr': 0, 'manual': 0,
-                                   'nao': 0, 'pendentes': 0, 'unitarios': set(), 'acomp': 0, 'valor_acomp': 0.0}
+                                   'nao': 0, 'pendentes': 0, 'unitarios': set(), 'acomp': 0, 'valor_acomp': 0.0,
+                                   'repos': 0, 'valor_repos': 0.0}
     # todos os tipos ATIVOS aparecem (na ordem definida em Tipos de refeição), mesmo sem refeição no período;
     # tipos inativos só se tiveram refeição no período
     ordem_tipos = {}
@@ -4806,20 +5065,27 @@ def _dispensa_dados_relatorio(data_ini, data_fim, tipo_id=None):
     zerados = ajustados = 0
     fat = {}
     _ORIGEM_TXT = {'importacao_manha': 'prescrição da manhã', 'importacao_noite': 'prescrição da noite',
-                   'ajuste_nutricao': 'ajuste da nutrição', 'nutricao': 'nutrição', None: 'cozinha (antes da regra)'}
-    for (dref, tid, tnome, _o, st, vu, val, mot, ent_em, ent_por, leito, nome, atend, pront, aj, para, aut_por, origem_it) in sorted(rows, key=lambda r: (r[0], r[3], r[10] or '', r[15] or '')):
+                   'ajuste_nutricao': 'ajuste da nutrição', 'nutricao': 'nutrição', None: 'cozinha (antes da regra)',
+                   'avaria': 'avaria registrada no totem'}
+    for (dref, tid, tnome, _o, st, vu, val, mot, ent_em, ent_por, leito, nome, atend, pront, aj, para, aut_por, origem_it,
+         repo_seq, av_mot) in sorted(rows, key=lambda r: (r[0], r[3], r[10] or '', r[15] or '', r[18])):
         autorizado = f"{aut_por or '—'} ({_ORIGEM_TXT.get(origem_it, origem_it)})"
         t = tipos[tid]
         vu = float(vu or 0)
         eh_acomp = para == 'acompanhante'
         nome_exib = f"{nome} (acompanhante)" if eh_acomp else nome
+        if repo_seq:
+            tnome = f"{tnome} · reposição nº {repo_seq} (avaria: {av_mot})"
         d = dias.setdefault(dref, {'data': dref, 'por_tipo': {}, 'qtd': 0, 'valor': 0.0, 'acomp': 0, 'valor_acomp': 0.0})
         if st == 'entregue':
             t['entregues'] += 1; t['valor'] += vu; t['unitarios'].add(vu)
+            if repo_seq:
+                t['repos'] += 1; t['valor_repos'] += vu
             if eh_acomp:
                 t['acomp'] += 1; t['valor_acomp'] += vu; d['acomp'] += 1; d['valor_acomp'] += vu
-            # faturamento: refeição × beneficiário × valor unitário
-            chave_f = (t['nome'], _o, 'Acompanhante' if eh_acomp else 'Paciente', vu)
+            # faturamento: refeição × beneficiário × valor unitário (reposição por avaria em linha própria)
+            chave_f = (f"{t['nome']} — reposição por avaria" if repo_seq else t['nome'], _o + (0.5 if repo_seq else 0),
+                       'Acompanhante' if eh_acomp else 'Paciente', vu)
             fat[chave_f] = fat.get(chave_f, 0) + 1
             t['qr' if val == 'qr' else 'manual'] += 1
             d['por_tipo'][tid] = d['por_tipo'].get(tid, 0) + 1
@@ -4864,6 +5130,8 @@ def _dispensa_dados_relatorio(data_ini, data_fim, tipo_id=None):
         'valor_acomp': sum(t['valor_acomp'] for t in tipos.values()),
         'acompanhantes': len({(r[0], r[12]) for r in rows if r[15] == 'acompanhante'}),
         'dias': len(dias),
+        'repos': sum(t['repos'] for t in tipos.values()),
+        'valor_repos': sum(t['valor_repos'] for t in tipos.values()),
     }
     tot['previstas'] = tot['entregues'] + tot['nao'] + tot['pendentes']
     tot['entregues_pac'] = tot['entregues'] - tot['acomp']
@@ -4957,6 +5225,10 @@ def dispensa_relatorio():
             ws.write(r, 3, tt['valor'], f_totv); ws.write(r, 4, tt['qr'], f_tot); ws.write(r, 5, tt['manual'], f_tot)
             ws.write(r, 6, tt['nao'], f_tot); ws.write(r, 7, tt['pendentes'], f_tot)
             ws.write(r, 8, tt['acomp'], f_tot); ws.write(r, 9, tt['valor_acomp'], f_totv)
+            if tt['repos']:
+                r += 1
+                ws.write(r, 0, f"Dos entregues, {tt['repos']} são reposições por avaria (cobradas de novo): "
+                               f"R$ {moeda_br(tt['valor_repos'])}.", f_sub)
             r += 3
             ws.write(r, 0, 'Custo por dia', f_b); r += 1
             cab = ['Data'] + [t['nome'] for t in dados['tipos']] + ['Total entregues', 'Dos quais acompanhante', 'Custo acompanhante', 'Custo do dia']
@@ -5030,23 +5302,236 @@ def dispensa_relatorio():
                            ini_padrao=hoje.replace(day=1).isoformat(), fim_padrao=hoje.isoformat())
 
 
+# ─── DISPENSA: RELATÓRIO DE AVARIAS (refeição entregue que caiu/estragou → reposição cobrada) ─────
+
+_AVARIA_SITUACAO = {'entregue': 'Reposição entregue', 'nao_entregue': 'Reposição não entregue', 'pendente': 'Reposição pendente'}
+
+
+def _avarias_dados(data_ini, data_fim, tipo_id=None):
+    """Avarias do período (pela data da prescrição): custo das reposições, motivos, responsáveis e lista detalhada.
+    Só a reposição ENTREGUE é cobrada (pelo valor da refeição original)."""
+    from collections import OrderedDict
+    init_dispensa_fase2()
+    sql = """SELECT p.data_prescricao, r.avaria_em, r.seq, r.avaria_motivo, r.avaria_por, r.status, r.valor_unitario,
+                    r.entregue_em, r.entregue_por, r.validacao, r.motivo, i.para, t.id, t.nome, t.ordem,
+                    p.leito, p.nome, p.atendimento, p.unidade, i.entregue_em, i.entregue_por
+             FROM dispensa_reposicoes r
+             JOIN dispensa_itens i ON i.id = r.item_id
+             JOIN dispensa_pacientes p ON p.id = i.paciente_id
+             JOIN dispensa_tipos t ON t.id = i.tipo_id
+             WHERE p.data_prescricao BETWEEN %s AND %s"""
+    params = [data_ini, data_fim]
+    if tipo_id:
+        sql += " AND t.id = %s"
+        params.append(tipo_id)
+    cur = mysql.connection.cursor()
+    cur.execute(sql + " ORDER BY p.data_prescricao, r.avaria_em", params)
+    rows = cur.fetchall()
+    cur.close()
+
+    def soma(d, chave, rotulo, st, vu):
+        x = d.setdefault(chave, {'nome': rotulo, 'qtd': 0, 'entregues': 0, 'nao': 0, 'pendentes': 0, 'valor': 0.0})
+        x['qtd'] += 1
+        x['entregues' if st == 'entregue' else 'nao' if st == 'nao_entregue' else 'pendentes'] += 1
+        if st == 'entregue':
+            x['valor'] += vu
+
+    motivos, tipos, pessoas, unidades, dias = {}, {}, {}, {}, OrderedDict()
+    detalhe = []
+    for (dref, av_em, seq, av_mot, av_por, st, vu, ent_em, ent_por, val, mot, para, tid, tnome, tordem,
+         leito, nome, atend, unid, orig_em, orig_por) in rows:
+        vu = float(vu or 0)
+        soma(motivos, (av_mot or 'Sem motivo').split(':')[0], (av_mot or 'Sem motivo').split(':')[0], st, vu)
+        soma(tipos, (tordem, tnome), tnome, st, vu)
+        soma(pessoas, av_por or '—', av_por or '—', st, vu)
+        soma(unidades, (unid or '').strip() or 'Unidade não informada', (unid or '').strip() or 'Unidade não informada', st, vu)
+        soma(dias, dref, dref, st, vu)
+        if st == 'entregue':
+            situacao = (f"Entregue às {ent_em.strftime('%H:%M') if ent_em else '—'} por {ent_por or '—'} "
+                        f"({'QR' if val == 'qr' else 'sem QR'})")
+        elif st == 'nao_entregue':
+            situacao = f"Não entregue — {mot or 'sem motivo'}"
+        else:
+            situacao = 'Pendente (sem registro no totem)'
+        detalhe.append({'data': dref, 'hora': av_em.strftime('%H:%M') if av_em else '', 'leito': leito,
+                        'unidade': (unid or '').strip(), 'nome': nome, 'atendimento': atend,
+                        'para': 'Acompanhante' if para == 'acompanhante' else 'Paciente', 'refeicao': tnome,
+                        'seq': seq, 'motivo': av_mot or '', 'registrada_por': av_por or '',
+                        'original': f"{orig_em.strftime('%H:%M') if orig_em else '—'} por {orig_por or '—'}",
+                        'status': st, 'situacao': situacao, 'valor': vu if st == 'entregue' else 0.0,
+                        'valor_ref': vu})
+    ordena = lambda d: sorted(d.values(), key=lambda x: (-x['qtd'], str(x['nome'])))
+    n = len(rows)
+    tot = {'avarias': n,
+           'entregues': sum(1 for d in detalhe if d['status'] == 'entregue'),
+           'nao': sum(1 for d in detalhe if d['status'] == 'nao_entregue'),
+           'pendentes': sum(1 for d in detalhe if d['status'] == 'pendente'),
+           'valor': sum(d['valor'] for d in detalhe),
+           'valor_pendente': sum(d['valor_ref'] for d in detalhe if d['status'] == 'pendente'),
+           'pacientes': len({(d['data'], d['atendimento']) for d in detalhe}),
+           'acomp': sum(1 for d in detalhe if d['para'] == 'Acompanhante'),
+           'dias': len(dias)}
+    # peso das avarias na dispensa do período (mesmo filtro de refeição)
+    disp = _dispensa_dados_relatorio(data_ini, data_fim, tipo_id)['tot']
+    originais = disp['entregues'] - disp['repos']
+    tot['entregas_originais'] = originais
+    tot['valor_dispensa'] = disp['valor']
+    tot['pct_avaria'] = round(n * 100 / originais, 2) if originais else 0
+    tot['pct_custo'] = round(tot['valor'] * 100 / disp['valor'], 2) if disp['valor'] else 0
+    tot['media_dia'] = tot['valor'] / ((data_fim - data_ini).days + 1)
+    for grupo in (motivos, tipos, pessoas, unidades):
+        for x in grupo.values():
+            x['pct'] = round(x['qtd'] * 100 / n, 1) if n else 0
+    return {'tot': tot, 'motivos': ordena(motivos), 'tipos': sorted(tipos.values(), key=lambda x: x['nome']),
+            'pessoas': ordena(pessoas), 'unidades': ordena(unidades), 'dias': list(dias.values()), 'detalhe': detalhe}
+
+
+@app.route('/admin/dispensa/avarias', methods=['GET', 'POST'])
+def dispensa_avarias_relatorio():
+    g = _guard_admin()
+    if g: return g
+    init_dispensa_fase2()
+    tipos_disp = _dispensa_tipos()
+    if request.method == 'POST':
+        data_ini = _parse_data(request.form.get('data_inicial'))
+        data_fim = _parse_data(request.form.get('data_final'))
+        if not data_ini or not data_fim:
+            flash("Datas inválidas.", "error")
+            return redirect(url_for('dispensa_avarias_relatorio'))
+        if data_fim < data_ini:
+            flash("A data final não pode ser anterior à inicial.", "error")
+            return redirect(url_for('dispensa_avarias_relatorio'))
+        tipo_id = request.form.get('tipo_id', '')
+        tipo_id = int(tipo_id) if tipo_id.isdigit() else None
+        tipo_nome = next((t['nome'] for t in tipos_disp if t['id'] == tipo_id), 'Todas')
+        formato = request.form.get('tipo_relatorio', 'pdf')
+        dados = _avarias_dados(data_ini, data_fim, tipo_id)
+        periodo = f"{data_ini.strftime('%d/%m/%Y')} até {data_fim.strftime('%d/%m/%Y')}"
+        agora = datetime.now().strftime('%d/%m/%Y %H:%M')
+        usuario = get_usuario_logado()
+        tt = dados['tot']
+        logger.info(f"{usuario} emitiu o relatório de avarias ({periodo}, {tipo_nome}, {formato}): "
+                    f"{tt['avarias']} avaria(s), R$ {moeda_br(tt['valor'])}.")
+        auditar(detalhes={'periodo': periodo, 'refeicao': tipo_nome, 'formato': formato,
+                          'avarias': tt['avarias'], 'valor': round(tt['valor'], 2)})
+        nome_arq = f"relatorio_avarias_{data_ini.strftime('%Y%m%d')}_{data_fim.strftime('%Y%m%d')}"
+
+        if formato == 'excel':
+            import xlsxwriter
+            out = BytesIO()
+            wb = xlsxwriter.Workbook(out, {'in_memory': True})
+            F = lambda **k: wb.add_format({'font_name': 'Arial', 'font_size': 10, **k})
+            f_tit, f_sub, f_b = F(bold=True, font_size=13), F(font_color='#777777', font_size=9), F(bold=True)
+            f_th = F(bold=True, bg_color='#1e2d3a', font_color='#ffffff', border=1, align='center', text_wrap=True)
+            f_td, f_num = F(border=1), F(border=1, align='center')
+            f_val = F(border=1, num_format='R$ #,##0.00')
+            f_pct = F(border=1, num_format='0.0"%"', align='center')
+            f_tot = F(bold=True, bg_color='#1e2d3a', font_color='#ffffff', border=1)
+            f_totv = F(bold=True, bg_color='#1e2d3a', font_color='#ffffff', border=1, num_format='R$ #,##0.00')
+            f_data = F(border=1, num_format='dd/mm/yyyy', align='center')
+
+            ws = wb.add_worksheet('Resumo')
+            ws.write('A1', 'GTR – Relatório de Avarias da Dispensa', f_tit)
+            ws.write('A2', get_instituicao(), f_sub)
+            ws.write('A4', 'Período:', f_b); ws.write('B4', periodo)
+            ws.write('A5', 'Refeição:', f_b); ws.write('B5', tipo_nome)
+            ws.write('A6', 'Gerado em:', f_b); ws.write('B6', f"{agora} por {usuario}")
+            ws.write('A7', 'Critério:', f_b)
+            ws.write('B7', 'Refeição entregue que caiu/estragou gera uma reposição; só a reposição ENTREGUE é cobrada, '
+                           'pelo valor da refeição original.')
+            resumo = [('Avarias registradas', tt['avarias'], f_num), ('Reposições entregues (cobradas)', tt['entregues'], f_num),
+                      ('Reposições não entregues', tt['nao'], f_num), ('Reposições pendentes', tt['pendentes'], f_num),
+                      ('Custo das reposições cobradas', tt['valor'], f_val),
+                      ('Custo potencial das pendentes', tt['valor_pendente'], f_val),
+                      ('Média de custo por dia', tt['media_dia'], f_val),
+                      ('Pacientes afetados', tt['pacientes'], f_num), ('Das avarias: acompanhante', tt['acomp'], f_num),
+                      ('Avarias por 100 entregas', tt['pct_avaria'], F(border=1, num_format='0.00', align='center')),
+                      ('Peso no custo da dispensa', tt['pct_custo'], F(border=1, num_format='0.00"%"', align='center'))]
+            for i, (rot, v, fm) in enumerate(resumo, start=9):
+                ws.write(i, 0, rot, f_td); ws.write(i, 1, v, fm)
+            ws.set_column(0, 0, 34); ws.set_column(1, 1, 22)
+
+            def aba(nome, titulo, linhas):
+                w = wb.add_worksheet(nome)
+                w.write_row(0, 0, [titulo, 'Avarias', '% das avarias', 'Entregues', 'Não entregues', 'Pendentes', 'Custo cobrado'], f_th)
+                for i, x in enumerate(linhas, start=1):
+                    w.write(i, 0, str(x['nome']), f_td); w.write(i, 1, x['qtd'], f_num); w.write(i, 2, x['pct'], f_pct)
+                    w.write(i, 3, x['entregues'], f_num); w.write(i, 4, x['nao'], f_num); w.write(i, 5, x['pendentes'], f_num)
+                    w.write(i, 6, x['valor'], f_val)
+                i = len(linhas) + 1
+                w.write(i, 0, 'TOTAL', f_tot); w.write(i, 1, tt['avarias'], f_tot); w.write(i, 2, '', f_tot)
+                w.write(i, 3, tt['entregues'], f_tot); w.write(i, 4, tt['nao'], f_tot); w.write(i, 5, tt['pendentes'], f_tot)
+                w.write(i, 6, tt['valor'], f_totv)
+                w.set_column(0, 0, 32); w.set_column(1, 6, 14)
+            aba('Por motivo', 'Motivo', dados['motivos'])
+            aba('Por refeição', 'Refeição', dados['tipos'])
+            aba('Por quem registrou', 'Registrada por', dados['pessoas'])
+            aba('Por unidade', 'Unidade de internação', dados['unidades'])
+
+            wd = wb.add_worksheet('Por dia')
+            wd.write_row(0, 0, ['Data', 'Avarias', 'Entregues', 'Não entregues', 'Pendentes', 'Custo cobrado'], f_th)
+            for i, x in enumerate(dados['dias'], start=1):
+                wd.write_datetime(i, 0, datetime.combine(x['nome'], time(0, 0)), f_data)
+                wd.write(i, 1, x['qtd'], f_num); wd.write(i, 2, x['entregues'], f_num); wd.write(i, 3, x['nao'], f_num)
+                wd.write(i, 4, x['pendentes'], f_num); wd.write(i, 5, x['valor'], f_val)
+            wd.set_column(0, 5, 14)
+
+            wl = wb.add_worksheet('Avarias')
+            cab = ['Data', 'Hora da avaria', 'Unidade', 'Leito', 'Paciente', 'Atendimento', 'Para', 'Refeição', 'Reposição nº',
+                   'Motivo / descrição', 'Registrada por', 'Entrega original', 'Situação da reposição', 'Valor cobrado']
+            wl.write_row(0, 0, cab, f_th)
+            for i, d in enumerate(dados['detalhe'], start=1):
+                wl.write_datetime(i, 0, datetime.combine(d['data'], time(0, 0)), f_data)
+                wl.write_row(i, 1, [d['hora'], d['unidade'], d['leito'], d['nome'], d['atendimento'], d['para'], d['refeicao']], f_td)
+                wl.write(i, 8, d['seq'], f_num)
+                wl.write_row(i, 9, [d['motivo'], d['registrada_por'], d['original'], d['situacao']], f_td)
+                wl.write(i, 13, d['valor'], f_val)
+            wl.set_column(0, 1, 12); wl.set_column(2, 3, 18); wl.set_column(4, 4, 34); wl.set_column(5, 8, 13)
+            wl.set_column(9, 9, 40); wl.set_column(10, 12, 26); wl.set_column(13, 13, 14)
+            wl.autofilter(0, 0, max(len(dados['detalhe']), 1), len(cab) - 1)
+            wl.freeze_panes(1, 0)
+            wb.close()
+            out.seek(0)
+            return send_file(out, download_name=nome_arq + '.xlsx', as_attachment=True)
+
+        html = render_template('relatorio_avarias.html', dados=dados, periodo=periodo, agora=agora, tipo_nome=tipo_nome,
+                               nome_instituicao=get_instituicao())
+        return send_file(BytesIO(gerar_pdf(html)), download_name=nome_arq + '.pdf', as_attachment=True)
+
+    hoje = date.today()
+    return render_template('menu_admin.html', modulo='dispensa_avarias_relatorio', module='dispensa_avarias_relatorio',
+                           usuario=get_usuario_logado(), tipos_disp=tipos_disp,
+                           ini_padrao=hoje.replace(day=1).isoformat(), fim_padrao=hoje.isoformat())
+
+
 # ─── DISPENSA: ACOMPANHAMENTO DA ENTREGA (COZINHA, AO VIVO) ─────────────────
 
 def _dispensa_acompanhamento_dados(data_ref):
     cur = mysql.connection.cursor()
     cur.execute("""SELECT i.id, t.id, t.nome, t.ordem, i.status, i.entregue_em, i.entregue_por, i.validacao, i.motivo,
-                          p.leito, p.nome, p.dieta, p.atendimento, i.para
+                          p.leito, p.nome, p.dieta, p.atendimento, i.para, 0, NULL
                    FROM dispensa_itens i
                    JOIN dispensa_pacientes p ON p.id = i.paciente_id
                    JOIN dispensa_tipos t ON t.id = i.tipo_id
                    WHERE p.data_prescricao = %s""", (data_ref,))
-    rows = cur.fetchall()
+    rows = list(cur.fetchall())
+    # reposições por avaria: a cozinha precisa produzir a refeição de novo
+    cur.execute("""SELECT CONCAT('r', r.id), t.id, t.nome, t.ordem, r.status, r.entregue_em, r.entregue_por, r.validacao,
+                          r.motivo, p.leito, p.nome, p.dieta, p.atendimento, i.para, r.seq, r.avaria_motivo
+                   FROM dispensa_reposicoes r
+                   JOIN dispensa_itens i ON i.id = r.item_id
+                   JOIN dispensa_pacientes p ON p.id = i.paciente_id
+                   JOIN dispensa_tipos t ON t.id = i.tipo_id
+                   WHERE p.data_prescricao = %s""", (data_ref,))
+    rows += list(cur.fetchall())
     cur.close()
     refeicoes = {}
     itens = []
-    for (iid, tid, tnome, tordem, st, em, por, val, mot, leito, nome, dieta, atend, para) in rows:
+    for (iid, tid, tnome, tordem, st, em, por, val, mot, leito, nome, dieta, atend, para, repo_seq, av_mot) in rows:
         if para == 'acompanhante':
             nome, dieta = f"{nome} — acompanhante", 'Acompanhante'
+        if repo_seq:
+            dieta = f"Reposição nº {repo_seq} · avaria: {av_mot}" + (' (acompanhante)' if para == 'acompanhante' else '')
         r = refeicoes.setdefault(tid, {'id': tid, 'nome': tnome, 'ordem': tordem, 'total': 0,
                                        'entregues': 0, 'nao': 0, 'pendentes': 0, 'sem_qr': 0})
         r['total'] += 1
@@ -5057,10 +5542,11 @@ def _dispensa_acompanhamento_dados(data_ref):
             r['nao'] += 1
         else:
             r['pendentes'] += 1
-        itens.append({'id': iid, 'tipo_id': tid, 'tipo': tnome, 'status': st, 'leito': leito, 'nome': nome,
+        itens.append({'id': iid, 'tipo_id': tid, 'tipo': f"{tnome} (reposição)" if repo_seq else tnome,
+                      'status': st, 'leito': leito, 'nome': nome,
                       'dieta': dieta or '', 'por': por or '', 'validacao': val or '',
                       'motivo': mot or '', 'hora': em.strftime('%H:%M') if em else '',
-                      'ts': em.strftime('%Y-%m-%d %H:%M:%S') if em else ''})
+                      'ts': em.strftime('%Y-%m-%d %H:%M:%S') if em else '', 'repo': bool(repo_seq)})
     corrigidos = {c['item_id'] for c in _dispensa_correcoes_do_dia(data_ref)}
     for x in itens:
         x['corrigido'] = x['id'] in corrigidos
@@ -5282,6 +5768,9 @@ def dispensa_corrigir():
         erro = "Informe o motivo da correção (mínimo 10 caracteres)."
     elif novo == 'entregue' and item['valor'] <= 0:
         erro = f"O tipo {item['tipo']} está sem valor cadastrado. Cadastre o valor antes de marcar como entregue."
+    elif item['status'] == 'entregue' and _repos_resumo(cur, [item_id]).get(item_id):
+        erro = ("Esta refeição teve avaria registrada no totem, com reposição: a entrega original não pode ser desfeita "
+                "(a reposição pressupõe que ela foi entregue).")
     else:
         fech = _fechamentos_no_intervalo(item['data_prescricao'])
         if fech:
@@ -5527,6 +6016,7 @@ MODULOS = [
     ('rel_cardapio',       'Emissões com cardápio',      'Relatórios',    ('ver',),                                 ''),
     ('rel_snd',            'Financeiro SND',             'Relatórios',    ('ver',),                                 ''),
     ('rel_dispensa',       'Financeiro Dispensa',        'Relatórios',    ('ver',),                                 ''),
+    ('rel_avarias',        'Avarias da dispensa',        'Relatórios',    ('ver',),                                 'Refeições que caíram/estragaram: reposições, custos e motivos'),
     ('rel_faturamento',    'Faturamento (consolidado)',  'Relatórios',    ('ver',),                                 'Colaboradores, visitantes, pacientes e acompanhantes'),
     ('cfg_localizacoes',   'Localizações',               'Parâmetros',    ACOES,                                    ''),
     ('cfg_emissao',        'Emissão de senha',           'Parâmetros',    ('ver', 'editar'),                        ''),
@@ -5558,7 +6048,7 @@ ROTAS_SO_ADMIN = {'config_identidade', 'config_seguranca', 'config_seguranca_des
                   'config_backup_restaurar', 'config_salutem'}
 # qualquer usuário logado, de qualquer perfil (ex.: trocar a própria senha)
 ROTAS_LOGADO = {'minha_senha'}
-ROTAS_JSON = {'dispensa_registrar', 'dispensa_totem_status', 'dispensa_ping', 'dispensa_acompanhamento_dados',
+ROTAS_JSON = {'dispensa_registrar', 'dispensa_avaria', 'dispensa_identificar', 'dispensa_totem_status', 'dispensa_ping', 'dispensa_acompanhamento_dados',
               'config_backup_status'}
 
 _V = lambda m: {'GET': (m, 'ver'), 'POST': (m, 'ver')}            # relatórios: ver = gerar
@@ -5626,7 +6116,10 @@ ROTAS_PERMISSAO = {
     'dispensa_totem_status':  {'GET': ('dispensa_totem', 'ver')},
     'dispensa_ping':          {'POST': ('dispensa_totem', 'ver')},
     'dispensa_registrar':     {'POST': ('dispensa_totem', ('incluir', 'editar', 'excluir'))},
+    'dispensa_avaria':        {'POST': ('dispensa_totem', ('incluir', 'editar', 'excluir'))},
+    'dispensa_identificar':   {'POST': ('dispensa_totem', 'ver')},
     'dispensa_relatorio':     _V('rel_dispensa'),
+    'dispensa_avarias_relatorio': _V('rel_avarias'),
     'relatorio_faturamento':  _V('rel_faturamento'),
     # Relatórios
     'relatorio_totalEmissao':      _V('rel_total_senhas'),
@@ -5653,7 +6146,7 @@ _PAGINA_DO_MODULO = [
     ('cardapio_pratos', 'cardapio_pratos'), ('dispensa_tipos', 'dispensa_tipos'), ('dispensa_fechamento', 'dispensa_fechamento'),
     ('rel_total_senhas', 'relatorio_totalEmissao'), ('rel_lista_senhas', 'relatorio_emissaoDiaria'),
     ('rel_visitantes', 'relatorio_totalVisitantes'), ('rel_departamento', 'relatorio_totalDepartamento'),
-    ('rel_cardapio', 'relatorio_cardapio'), ('rel_snd', 'relatorio_snd'), ('rel_dispensa', 'dispensa_relatorio'), ('rel_faturamento', 'relatorio_faturamento'),
+    ('rel_cardapio', 'relatorio_cardapio'), ('rel_snd', 'relatorio_snd'), ('rel_dispensa', 'dispensa_relatorio'), ('rel_avarias', 'dispensa_avarias_relatorio'), ('rel_faturamento', 'relatorio_faturamento'),
     ('cfg_localizacoes', 'config_localizacoes'), ('cfg_emissao', 'config_emissao_senha'), ('cfg_custos', 'config_custos_refeicao'),
     ('cfg_turnos', 'config_turnos'), ('cfg_limite_visit', 'config_limite_visitantes'), ('dispensa_totem', 'dispensa_totem'),
 ]
@@ -7758,7 +8251,7 @@ import hashlib
 AUDIT_RETENCAO_DIAS = 730
 AUDIT_POR_PAGINA = 50
 # alto volume e já registrados nas próprias tabelas (emissoes_senha) — não entram na auditoria
-AUDIT_IGNORAR = {'senha_colaborador', 'senha_visitante', 'senha_colaborador_cardapio', 'dispensa_ping',
+AUDIT_IGNORAR = {'senha_colaborador', 'senha_visitante', 'senha_colaborador_cardapio', 'dispensa_ping', 'dispensa_identificar',
                  'emissao_senha', 'emissao_senha_tablet', 'static'}
 AUDIT_ROTULOS = {
     'login': ('Acesso', 'Entrar no sistema'),
@@ -7802,6 +8295,7 @@ AUDIT_ROTULOS = {
     'dispensa_pacientes': ('Dispensa Refeição', 'Ver pacientes do dia'),
     'dispensa_refeicoes_ajustar': ('Dispensa Refeição', 'Ajustar refeições autorizadas (nutrição)'),
     'dispensa_registrar': ('Dispensa Refeição', 'Registro no totem de dispensa'),
+    'dispensa_avaria': ('Dispensa Refeição', 'Avaria no totem (reposição liberada)'),
     'dispensa_tipos': ('Dispensa Refeição', 'Cadastrar tipo de refeição'),
     'dispensa_tipo_editar': ('Dispensa Refeição', 'Editar tipo de refeição'),
     'dispensa_tipos_ordem': ('Dispensa Refeição', 'Reordenar tipos de refeição'),
@@ -7811,6 +8305,7 @@ AUDIT_ROTULOS = {
     'dispensa_fechamento': ('Dispensa Refeição', 'Fechar período'),
     'dispensa_fechamento_reabrir': ('Dispensa Refeição', 'Reabrir período fechado'),
     'dispensa_relatorio': ('Relatórios', 'Gerar relatório financeiro da dispensa'),
+    'dispensa_avarias_relatorio': ('Relatórios', 'Gerar relatório de avarias da dispensa'),
     'relatorio_faturamento': ('Relatórios', 'Gerar relatório de faturamento'),
     'relatorio_totalEmissao': ('Relatórios', 'Gerar relatório: total de senhas'),
     'relatorio_emissaoDiaria': ('Relatórios', 'Gerar relatório: lista de senhas emitidas'),

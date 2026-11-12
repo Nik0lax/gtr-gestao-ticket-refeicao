@@ -146,8 +146,9 @@ Menu **Dispensa Refeição**. Os dados de pacientes são sensíveis (LGPD): tudo
      - período fechado;
      - pacientes que **não vieram na nova importação** (provável alta ou transferência). Os marcados têm as refeições pendentes encerradas como "não entregue".
    - **Dietas sem refeição:** dietas que não recebem refeição (configuráveis, por exemplo hidratação ou suplemento) ficam fora da importação.
-2. **Acompanhante:** pode receber refeição (padrão até 3 por dia; lactante até 5, configurável), com os mesmos tipos e valores do paciente.
-3. **Pacientes do dia:** lista somente leitura para a cozinha, com filtros por dieta e por unidade e contadores. Ajustes posteriores são feitos pela nutrição, com motivo.
+   - **Observação do nutricionista:** vem da prescrição (Salutem, ou coluna opcional "observacao" no CSV) e aparece em coluna própria na prévia, em Pacientes do dia e no totem.
+2. **Acompanhante:** pode receber refeição (padrão até 3 por dia; lactante até 5, configurável), com os mesmos tipos e valores do paciente. A prévia já vem com o acompanhante marcado quando a prescrição libera a refeição para ele (campo da Salutem ou observação do tipo "+ REFEIÇÃO PARA ACOMPANHANTE"); a nutricionista confere.
+3. **Pacientes do dia:** lista somente leitura para a cozinha, com filtros por dieta e por unidade, contadores e a observação do nutricionista. Ajustes posteriores são feitos pela nutrição, com motivo.
 4. **Etiquetas QR do leito:**
    - impressão em impressora térmica de 100×40 mm, com unidade, leito, nome, nascimento e nome da mãe;
    - o código é assinado por HMAC, então não dá para forjar;
@@ -155,8 +156,10 @@ Menu **Dispensa Refeição**. Os dados de pacientes são sensíveis (LGPD): tudo
 5. **Totem de dispensa** (tablet, perfil Dispensa):
    - **Navegação:** a dispenseira escolhe a refeição e a unidade e vê a lista de leitos.
    - **Conferência:** a entrega é conferida pela **câmera**, lendo o QR da etiqueta ou da pulseira. Pulseira de outro paciente é detectada e recusada.
+   - **Leitor de QR sem fio** (Bluetooth/USB, modo teclado com Enter no fim): com a lista aberta, a leitura abre o leito do paciente e a dispenseira confirma a entrega depois de conferir a bandeja; com o leito aberto, a leitura entrega direto. Funciona também sem HTTPS.
    - **Entrega sem QR:** exige motivo e a digitação de prontuário e atendimento. "Não entregue" exige motivo.
    - **Registro definitivo:** não há "desfazer" no totem. Os tablets se sincronizam a cada 8 s e avisam quando outro tablet já registrou o leito.
+   - **Avaria:** se a refeição entregue cair, derramar ou estragar, a dispenseira registra a avaria com o motivo e o totem libera uma **reposição**, entregue com nova conferência e **cobrada de novo** pelo valor da original. Sem limite (a reposição também pode ter avaria); a cozinha vê a reposição no Acompanhamento.
    - **Inatividade:** depois de 10 minutos sem uso, o totem sai sozinho.
    - **Virada do dia:** o jantar e a ceia do dia anterior continuam aceitos até **03:00**.
    - **HTTPS:** a câmera do tablet só funciona com HTTPS (veja `GTR_URL_HTTPS` no `.env`).
@@ -181,7 +184,8 @@ Todos geram **PDF** e, quando aplicável, **Excel**. Os PDFs usam o cabeçalho e
 | Emissões com cardápio | Emissões feitas no modo com cardápio, por prato e refeição |
 | Financeiro SND | Valores do refeitório por grupo SND, com os custos de refeição vigentes |
 | Financeiro Dispensa | Refeições **entregues** a pacientes e acompanhantes, pelo valor congelado na entrega, com alertas (R$ 0,00, pendentes, % sem QR, correções) e selo de período fechado |
-| Faturamento (consolidado) | Colaboradores, visitantes, pacientes e acompanhantes em um único relatório |
+| Avarias da dispensa | Refeições que caíram ou estragaram: reposições, custo cobrado, peso no custo da dispensa, por motivo, refeição, quem registrou, unidade e dia, e a lista de cada avaria com a descrição |
+| Faturamento (consolidado) | Colaboradores, visitantes, pacientes e acompanhantes em um único relatório (reposições por avaria em linha própria) |
 
 ---
 

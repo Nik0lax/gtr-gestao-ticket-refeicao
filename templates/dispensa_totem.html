@@ -103,18 +103,21 @@
         </div>
       </div>
 
+      <p class="dt-leitor-dica"><i class="fas fa-barcode"></i> <span><b>Leitor sem fio:</b> leia o QR da etiqueta do leito ou da pulseira a qualquer momento. O leito abre sozinho.</span></p>
       <div class="dt-cards" id="dt-cards">
         {% for i in itens %}
-          <button type="button" class="dt-card is-{{ i.card_status }}" data-status="{{ i.card_status }}" data-id="{{ i.id }}"
+          <button type="button" class="dt-card is-{{ i.card_status }}{% if i.repo %} is-repo{% endif %}" data-status="{{ i.card_status }}" data-id="{{ i.id }}"
                   {% if i.acomp and not i.so_acomp %}data-acomp-id="{{ i.acomp.id }}"{% endif %}
                   data-busca="{{ (i.leito ~ ' ' ~ i.nome) | lower }}" data-unid="{{ i.unidade }}"
                   data-item='{{ i | tojson }}'>
             <span class="dt-leito">{{ i.leito }}</span>
             <span class="dt-card-txt">
               <strong>{{ i.nome }}</strong>
-              <small>{% if i.dieta %}{{ i.dieta }}{% else %}Dieta não informada{% endif %}{% if i.data_nascimento %} · Nasc. {{ i.data_nascimento }}{% endif %}</small>
+              <small>{% if i.dieta %}{{ i.dieta }}{% else %}Dieta não informada{% endif %}{% if i.data_nascimento %} · Nasc. {{ i.data_nascimento }}{% endif %}{% if i.observacao %} · <i class="fas fa-comment-medical" title="Tem observação da nutrição"></i> obs.{% endif %}</small>
               {% if i.acomp %}<span class="dt-ac-chip is-{{ i.acomp.status }}"><i class="fas fa-user-group"></i>
                 {% if i.so_acomp %}Só acompanhante{% else %}+ acompanhante{% endif %}{% if i.acomp.lactante %} · lactante{% endif %}</span>{% endif %}
+              {% if i.repo %}<span class="dt-repo-chip"><i class="fas fa-rotate"></i> Reposição nº {{ i.repo.seq }}{% if i.repo.acompanhante %} do acompanhante{% endif %} · {{ i.repo.avaria }}</span>
+              {% elif i.n_repo or (i.acomp and i.acomp.n_repo) %}<span class="dt-repo-chip is-info"><i class="fas fa-triangle-exclamation"></i> {{ i.n_repo + (i.acomp.n_repo if i.acomp and not i.so_acomp else 0) }} avaria(s) registrada(s)</span>{% endif %}
             </span>
             {% if i.falta_acomp %}
               <span class="dt-st is-falta"><i class="fas fa-user-group"></i> Falta acompanhante</span>
@@ -149,7 +152,11 @@
             <div><small>Nome da mãe</small><b id="dt-s-mae"></b></div>
             <div><small>Dieta</small><b id="dt-s-dieta"></b></div>
           </div>
+          <div class="dt-obs" id="dt-s-obs-box" hidden><small><i class="fas fa-comment-medical"></i> Observação da nutrição</small><b id="dt-s-obs"></b></div>
         </div>
+
+        <!-- Reposição por avaria -->
+        <div class="dt-repo-info" id="dt-repo-info" hidden></div>
 
         <!-- Acompanhante -->
         <div class="dt-acomp" id="dt-acomp" hidden>
@@ -165,6 +172,7 @@
             <button type="button" class="dt-btn dt-btn-ghost dt-btn-sm" id="dt-ac-semqr"><i class="fas fa-hand"></i> Sem QR</button>
             <button type="button" class="dt-btn dt-btn-ghost dt-btn-sm is-danger" id="dt-ac-nao"><i class="fas fa-ban"></i> Não recebeu</button>
           </div>
+          <button type="button" class="dt-btn dt-btn-ghost dt-btn-sm is-danger dt-btn-avaria" id="dt-ac-avaria" hidden><i class="fas fa-triangle-exclamation"></i> Avaria na refeição do acompanhante</button>
         </div>
 
         <div class="dt-cam" id="dt-cam" hidden>
@@ -174,6 +182,12 @@
         </div>
         <div class="dt-aviso" id="dt-aviso" hidden></div>
 
+        <!-- Leito aberto pela leitura do leitor sem fio: a dispenseira confere a bandeja e confirma -->
+        <div class="dt-lido" id="dt-lido" hidden>
+          <span class="dt-lido-txt"><i class="fas fa-barcode"></i> <b>Código lido pelo leitor.</b> Confira o nome e a dieta com a bandeja antes de entregar.</span>
+          <button type="button" class="dt-btn dt-btn-primary" id="dt-lido-ok"><i class="fas fa-check"></i> Confirmar entrega</button>
+        </div>
+
         <!-- Pendente: ler pulseira -->
         <div class="dt-acoes" id="dt-acoes-pendente">
           <button type="button" class="dt-btn dt-btn-primary" id="dt-ler"><i class="fas fa-qrcode"></i> Ler QR e entregar</button>
@@ -182,7 +196,7 @@
             <button type="button" class="dt-btn dt-btn-ghost is-danger" id="dt-nao"><i class="fas fa-ban"></i> Não entregue</button>
           </div>
           <details class="dt-digitar">
-            <summary>Leitor externo / digitar código</summary>
+            <summary>Digitar o código</summary>
             <div class="dt-digitar-row">
               <input type="text" id="dt-qr-manual" placeholder="Leia com o leitor ou cole o conteúdo do QR" autocomplete="off">
               <button type="button" class="dt-btn dt-btn-primary dt-btn-sm" id="dt-qr-enviar">Conferir</button>
@@ -212,6 +226,7 @@
         <!-- Já registrado -->
         <div class="dt-acoes" id="dt-acoes-registrado" hidden>
           <div class="dt-registro" id="dt-registro"></div>
+          <button type="button" class="dt-btn dt-btn-ghost is-danger dt-btn-avaria" id="dt-avaria" hidden><i class="fas fa-triangle-exclamation"></i> Registrar avaria (caiu, derramou, estragou)</button>
         </div>
       </div>
     </div>
@@ -232,6 +247,9 @@
     <script>
       window.DT = {
         registrar: "{{ url_for('dispensa_registrar') }}",
+        avaria: "{{ url_for('dispensa_avaria') }}",
+        identificar: "{{ url_for('dispensa_identificar', tipo_id=tipo_id) }}",
+        motivosAvaria: {{ motivos_avaria | tojson }},
         status: "{{ url_for('dispensa_totem_status', tipo_id=tipo_id, data=data_iso) }}",
         inicio: "{{ url_for('dispensa_totem') }}",
         motivos: {{ motivos | tojson }},

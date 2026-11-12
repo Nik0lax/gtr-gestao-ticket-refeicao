@@ -117,6 +117,11 @@
     <div class="alerta"><strong>Auditoria:</strong> {{ t.corrigidos }} registro(s) do totem foram <strong>corrigidos manualmente</strong>
       (Dispensa Refeição → Acompanhamento da entrega → Correções), com motivo registrado.</div>
   {% endif %}
+  {% if t.repos %}
+    <div class="alerta"><strong>Avaria:</strong> {{ t.repos }} refeição(ões) entregue(s) caíram ou estragaram e foram
+      <strong>repostas e cobradas novamente</strong> (R$ {{ t.valor_repos | moeda_br }}), com motivo registrado no totem.
+      Aparecem como "reposição por avaria" nas refeições para faturamento.</div>
+  {% endif %}
   {% if t.manual %}
     <div class="alerta"><strong>Auditoria:</strong> {{ t.manual }} de {{ t.entregues }} entrega(s) ({{ ('%.1f'|format(t.pct_manual))|replace('.', ',') }}%)
       foram confirmadas <strong>sem leitura da pulseira</strong>.</div>
@@ -125,7 +130,7 @@
   <div class="section-label">Resumo do período</div>
   <div class="cost-summary">
     <div class="cost-box"><div class="lbl">Refeições previstas</div><div class="val">{{ t.previstas }}</div><div class="sub">definidas pela cozinha</div></div>
-    <div class="cost-box"><div class="lbl">Entregues</div><div class="val">{{ t.entregues }}</div><div class="sub">{{ t.qr }} com QR · {{ t.manual }} sem QR</div></div>
+    <div class="cost-box"><div class="lbl">Entregues</div><div class="val">{{ t.entregues }}</div><div class="sub">{{ t.qr }} com QR · {{ t.manual }} sem QR{% if t.repos %} · {{ t.repos }} reposição(ões){% endif %}</div></div>
     <div class="cost-box"><div class="lbl">Não entregues</div><div class="val">{{ t.nao }}</div><div class="sub">{{ t.pendentes }} sem registro</div></div>
     <div class="cost-box total"><div class="lbl">Custo total</div><div class="val">R$ {{ t.valor | moeda_br }}</div><div class="sub">média de R$ {{ t.media_dia | moeda_br }}/dia</div></div>
   </div>

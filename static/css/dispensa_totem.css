@@ -248,3 +248,27 @@ button.dt-ref { font: inherit; text-align: left; cursor: pointer; width: 100%; c
 .dt-unid .dt-ref-top { flex-direction: column; align-items: flex-start; gap: 8px; padding-right: 44px; }
 .dt-unid .dt-ref-arrow { top: 50%; margin-top: -18px; right: 20px; }
 .dt-unid .dt-bar { margin-right: 44px; }
+
+/* Avaria: reposição da refeição que caiu/estragou */
+.dt-card.is-repo { border: 2px dashed var(--orange); }
+.dt-card.is-repo.is-pendente .dt-leito { background: var(--orange); }
+.dt-repo-chip { display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; padding: 4px 10px; border-radius: 999px;
+  background: var(--orange-s); color: #8a3c0c; font-size: 12px; font-weight: 800; }
+.dt-repo-chip.is-info { background: #f1f2f4; color: var(--ink-2); }
+.dt-repo-info { padding: 14px 16px; border-radius: 16px; background: var(--orange-s); color: #8a3c0c; font-size: 14.5px; line-height: 1.5; }
+.dt-repo-info small { display: block; font-size: 12.5px; font-weight: 600; opacity: .85; margin-top: 2px; }
+.dt-btn-avaria { margin-top: 12px; width: 100%; }
+#dt-ac-avaria { margin-top: 10px; }
+
+/* Observação do nutricionista (prescrição) */
+.dt-obs { margin-top: 12px; padding: 12px 14px; border-radius: 14px; background: #fff8e1; color: #6b4e00; }
+.dt-obs small { display: block; font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; }
+.dt-obs b { font-size: 15px; line-height: 1.45; white-space: pre-line; }
+
+/* Leitor de QR sem fio */
+.dt-leitor-dica { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; padding: 10px 14px; border-radius: 14px;
+  background: #eef2ff; color: #1f46d6; font-size: 13.5px; line-height: 1.4; }
+.dt-leitor-dica i { font-size: 18px; }
+.dt-lido { display: flex; flex-direction: column; gap: 12px; padding: 14px 16px; border-radius: 16px; background: #eef2ff; color: #1f2a5a; }
+.dt-lido-txt { font-size: 14.5px; line-height: 1.5; }
+.dt-lido-txt i { color: #1f46d6; margin-right: 4px; }
