@@ -1,6 +1,6 @@
 <p align="center">
   <a>
-	<img width="789" height="227" alt="GTR" src="https://github.com/user-attachments/assets/fee102a7-4c15-4f2e-bf01-7d0f3ce5f251" />
+	<img width="1000" height="500" alt="image" src="https://github.com/user-attachments/assets/903340f6-eb71-4c0f-b517-8db7a2f2a556" />
   </a>
 </p>
 
@@ -18,6 +18,9 @@
 ## Sobre o GTR
 
 O GTR é uma aplicação web em Flask para controlar as refeições servidas em hospitais e empresas e dar base confiável ao faturamento da empresa terceirizada de alimentação.
+
+<img width="1907" height="874" alt="image" src="https://github.com/user-attachments/assets/fbc29cc8-a523-4385-ba8d-a6929f4d7061" />
+
 
 Ele cobre dois fluxos:
 
