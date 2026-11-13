@@ -168,6 +168,21 @@ def validar_cpf(cpf):
             return False
     return True
 
+def cpf_digitos(cpf):
+    import re
+    return re.sub(r'\D', '', cpf or '')
+
+
+def cpf_formatado(cpf):
+    """CPF no formato padrão do GTR (000.000.000-00), o mesmo que o totem envia."""
+    d = cpf_digitos(cpf)
+    return f"{d[:3]}.{d[3:6]}.{d[6:9]}-{d[9:]}" if len(d) == 11 else (cpf or '').strip()
+
+
+# Busca de colaborador pelo CPF comparando SÓ os números: cadastro antigo com pontuação diferente
+# (ex.: 000.000.000.00) não pode escapar da emissão como colaborador nem do bloqueio de visitante
+SQL_COLAB_POR_CPF = "REGEXP_REPLACE(cpf, '[^0-9]', '') = %s"
+
 _PARTICULAS_NOME = {'DE', 'DA', 'DO', 'DAS', 'DOS', 'E'}
 
 def nome_completo_valido(nome):
@@ -770,8 +785,9 @@ def cadastro():
             flash("CPF inválido. Verifique os dígitos.", "error")
             return redirect(url_for('cadastro'))
 
+        cpf = cpf_formatado(cpf)
         cur = mysql.connection.cursor()
-        cur.execute("SELECT id FROM colaboradores WHERE cpf = %s", (cpf,))
+        cur.execute(f"SELECT id FROM colaboradores WHERE {SQL_COLAB_POR_CPF}", (cpf_digitos(cpf),))
         if cur.fetchone():
             flash("Esse CPF já está cadastrado.", "error")
             cur.close()
@@ -2120,11 +2136,13 @@ def senha_colaborador():
 
         cur = mysql.connection.cursor()
         init_escalas()
-        cur.execute("SELECT nome, cpf, cargo, departamento, tipo, escala_id FROM colaboradores WHERE cpf = %s", (cpf,))
+        cur.execute(f"SELECT nome, cpf, cargo, departamento, tipo, escala_id FROM colaboradores WHERE {SQL_COLAB_POR_CPF}",
+                    (cpf_digitos(cpf),))
         colaborador = cur.fetchone()
 
         if colaborador:
             nome, cpf, cargo, departamento, limite_diario, escala_id = colaborador
+            cpf = cpf_formatado(cpf)   # a senha e o limite do dia usam sempre o formato padrão
             data_hoje = date.today()
             with trava_emissao() as travou:
                 if not travou:
@@ -2213,7 +2231,7 @@ def senha_visitante():
         data_hoje = date.today()
 
         # CPF de colaborador não emite como visitante: a senha sairia com o limite e o custo errados
-        cur.execute("SELECT 1 FROM colaboradores WHERE cpf = %s LIMIT 1", (cpf,))
+        cur.execute(f"SELECT 1 FROM colaboradores WHERE {SQL_COLAB_POR_CPF} LIMIT 1", (cpf_digitos(cpf),))
         if cur.fetchone():
             cur.close()
             logger.info(f"{usuario_logado}: CPF {cpf} de colaborador recusado na emissão de visitante.")
@@ -7192,7 +7210,8 @@ def senha_colaborador_cardapio():
         cur = mysql.connection.cursor()
 
         init_escalas()
-        cur.execute("SELECT nome, cpf, cargo, departamento, tipo, escala_id FROM colaboradores WHERE cpf = %s", (cpf,))
+        cur.execute(f"SELECT nome, cpf, cargo, departamento, tipo, escala_id FROM colaboradores WHERE {SQL_COLAB_POR_CPF}",
+                    (cpf_digitos(cpf),))
         colaborador = cur.fetchone()
         if not colaborador:
             flash("CPF não encontrado na base de colaboradores.", "error")
@@ -7200,6 +7219,7 @@ def senha_colaborador_cardapio():
             return redirect(url_for('senha_colaborador_cardapio', **extra))
 
         nome, cpf_db, cargo, departamento, limite_diario, escala_id = colaborador
+        cpf_db = cpf_formatado(cpf_db)   # a senha e o limite do dia usam sempre o formato padrão
         data_hoje = date.today()
 
         cur.execute(
@@ -8831,7 +8851,7 @@ def importar_colaboradores():
     init_escalas()
     cur = mysql.connection.cursor()
     cur.execute("SELECT cpf FROM colaboradores")
-    cpfs_banco = {row[0] for row in cur.fetchall()}
+    cpfs_banco = {cpf_digitos(row[0]) for row in cur.fetchall()}
     cur.execute("SELECT id, nome FROM escalas")
     escalas_banco = {' '.join(n.split()).upper(): i for i, n in cur.fetchall()}
     cur.execute("SELECT nome FROM departamentos")
@@ -8865,12 +8885,13 @@ def importar_colaboradores():
             resultados.append({'linha': linha, 'nome': nome, 'status': 'erro', 'motivo': f'CPF "{cpf_raw}" inválido'})
             continue
 
-        if cpf_raw in cpfs_no_csv:
+        cpf_raw = cpf_formatado(cpf_raw)   # grava sempre 000.000.000-00; compara só os números
+        if cpf_digitos(cpf_raw) in cpfs_no_csv:
             resultados.append({'linha': linha, 'nome': nome, 'status': 'erro', 'motivo': 'CPF duplicado dentro do arquivo'})
             continue
-        cpfs_no_csv.add(cpf_raw)
+        cpfs_no_csv.add(cpf_digitos(cpf_raw))
 
-        if cpf_raw in cpfs_banco:
+        if cpf_digitos(cpf_raw) in cpfs_banco:
             resultados.append({'linha': linha, 'nome': nome, 'status': 'erro', 'motivo': 'CPF já cadastrado no sistema'})
             continue
 
@@ -8888,7 +8909,7 @@ def importar_colaboradores():
                 (nome, cpf_raw, cargo, departamento, escala_id)
             )
             mysql.connection.commit()
-            cpfs_banco.add(cpf_raw)
+            cpfs_banco.add(cpf_digitos(cpf_raw))
             inseridos += 1
             resultados.append({'linha': linha, 'nome': nome, 'status': 'sucesso', 'motivo': 'Importado com sucesso'})
         except Exception as e:
